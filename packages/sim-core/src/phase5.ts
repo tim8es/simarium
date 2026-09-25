@@ -15,7 +15,8 @@ export type BradysiaDeathCause =
   | "starvation"
   | "dehydration"
   | "senescence"
-  | "carbon_exhaustion";
+  | "carbon_exhaustion"
+  | "predation";
 
 export interface BradysiaIndividual {
   id: number;
