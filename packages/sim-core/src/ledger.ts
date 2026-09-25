@@ -79,18 +79,9 @@ export class MassLedger {
     }
 
     for (const key of MATERIAL_KEYS) {
-      const sourceBeforeValue = source[key];
       source[key] -= effectiveAmount[key];
+      destination[key] += effectiveAmount[key];
       if (Math.abs(source[key]) < 1e-12) source[key] = 0;
-
-      // Credit the representable amount that was actually removed from the
-      // source. Repeated subtraction of tiny fluxes from a large pool can
-      // otherwise round differently from addition into a small destination
-      // and create machine-scale conservation drift over millions of
-      // transfers.
-      const actuallyRemoved = sourceBeforeValue - source[key];
-      destination[key] += actuallyRemoved;
-      effectiveAmount[key] = actuallyRemoved;
     }
 
     const event: TransferEvent = {
