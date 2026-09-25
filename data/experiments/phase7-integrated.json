@@ -16,7 +16,7 @@
       "dalotiaLarva": 0.01375,
       "dalotiaAdult": 0.0275
     },
-    "bradysiaMatingRadiusCells": 3,
+    "bradysiaMatingRadiusCells": 6,
     "dalotiaMatingRadiusCells": 3,
     "dalotiaPreyEncounterRadiusCells": 3
   },
@@ -79,7 +79,7 @@
     "validationSeeds": 20
   },
   "parameter_status": "CALIBRATED",
-  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. Spatial habitat is 60x30 substrate cells across the 120x60 cm footprint (~2 cm/cell). Movement event rates are scaled by the square of the cell-size ratio so the diffusive physical displacement remains comparable to the earlier 10 cm grid; spatial integration samples net random-walk displacement over each ecological timestep. These are not biological population-density claims. Full-ecosystem invariant tolerance is explicitly looser than kernel tests to account for floating-point accumulation over millions of conservative transfers; it remains sub-part-per-billion relative. Dalotia mating and prey encounter radii are 3 cells (~6 cm) to compensate for endpoint-only encounter detection over 30-minute spatial timesteps. They are CALIBRATED numerical encounter-kernel values, not sensory-range claims or global-prey access; prey lookup remains restricted to the bounded local neighborhood.",
+  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. Spatial habitat is 60x30 substrate cells across the 120x60 cm footprint (~2 cm/cell). Movement event rates are scaled by the square of the cell-size ratio so the diffusive physical displacement remains comparable to the earlier 10 cm grid; spatial integration samples net random-walk displacement over each ecological timestep. These are not biological population-density claims. Full-ecosystem invariant tolerance is explicitly looser than kernel tests to account for floating-point accumulation over millions of conservative transfers; it remains sub-part-per-billion relative. Bradysia mating radius is 6 cells (~12 cm) and Dalotia mating/prey encounter radii are 3 cells (~6 cm). These are CALIBRATED numerical encounter-kernel values that compensate for endpoint-only encounter detection over 30-minute spatial timesteps, not sensory-range claims or global access. Bradysia radius 6 was selected using calibration seeds 0-4: with Dalotia capture 0.20 and prey radius 3, all 5/5 150-day runs retained Bradysia and 4/5 retained Dalotia; radius 3 retained Bradysia in 4/5. Validation seeds were not used for tuning. Dalotia prey lookup remains restricted to the bounded local neighborhood.",
   "numerics": {
     "invariantAbsoluteTolerance": 1e-8,
     "invariantRelativeTolerance": 5e-10
