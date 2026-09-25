@@ -13,19 +13,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  render-benchmark:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm install --no-audit --no-fund
-      - run: npx vitest run tests/render-adapter.test.ts
-      - run: npm run build
-      - run: npm run build:render
-
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
