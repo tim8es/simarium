@@ -91,6 +91,13 @@
       "status": "CALIBRATED",
       "source": "predation_2015",
       "notes": "Phase-7 local encounter/capture proxy used only by the integrated spatial ecosystem. Calibrated on seeds 0-4 with a 3-cell prey encounter kernel and Bradysia mating radius 6; 0.20 produced Bradysia/Dalotia coexistence in multiple 150-day calibration runs without the prey wipeout seen at higher values. Phase-6 standalone chambers retain their separate 0.75 arena proxy. This is not a measured attack-success probability and validation seeds are not used for tuning."
+    },
+    "dalotiaLocalPreyHalfSaturationCount": {
+      "value": 0.2992,
+      "unit": "dimensionless",
+      "status": "DERIVED",
+      "source": "model_internal",
+      "notes": "Spatial equivalent of the Phase-6 global preyHalfSaturationCount=12. The integrated encounter kernel uses Chebyshev radius 3 on a 60x30 habitat; the mean clipped neighborhood contains 44.88 cells, so 12 × 44.88 / 1800 = 0.2992. This preserves the Phase-6 prey-density response when switching from global prey counts to local candidate counts; it is a model-scale normalization, not a measured biological constant."
     }
   }
 }
