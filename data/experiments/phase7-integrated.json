@@ -6,21 +6,25 @@
   "fixedDtSeconds": 1800,
   "temperatureC": 24,
   "spatial": {
-    "widthCells": 12,
-    "depthCells": 6,
+    "widthCells": 60,
+    "depthCells": 30,
     "movementRatesPerSecond": {
-      "folsomia": 0.00028,
-      "trichorhina": 0.00014,
-      "bradysiaLarva": 0.00009,
-      "bradysiaAdult": 0.0017,
-      "dalotiaLarva": 0.00055,
-      "dalotiaAdult": 0.0011
+      "folsomia": 0.0014,
+      "trichorhina": 0.0007,
+      "bradysiaLarva": 0.00045,
+      "bradysiaAdult": 0.0085,
+      "dalotiaLarva": 0.00275,
+      "dalotiaAdult": 0.0055
     }
   },
   "plants": {
     "fittonia_albivenis": {
       "initialRamets": 3,
-      "initialAgesDays": [340, 90, 60],
+      "initialAgesDays": [
+        340,
+        90,
+        60
+      ],
       "maturityDays": 40,
       "cloneIntervalDays": 45,
       "cloneFraction": 0.18,
@@ -29,7 +33,11 @@
     },
     "peperomia_caperata": {
       "initialRamets": 3,
-      "initialAgesDays": [400, 100, 70],
+      "initialAgesDays": [
+        400,
+        100,
+        70
+      ],
       "maturityDays": 60,
       "cloneIntervalDays": 75,
       "cloneFraction": 0.15,
@@ -38,10 +46,14 @@
     },
     "pilea_depressa": {
       "initialRamets": 3,
-      "initialAgesDays": [280, 70, 40],
+      "initialAgesDays": [
+        280,
+        70,
+        40
+      ],
       "maturityDays": 30,
       "cloneIntervalDays": 30,
-      "cloneFraction": 0.20,
+      "cloneFraction": 0.2,
       "minimumStructuralCarbonMgForClone": 10,
       "rametLifespanDays": 300
     }
@@ -54,7 +66,7 @@
     "dalotiaAdultPair": true
   },
   "decomposition": {
-    "fineDetritusRateMultiplier": 3.0,
+    "fineDetritusRateMultiplier": 3,
     "corpseRateMultiplier": 1.5
   },
   "validation": {
@@ -64,5 +76,5 @@
     "validationSeeds": 20
   },
   "parameter_status": "CALIBRATED",
-  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. They are not biological population-density claims."
+  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. Spatial habitat is 60x30 substrate cells across the 120x60 cm footprint (~2 cm/cell); movement event rates are scaled from the earlier coarse grid to preserve approximate physical displacement per unit time. These are not biological population-density claims."
 }
