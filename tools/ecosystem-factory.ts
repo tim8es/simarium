@@ -282,6 +282,7 @@ function trichorhinaParameters(): TrichorhinaParameters {
     desiccationRatePerSecond: value(p.desiccationRatePerSecond),
     hydrationRatePerSecond: value(p.hydrationRatePerSecond),
     adultCarbonTargetMg: value(p.adultCarbonMg),
+    maturationCarbonFractionOfAdult: value(p.maturationCarbonFractionOfAdult),
     adultBodyWaterG: value(p.adultBodyWaterG),
     mancaCarbonMg: value(p.mancaCarbonMg)
   };
