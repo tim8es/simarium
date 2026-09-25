@@ -337,7 +337,7 @@ function bradysiaParameters(): BradysiaParameters {
   };
 }
 
-function dalotiaParameters(): DalotiaParameters {
+function dalotiaParameters(captureProbabilityOverride?: number): DalotiaParameters {
   const p = dalotiaFixture.parameters;
   return {
     biomassPool: "dalotia_biomass",
@@ -364,7 +364,8 @@ function dalotiaParameters(): DalotiaParameters {
     maxAdultPreyPerDay: value(p.maxAdultPreyPerDay),
     maxLarvalPreyPerDay: value(p.maxLarvalPreyPerDay),
     preyHalfSaturationCount: value(p.preyHalfSaturationCount),
-    captureProbability: value(p.captureProbability),
+    captureProbability:
+      captureProbabilityOverride ?? value(p.captureProbability),
     assimilationEfficiency: value(p.assimilationEfficiency),
     reserveTargetFraction: value(p.reserveTargetFraction),
     basalMetabolismCarbonMgPerSecond:
@@ -561,11 +562,12 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
     new DalotiaPredatorSystem(
       dalotia,
       { bradysia, folsomia },
-      dalotiaParameters(),
+      dalotiaParameters(
+        value(integratedFixture.calibration.dalotiaLocalCaptureProbability)
+      ),
       habitat,
       integratedFixture.spatial.dalotiaMatingRadiusCells,
-      integratedFixture.spatial.dalotiaPreyEncounterRadiusCells,
-      value(integratedFixture.calibration.dalotiaSpatialEncounterEfficiency)
+      integratedFixture.spatial.dalotiaPreyEncounterRadiusCells
     )
   ];
 
