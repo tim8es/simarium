@@ -213,3 +213,10 @@ The local `InMemoryWorldShareProvider` satisfies this contract. A future server 
 The current `main` serializer covers Phase-1 world state only. The full ecosystem integration adapter must therefore populate and restore the deterministic `sections` for animal populations/life records, plant ramets/lineage, microbe fields, spatial habitat positions and required stats before browser persistence is considered complete for the integrated ecosystem.
 
 This platform work deliberately does not change biology coefficients, lifecycle rules or ecological calibration.
+
+
+## Concrete browser worker entrypoint
+
+`workers/sim-worker.ts` is the browser worker entrypoint compiled by the repository build. It attaches `SimulationWorkerRuntime` to the worker message boundary and currently uses `Phase1SimulationRuntimeAdapter`, which runs the existing serializable `sim-core` `WorldState` and fixed-step systems entirely behind the worker protocol.
+
+The concrete adapter supports deterministic stepping, save/load, stats and boundary-flux water/litter actions when the target material pool exists. Organism introduction/removal, light, ventilation and hardscape mutations are intentionally rejected by this Phase-1 adapter because those authoritative domains live in the integrated ecosystem. The later integrated adapter must implement those actions inside sim-core rather than falling back to UI-side mutation.
