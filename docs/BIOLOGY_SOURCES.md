@@ -36,6 +36,21 @@ Checked for the MVP species list and key ecological assumptions.
   https://www.oecd.org/en/publications/test-no-232-collembolan-reproduction-test-in-soil_9789264264601-en.html
 - Fountain & Hopkin, Annual Review of Entomology (2005): widespread soil arthropod; parthenogenetic; standard research organism.
   https://pubmed.ncbi.nlm.nih.gov/15355236/
+- OECD Test Guideline 232 uses 10–12-day-old juveniles and a 28-day reproduction test for *F. candida*. This is a strong reference condition for Phase 3 population tests.
+  https://doi.org/10.1787/9789264076273-en
+- de Lima e Silva et al. (2018): experimental life-stage work used 4–5-day eggs, 10–12-day juveniles, 21-day young adults and 28-day adults at about 20 C; provides direct life-stage calibration points.
+  https://pubmed.ncbi.nlm.nih.gov/30077841/
+- Environmental Toxicology and Chemistry (2024): reports first oviposition at about 21–24 days at 20 C and egg hatching at about 10 days; useful direct constraints for the Phase 3 lifecycle.
+  https://academic.oup.com/etc/article/43/5/1173/7829375
+- Roeben et al. (2023): reproduction was observed from 4 C to 25 C and temperature strongly affected hatching, maturation and longevity; lifetime reproductive output in related work peaks around 21 C.
+  https://doi.org/10.1016/j.pedobi.2022.150847
+- Holmstrup et al. and follow-up drought studies: *F. candida* has a highly water-permeable cuticle and unusual water-vapour absorption physiology; reproduction is substantially more moisture-sensitive than survival and can cease under moderate drought.
+  https://pubmed.ncbi.nlm.nih.gov/11472765/
+  https://doi.org/10.1016/j.soilbio.2010.11.028
+- Bak et al. (2025): medium-sized adults around 25 ± 3 days old had dry mass of approximately 40 µg in that laboratory culture. This is used only as an adult body-mass anchor, not a universal species constant.
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC12295829/
+- A locomotion comparison reported a mean *F. candida* body mass of about 241 ± 69 µg for its experimental animals at 20 C, supporting the order of magnitude of fresh/live mass while highlighting strong protocol/age dependence.
+  https://academic.oup.com/biolinnean/article/137/2/216/6680021
 
 ### Trichorhina tomentosa
 - GBIF/accepted taxonomic sources should be used in implementation data.
