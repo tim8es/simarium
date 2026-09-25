@@ -47,7 +47,7 @@ function createAdultPair(includeMale = true): BradysiaPopulation {
     adultAgeSeconds: 0,
     birthTimeSeconds: -22 * 86400,
     material,
-    reserveCarbonMg: material.carbonMg * 0.6,
+    reserveCarbonMg: material.carbonMg * 0.8,
     starvationSeconds: 0,
     dehydrationSeconds: 0,
     hasOviposited: false
@@ -62,7 +62,7 @@ function createAdultPair(includeMale = true): BradysiaPopulation {
       adultAgeSeconds: 0,
       birthTimeSeconds: -22 * 86400,
       material,
-      reserveCarbonMg: material.carbonMg * 0.6,
+      reserveCarbonMg: material.carbonMg * 0.8,
       starvationSeconds: 0,
       dehydrationSeconds: 0,
       hasOviposited: false
