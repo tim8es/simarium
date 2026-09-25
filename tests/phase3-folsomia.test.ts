@@ -129,6 +129,38 @@ describe("Phase 3 Folsomia candida lifecycle", () => {
     expect(world.ledger.getPool("folsomia_feed_buffer").carbonMg).toBeCloseTo(0, 12);
   }, 30_000);
 
+  it("limits realized clutch size to reserve carbon above the reproductive floor", () => {
+    const population = createPopulation();
+    const adults = population.living();
+    for (const individual of adults) {
+      individual.stage = "adult";
+      individual.ageSeconds = 30 * 86400;
+      individual.stageAgeSeconds = 30 * 86400;
+      individual.reserveCarbonMg = 0;
+      individual.lastReproductionSeconds = Number.NEGATIVE_INFINITY;
+    }
+
+    const parent = adults[0]!;
+    parent.reserveCarbonMg =
+      parent.material.carbonMg * p("reproductionReserveFraction") +
+      p("eggCarbonMg") * 1.8;
+
+    const world = createWorld(population, (pools) => {
+      pools.linnemannia_biomass.carbonMg = 0;
+      pools.bacillus_biomass.carbonMg = 0;
+    });
+
+    new FixedStepScheduler(world, [
+      new FolsomiaLifecycleSystem(population, parameters())
+    ]).step(1);
+
+    const offspring = population
+      .all()
+      .filter((individual) => individual.parentId === parent.id);
+    expect(offspring).toHaveLength(1);
+    expect(offspring.length).toBeLessThan(p("clutchSize"));
+  });
+
   it("suppresses reproduction in a dry substrate proxy", () => {
     const wetPopulation = createPopulation();
     const wet = createWorld(wetPopulation);
