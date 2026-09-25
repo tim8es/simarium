@@ -7,6 +7,10 @@ on:
       - agent/phase7-ecology
     paths:
       - ".github/workflows/phase7-folsomia-check.yml"
+      - "data/experiments/phase3-folsomia.json"
+      - "packages/sim-core/src/phase3.ts"
+      - "tools/ecosystem-factory.ts"
+      - "data/experiments/phase7-integrated.json"
 
 permissions:
   contents: read
