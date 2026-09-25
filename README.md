@@ -34,6 +34,18 @@ Microbial decomposers:
 
 The MVP is a constructed tropical bioactive terrarium, not a claim to reproduce one exact natural geographic biotope.
 
-See:
+## Documentation
+
 - [MVP specification](docs/MVP_SPEC.md)
+- [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
+- [Simulation model](docs/SIMULATION_MODEL.md)
+- [World model](docs/WORLD_MODEL.md)
+- [Technical architecture](docs/ARCHITECTURE.md)
+- [Species data model](docs/SPECIES_DATA_MODEL.md)
+- [Preset specification](docs/PRESET_SPEC.md)
+- [Validation strategy](docs/VALIDATION.md)
+- [Rendering specification](docs/RENDERING.md)
+- [Assumptions and limitations](docs/ASSUMPTIONS.md)
+- [Parameter evidence backlog](docs/PARAMETER_EVIDENCE.md)
 - [Biology sources](docs/BIOLOGY_SOURCES.md)
+- [Species data skeleton](data/species.yml)
