@@ -29,8 +29,8 @@ export interface RenderWorldDeltaDto {
   virtualTime: number;
   upserted: RenderEntityDto[];
   removedEntityIds: string[];
-  selectedEntityId?: string;
-  environment?: Record<string, JsonValue>;
+  selectedEntityId?: string | null;
+  environment?: Record<string, JsonValue> | null;
 }
 
 function entityEqual(a: RenderEntityDto, b: RenderEntityDto): boolean {
@@ -61,8 +61,14 @@ export function diffRenderSnapshots(
     upserted,
     removedEntityIds
   };
-  if (next.selectedEntityId !== undefined) delta.selectedEntityId = next.selectedEntityId;
-  if (next.environment !== undefined) delta.environment = structuredClone(next.environment);
+  if (next.selectedEntityId !== previous.selectedEntityId) {
+    delta.selectedEntityId = next.selectedEntityId ?? null;
+  }
+  if (next.environment !== undefined) {
+    delta.environment = structuredClone(next.environment);
+  } else if (previous.environment !== undefined) {
+    delta.environment = null;
+  }
   return delta;
 }
 
@@ -81,10 +87,20 @@ export function applyRenderDelta(
     virtualTime: delta.virtualTime,
     entities: [...entities.values()]
   };
-  if (delta.selectedEntityId !== undefined) next.selectedEntityId = delta.selectedEntityId;
-  else if (base.selectedEntityId !== undefined) next.selectedEntityId = base.selectedEntityId;
-  if (delta.environment !== undefined) next.environment = structuredClone(delta.environment);
-  else if (base.environment !== undefined) next.environment = structuredClone(base.environment);
+  if (delta.selectedEntityId === null) {
+    // Explicitly cleared by the authoritative snapshot.
+  } else if (delta.selectedEntityId !== undefined) {
+    next.selectedEntityId = delta.selectedEntityId;
+  } else if (base.selectedEntityId !== undefined) {
+    next.selectedEntityId = base.selectedEntityId;
+  }
+  if (delta.environment === null) {
+    // Explicitly cleared by the authoritative snapshot.
+  } else if (delta.environment !== undefined) {
+    next.environment = structuredClone(delta.environment);
+  } else if (base.environment !== undefined) {
+    next.environment = structuredClone(base.environment);
+  }
   return next;
 }
 
