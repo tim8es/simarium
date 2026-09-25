@@ -164,6 +164,8 @@ function parameters(
 
     basalMetabolismCarbonMgPerSecond: p("basalMetabolismCarbonMgPerSecond"),
     adultCarbonTargetMg: p("adultCarbonTargetMg"),
+    pupationCarbonFractionOfAdult: p("pupationCarbonFractionOfAdult"),
+    reproductionReserveFraction: p("reproductionReserveFraction"),
     eggCarbonMg: p("eggCarbonMg"),
     adultBodyWaterG: p("adultBodyWaterG"),
 
