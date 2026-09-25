@@ -15,6 +15,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ecosystem-validation-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validation-shard:
     name: 180d validation shard ${{ matrix.shard }}
