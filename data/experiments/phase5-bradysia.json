@@ -178,13 +178,6 @@
       "status": "CALIBRATED",
       "source": "diet_2020",
       "notes": "Engineering critical-mass gate: larvae that have not accumulated sufficient biomass remain larvae instead of pupating on thermal time alone. Value must be sensitivity-tested."
-    },
-    "pupationMinAdultCarbonFraction": {
-      "value": 0.5,
-      "unit": "dimensionless",
-      "status": "CALIBRATED",
-      "source": "model_internal",
-      "notes": "Engineering critical-mass gate: larval thermal time alone cannot trigger pupation below half of the adult carbon target."
     }
   },
   "initialPopulation": {
