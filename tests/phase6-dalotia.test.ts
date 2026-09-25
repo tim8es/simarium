@@ -363,4 +363,38 @@ describe("Phase 6 Dalotia coriaria predator", () => {
   });
 
 
+  it("applies documented immature survival before adult emergence", () => {
+    const dalotia = seedDalotiaLarvae({
+      count: 4,
+      ageDays: 0,
+      carbonMg: p("initialLarvaCarbonMg"),
+      reserveCarbonMg: p("initialReserveCarbonMg"),
+      nitrogenPerCarbon: p("nitrogenPerCarbon"),
+      phosphorusPerCarbon: p("phosphorusPerCarbon"),
+      adultBodyWaterG: p("adultBodyWaterG")
+    });
+    for (const individual of dalotia.living()) {
+      individual.stage = "pupa";
+      individual.stageAgeSeconds = (p("pupalDevelopmentDays") + 1) * 86400;
+    }
+    const prey = preyPopulations();
+    const world = createWorld(dalotia, prey);
+
+    new FixedStepScheduler(world, [
+      new DalotiaPredatorSystem(
+        dalotia,
+        prey,
+        parameters({ immatureSurvivalProbability: 0 })
+      )
+    ]).step(1);
+
+    expect(dalotia.living()).toHaveLength(0);
+    expect(
+      dalotia.eventLog().some(
+        (event) =>
+          event.type === "death" && event.cause === "developmental_mortality"
+      )
+    ).toBe(true);
+  });
+
 });
