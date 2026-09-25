@@ -156,4 +156,22 @@ describe("Phase 7 ecosystem analysis", () => {
     expect(run.summary.litterNitrogenTracer.reachedPlantTissue).toBe(true);
   }, 60_000);
 
+  it("exports stage, death-cause and prey-specific predation diagnostics for calibration", () => {
+    const batch = runEcosystemBatch({
+      seeds: [7001],
+      days: 12,
+      sampleEveryDays: 1
+    });
+
+    const outcome = batch.runOutcomes[0]!;
+    expect(outcome.deathCauses.folsomia).toBeDefined();
+    expect(outcome.deathCauses.bradysia).toBeDefined();
+    expect(outcome.predation.total).toBe(
+      outcome.predation.bradysia + outcome.predation.folsomia
+    );
+    expect(outcome.finalStages.bradysia).toBeDefined();
+    expect(outcome.finalStages.dalotia).toBeDefined();
+  }, 30_000);
+
+
 });
