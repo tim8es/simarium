@@ -44,6 +44,7 @@ export interface TrichorhinaLifeRecord {
 export class TrichorhinaPopulation {
   private nextId = 1;
   private readonly individuals: TrichorhinaIndividual[] = [];
+  private readonly livingIndividuals = new Set<TrichorhinaIndividual>();
   private readonly records = new Map<number, TrichorhinaLifeRecord>();
 
   create(
@@ -58,6 +59,7 @@ export class TrichorhinaPopulation {
       material: cloneMaterial(input.material)
     };
     this.individuals.push(individual);
+    this.livingIndividuals.add(individual);
 
     const record: TrichorhinaLifeRecord = {
       id,
@@ -70,7 +72,7 @@ export class TrichorhinaPopulation {
   }
 
   living(): TrichorhinaIndividual[] {
-    return this.individuals.filter((individual) => individual.alive);
+    return [...this.livingIndividuals];
   }
 
   all(): readonly TrichorhinaIndividual[] {
@@ -102,6 +104,7 @@ export class TrichorhinaPopulation {
     timeSeconds: number
   ): void {
     individual.alive = false;
+    this.livingIndividuals.delete(individual);
     const record = this.record(individual.id);
     record.deathTimeSeconds = timeSeconds;
     record.deathCause = cause;
@@ -109,8 +112,8 @@ export class TrichorhinaPopulation {
 
   totalLivingMaterial(): Material {
     let total = zeroMaterial();
-    for (const individual of this.individuals) {
-      if (individual.alive) total = addMaterial(total, individual.material);
+    for (const individual of this.livingIndividuals) {
+      total = addMaterial(total, individual.material);
     }
     return total;
   }
