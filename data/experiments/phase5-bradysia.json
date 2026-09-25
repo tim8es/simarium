@@ -184,14 +184,14 @@
       "unit": "dimensionless",
       "status": "MEASURED",
       "source": "physiological_time_2026",
-      "notes": "Laboratory immature survival reported around 46.4% across the study temperature range. Applied at adult emergence as an aggregate immature-survival draw because stage-specific survival fractions are not available. Runtime applies the aggregate probability as equal per-transition survival factors whose product equals the measured egg-to-adult survival, so mortality is not delayed entirely until adult emergence."
+      "notes": "Laboratory immature survival reported around 46.4% across the study temperature range. Because stage-specific mortality is unavailable, post-start offspring receive one aggregate viability draw when eggs enter the feeding larval cohort; pre-start seeded larvae receive the same aggregate draw at adult emergence. This is an implementation placement of aggregate mortality, not a claim that all deaths occur at one biological stage."
     },
     "reproductionReserveFraction": {
       "value": 0.2,
       "unit": "dimensionless",
       "status": "CALIBRATED",
       "source": "model_internal",
-      "notes": "Minimum adult reserve fraction required before oviposition. Added after calibration seeds 0-2 showed reproduction could proceed from structural body carbon despite depleted energetic reserve; engineering gate, not a measured lipid fraction."
+      "notes": "Minimum adult reserve fraction retained before egg allocation. Realized brood size is limited by reserve carbon above this floor while fecundityEggsPerFemale remains the measured laboratory maximum/mean target. Added from Phase-7 calibration-seed diagnosis; engineering calibration, not a measured lipid fraction."
     }
   },
   "initialPopulation": {
