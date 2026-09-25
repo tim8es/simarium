@@ -1,0 +1,68 @@
+{
+  "id": "phase7_integrated_ecosystem",
+  "status": "candidate",
+  "purpose": "First all-species headless ecosystem candidate. No rescue rules. This file contains only integration-specific parameters; species physiology/lifecycle parameters remain in phase2-phase6 fixtures.",
+  "seed": 7001,
+  "fixedDtSeconds": 1800,
+  "temperatureC": 24,
+  "spatial": {
+    "widthCells": 12,
+    "depthCells": 6,
+    "movementRatesPerSecond": {
+      "folsomia": 0.00028,
+      "trichorhina": 0.00014,
+      "bradysiaLarva": 0.00009,
+      "bradysiaAdult": 0.0017,
+      "dalotiaLarva": 0.00055,
+      "dalotiaAdult": 0.0011
+    }
+  },
+  "plants": {
+    "fittonia_albivenis": {
+      "initialRamets": 3,
+      "initialAgesDays": [340, 90, 60],
+      "maturityDays": 40,
+      "cloneIntervalDays": 45,
+      "cloneFraction": 0.18,
+      "minimumStructuralCarbonMgForClone": 12,
+      "rametLifespanDays": 360
+    },
+    "peperomia_caperata": {
+      "initialRamets": 3,
+      "initialAgesDays": [400, 100, 70],
+      "maturityDays": 60,
+      "cloneIntervalDays": 75,
+      "cloneFraction": 0.15,
+      "minimumStructuralCarbonMgForClone": 15,
+      "rametLifespanDays": 420
+    },
+    "pilea_depressa": {
+      "initialRamets": 3,
+      "initialAgesDays": [280, 70, 40],
+      "maturityDays": 30,
+      "cloneIntervalDays": 30,
+      "cloneFraction": 0.20,
+      "minimumStructuralCarbonMgForClone": 10,
+      "rametLifespanDays": 300
+    }
+  },
+  "initialAnimals": {
+    "folsomiaJuveniles": 30,
+    "trichorhinaJuveniles": 8,
+    "bradysiaLarvae": 4,
+    "bradysiaAdultPair": true,
+    "dalotiaAdultPair": true
+  },
+  "decomposition": {
+    "fineDetritusRateMultiplier": 3.0,
+    "corpseRateMultiplier": 1.5
+  },
+  "validation": {
+    "smokeDays": 60,
+    "candidateDays": 180,
+    "calibrationSeeds": 10,
+    "validationSeeds": 20
+  },
+  "parameter_status": "CALIBRATED",
+  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. They are not biological population-density claims."
+}
