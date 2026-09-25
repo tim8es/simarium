@@ -13,6 +13,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  render-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npx vitest run tests/render-adapter.test.ts
+      - run: npm run build:render
+
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -22,9 +34,9 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
+      - run: npm test
       - run: npm run build
       - run: npm run build:render
-      - run: npm test
       - name: Run integrated ecosystem smoke batch
         run: node dist/tools/ecosystem-batch.js --days 30 --seeds 0:10 --sample 5 --format json > ecosystem-smoke.json
       - uses: actions/upload-artifact@v4
