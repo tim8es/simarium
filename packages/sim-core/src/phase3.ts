@@ -172,11 +172,17 @@ export class FolsomiaPopulation {
   }
 
   totalLivingMaterial(): Material {
-    let total = zeroMaterial();
+    let carbonMg = 0;
+    let nitrogenMg = 0;
+    let phosphorusMg = 0;
+    let waterG = 0;
     for (const individual of this.livingIndividuals) {
-      total = addMaterial(total, individual.material);
+      carbonMg += individual.material.carbonMg;
+      nitrogenMg += individual.material.nitrogenMg;
+      phosphorusMg += individual.material.phosphorusMg;
+      waterG += individual.material.waterG;
     }
-    return total;
+    return { carbonMg, nitrogenMg, phosphorusMg, waterG };
   }
 
   assertMatchesAggregate(aggregate: Material, tolerance = 1e-10): void {
@@ -347,16 +353,33 @@ export class FolsomiaLifecycleSystem implements SimSystem {
       );
     }
 
+    let totalMetabolicCarbon = 0;
+    const carbonExhausted: FolsomiaIndividual[] = [];
     for (const individual of current) {
       if (!individual.alive) continue;
-      this.metabolize(
-        world,
+      totalMetabolicCarbon += this.metabolize(
         individual,
         metabolicTemperatureFactor,
         dtSeconds
       );
-      if (!individual.alive) continue;
+      if (individual.material.carbonMg <= 1e-12) {
+        carbonExhausted.push(individual);
+      }
+    }
 
+    if (totalMetabolicCarbon > 0) {
+      world.ledger.transfer(
+        this.p.biomassPool,
+        this.p.atmospherePool,
+        { ...zeroMaterial(), carbonMg: totalMetabolicCarbon }
+      );
+    }
+    for (const individual of carbonExhausted) {
+      this.die(world, individual, "carbon_exhaustion");
+    }
+
+    for (const individual of current) {
+      if (!individual.alive) continue;
       this.feed(world, individual, dtSeconds);
       this.reproduce(world, individual, moisture);
       this.evaluateMortality(world, individual, moisture, dtSeconds);
@@ -413,11 +436,10 @@ export class FolsomiaLifecycleSystem implements SimSystem {
   }
 
   private metabolize(
-    world: WorldState,
     individual: FolsomiaIndividual,
     temperatureFactorForStep: number,
     dtSeconds: number
-  ): void {
+  ): number {
     const requested =
       this.p.basalMetabolismCarbonMgPerSecond *
       stageMetabolismFactor(individual.stage) *
@@ -426,21 +448,13 @@ export class FolsomiaLifecycleSystem implements SimSystem {
     const consumed = Math.min(individual.material.carbonMg, requested);
 
     if (consumed > 0) {
-      world.ledger.transfer(
-        this.p.biomassPool,
-        this.p.atmospherePool,
-        { ...zeroMaterial(), carbonMg: consumed }
-      );
       individual.material.carbonMg -= consumed;
       individual.reserveCarbonMg = Math.max(
         0,
         individual.reserveCarbonMg - consumed
       );
     }
-
-    if (individual.material.carbonMg <= 1e-12) {
-      this.die(world, individual, "carbon_exhaustion");
-    }
+    return consumed;
   }
 
   private feed(
