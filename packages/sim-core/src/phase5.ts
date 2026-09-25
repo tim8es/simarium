@@ -263,6 +263,33 @@ export interface BradysiaParameters {
 
 const DAY = 86400;
 const HOUR = 3600;
+const BRADYSIA_AGGREGATE_TOLERANCE = 1e-8;
+
+function reconcileMaterialToAggregate(
+  requested: Material,
+  available: Material
+): Material {
+  const reconciled = cloneMaterial(requested);
+  for (const key of ["carbonMg", "nitrogenMg", "phosphorusMg", "waterG"] as const) {
+    if (reconciled[key] <= available[key]) continue;
+
+    const deficit = reconciled[key] - available[key];
+    const tolerance =
+      BRADYSIA_AGGREGATE_TOLERANCE +
+      Math.abs(available[key]) * BRADYSIA_AGGREGATE_TOLERANCE;
+    if (deficit > tolerance) {
+      throw new Error(
+        `Bradysia individual material exceeds aggregate pool for ${key}: individual=${reconciled[key]} ledger=${available[key]}`
+      );
+    }
+
+    // The ledger is authoritative for conserved mass. Clamp only residual
+    // floating-point drift already accepted by the population aggregate audit;
+    // larger mismatches remain hard failures.
+    reconciled[key] = available[key];
+  }
+  return reconciled;
+}
 
 function response(value: number, optimum: number, sigma: number): number {
   const z = (value - optimum) / Math.max(1e-9, sigma);
@@ -775,10 +802,14 @@ export class BradysiaLifecycleSystem implements SimSystem {
     cause: BradysiaDeathCause
   ): void {
     if (!individual.alive) return;
+    const remains = reconcileMaterialToAggregate(
+      individual.material,
+      world.ledger.getPool(this.p.biomassPool)
+    );
     world.ledger.transfer(
       this.p.biomassPool,
       this.p.corpsePool,
-      cloneMaterial(individual.material)
+      remains
     );
     individual.material = zeroMaterial();
     individual.reserveCarbonMg = 0;
