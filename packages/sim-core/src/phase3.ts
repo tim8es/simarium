@@ -291,6 +291,10 @@ export class FolsomiaLifecycleSystem implements SimSystem {
       Math.max(1e-12, substrateWater + this.p.moistureHalfSaturationWaterG);
 
     const current = [...this.population.living()];
+    let availableSubstrateWater = substrateWater;
+    let totalWaterUptake = 0;
+    let totalWaterLoss = 0;
+
     for (const individual of current) {
       individual.ageSeconds += dtSeconds;
       individual.stageAgeSeconds += dtSeconds * developmentFactor;
@@ -306,7 +310,34 @@ export class FolsomiaLifecycleSystem implements SimSystem {
         continue;
       }
 
-      this.updateWater(world, individual, moisture, dtSeconds);
+      const waterFlux = this.updateWater(
+        individual,
+        moisture,
+        dtSeconds,
+        availableSubstrateWater
+      );
+      availableSubstrateWater -= waterFlux.uptakeG;
+      totalWaterUptake += waterFlux.uptakeG;
+      totalWaterLoss += waterFlux.lossG;
+    }
+
+    if (totalWaterUptake > 0) {
+      world.ledger.transfer(
+        this.p.substratePool,
+        this.p.biomassPool,
+        { ...zeroMaterial(), waterG: totalWaterUptake }
+      );
+    }
+    if (totalWaterLoss > 0) {
+      world.ledger.transfer(
+        this.p.biomassPool,
+        this.p.atmospherePool,
+        { ...zeroMaterial(), waterG: totalWaterLoss }
+      );
+    }
+
+    for (const individual of current) {
+      if (!individual.alive) continue;
       this.metabolize(world, individual, temp, dtSeconds);
       if (!individual.alive) continue;
 
@@ -341,21 +372,21 @@ export class FolsomiaLifecycleSystem implements SimSystem {
   }
 
   private updateWater(
-    world: WorldState,
     individual: FolsomiaIndividual,
     moisture: number,
-    dtSeconds: number
-  ): void {
+    dtSeconds: number,
+    availableSubstrateWater: number
+  ): { uptakeG: number; lossG: number } {
     const target = stageWaterTarget(individual.stage, this.p.adultBodyWaterG);
     const deficit = Math.max(0, target - individual.material.waterG);
-    const substrateWater = world.ledger.getPool(this.p.substratePool).waterG;
     const uptakeFraction =
       1 - Math.exp(-this.p.hydrationRatePerSecond * moisture * dtSeconds);
-    const uptake = Math.min(substrateWater, deficit * uptakeFraction);
+    const uptake = Math.min(
+      availableSubstrateWater,
+      deficit * uptakeFraction
+    );
 
     if (uptake > 0) {
-      const material = { ...zeroMaterial(), waterG: uptake };
-      world.ledger.transfer(this.p.substratePool, this.p.biomassPool, material);
       individual.material.waterG += uptake;
     }
 
@@ -368,10 +399,10 @@ export class FolsomiaLifecycleSystem implements SimSystem {
       );
     const waterLoss = individual.material.waterG * lossFraction;
     if (waterLoss > 0) {
-      const material = { ...zeroMaterial(), waterG: waterLoss };
-      world.ledger.transfer(this.p.biomassPool, this.p.atmospherePool, material);
       individual.material.waterG -= waterLoss;
     }
+
+    return { uptakeG: uptake, lossG: waterLoss };
   }
 
   private metabolize(
