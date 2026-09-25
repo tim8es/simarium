@@ -68,6 +68,7 @@ function parameters(overrides: Partial<FolsomiaParameters> = {}): FolsomiaParame
     temperatureOptimumC: p("temperatureOptimumC"),
     temperatureSigmaC: p("temperatureSigmaC"),
     eggDevelopmentDays: p("eggDevelopmentDays"),
+    eggHatchProbability: p("eggHatchProbability"),
     adultDevelopmentDays: p("adultDevelopmentDays"),
     reproductionIntervalDays: p("reproductionIntervalDays"),
     clutchSize: p("clutchSize"),
@@ -160,6 +161,57 @@ describe("Phase 3 Folsomia candida lifecycle", () => {
     expect(offspring).toHaveLength(1);
     expect(offspring.length).toBeLessThan(p("clutchSize"));
   });
+
+
+  it("returns non-hatching eggs to detrital material without hidden loss", () => {
+    const population = createPopulation();
+    const adults = population.living();
+    for (const individual of adults) {
+      individual.stage = "adult";
+      individual.ageSeconds = 30 * 86400;
+      individual.stageAgeSeconds = 30 * 86400;
+      individual.reserveCarbonMg = 0;
+      individual.lastReproductionSeconds = Number.NEGATIVE_INFINITY;
+    }
+
+    const parent = adults[0]!;
+    parent.reserveCarbonMg =
+      parent.material.carbonMg * p("reproductionReserveFraction") +
+      p("eggCarbonMg") * 1.8;
+
+    const world = createWorld(population, (pools) => {
+      pools.linnemannia_biomass.carbonMg = 0;
+      pools.bacillus_biomass.carbonMg = 0;
+    });
+    const invariant = new InvariantMonitor(world);
+    const system = new FolsomiaLifecycleSystem(
+      population,
+      parameters({
+        eggHatchProbability: 0,
+        reproductionIntervalDays: 1000
+      })
+    );
+    const scheduler = new FixedStepScheduler(world, [system]);
+
+    scheduler.step(1);
+    const egg = population
+      .all()
+      .find((individual) => individual.parentId === parent.id);
+    expect(egg?.stage).toBe("egg");
+
+    scheduler.runFor((p("eggDevelopmentDays") + 1) * 86400);
+    invariant.check(world);
+
+    expect(egg?.alive).toBe(false);
+    expect(population.record(egg!.id).deathCause).toBe(
+      "developmental_mortality"
+    );
+    expect(world.ledger.getPool("animal_corpses").carbonMg).toBeGreaterThan(0);
+    population.assertMatchesAggregate(
+      world.ledger.getPool("folsomia_biomass"),
+      1e-8
+    );
+  }, 30_000);
 
   it("suppresses reproduction in a dry substrate proxy", () => {
     const wetPopulation = createPopulation();
