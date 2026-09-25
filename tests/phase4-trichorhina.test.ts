@@ -258,4 +258,28 @@ describe("Phase 4 Trichorhina tomentosa detritivore", () => {
     expect(world.ledger.getPool("animal_corpses").carbonMg).toBeGreaterThan(0);
     expect(world.ledger.getPool("trichorhina_biomass").carbonMg).toBeCloseTo(0, 12);
   });
+  it("does not mature an underweight juvenile on thermal time alone", () => {
+    const population = createPopulation();
+    for (const individual of population.living()) {
+      individual.stage = "juvenile";
+      individual.stageAgeSeconds = (p("adultDevelopmentDays") + 1) * 86400;
+      individual.material.carbonMg = p("adultCarbonMg") * 0.10;
+      individual.reserveCarbonMg = individual.material.carbonMg * 0.05;
+    }
+    const world = createWorld(population, (pools) => {
+      pools.litter.carbonMg = 0;
+      pools.litter.nitrogenMg = 0;
+      pools.litter.phosphorusMg = 0;
+      pools.linnemannia_biomass.carbonMg = 0;
+      pools.linnemannia_biomass.nitrogenMg = 0;
+      pools.linnemannia_biomass.phosphorusMg = 0;
+    });
+
+    new FixedStepScheduler(world, [
+      new TrichorhinaDetritivoreSystem(population, parameters())
+    ]).step(1);
+
+    expect(population.living().every((x) => x.stage === "juvenile")).toBe(true);
+  });
+
 });
