@@ -64,24 +64,30 @@ export class MassLedger {
     const destination = this.requirePool(to);
     const sourceBefore = cloneMaterial(source);
 
+    const effectiveAmount = cloneMaterial(amount);
+
     for (const key of MATERIAL_KEYS) {
-      if (source[key] + 1e-12 < amount[key]) {
-        throw new Error(
-          `Insufficient ${key} in ${from}: have ${source[key]}, need ${amount[key]}`
-        );
+      const tolerance = Math.max(1e-12, Math.abs(source[key]) * 1e-9);
+      if (amount[key] > source[key]) {
+        if (amount[key] - source[key] > tolerance) {
+          throw new Error(
+            `Insufficient ${key} in ${from}: have ${source[key]}, need ${amount[key]}`
+          );
+        }
+        effectiveAmount[key] = source[key];
       }
     }
 
     for (const key of MATERIAL_KEYS) {
-      source[key] -= amount[key];
-      destination[key] += amount[key];
+      source[key] -= effectiveAmount[key];
+      destination[key] += effectiveAmount[key];
       if (Math.abs(source[key]) < 1e-12) source[key] = 0;
     }
 
     const event: TransferEvent = {
       from,
       to,
-      amount: cloneMaterial(amount),
+      amount: cloneMaterial(effectiveAmount),
       sourceBefore
     };
     for (const observer of this.observers) observer(event);
