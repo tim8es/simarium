@@ -6,6 +6,10 @@ on:
       - agent/phase7-ecology
     paths:
       - ".github/workflows/phase7-dalotia-radius-sweep.yml"
+      - "packages/sim-core/src/phase5.ts"
+      - "packages/sim-core/src/phase6.ts"
+      - "data/experiments/phase7-integrated.json"
+      - "tools/ecosystem-factory.ts"
 
 permissions:
   contents: read
