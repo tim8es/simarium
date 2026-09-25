@@ -99,8 +99,10 @@ export class FolsomiaPopulation {
   }
 
   get(id: number): FolsomiaIndividual {
-    const individual = this.individuals.find((candidate) => candidate.id === id);
-    if (!individual) throw new Error(`Unknown Folsomia individual: ${id}`);
+    const individual = this.individuals[id - 1];
+    if (!individual || individual.id !== id) {
+      throw new Error(`Unknown Folsomia individual: ${id}`);
+    }
     return individual;
   }
 
