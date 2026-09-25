@@ -364,9 +364,7 @@ function dalotiaParameters(): DalotiaParameters {
     maxAdultPreyPerDay: value(p.maxAdultPreyPerDay),
     maxLarvalPreyPerDay: value(p.maxLarvalPreyPerDay),
     preyHalfSaturationCount: value(p.preyHalfSaturationCount),
-    captureProbability: value(
-      integratedFixture.calibration.dalotiaLocalCaptureProbability
-    ),
+    captureProbability: value(p.captureProbability),
     assimilationEfficiency: value(p.assimilationEfficiency),
     reserveTargetFraction: value(p.reserveTargetFraction),
     basalMetabolismCarbonMgPerSecond:
@@ -567,7 +565,7 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
       habitat,
       integratedFixture.spatial.dalotiaMatingRadiusCells,
       integratedFixture.spatial.dalotiaPreyEncounterRadiusCells,
-      integratedFixture.spatial.dalotiaEncounterEfficiency
+      value(integratedFixture.calibration.dalotiaSpatialEncounterEfficiency)
     )
   ];
 
