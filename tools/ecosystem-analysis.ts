@@ -98,10 +98,42 @@ export interface BatchOptions {
   sampleEveryDays?: number;
 }
 
+export interface RunOutcome {
+  seed: number;
+  invariantFailures: number;
+  persistence: {
+    fittonia: boolean;
+    peperomia: boolean;
+    pilea: boolean;
+    folsomia: boolean;
+    trichorhina: boolean;
+    bradysia: boolean;
+    dalotia: boolean;
+    allProducers: boolean;
+    atLeastOneDetritivore: boolean;
+  };
+  postStartGeneration: {
+    folsomia: boolean;
+    trichorhina: boolean;
+    bradysia: boolean;
+    dalotia: boolean;
+  };
+  finalLiving: {
+    fittonia: number;
+    peperomia: number;
+    pilea: number;
+    folsomia: number;
+    trichorhina: number;
+    bradysia: number;
+    dalotia: number;
+  };
+}
+
 export interface BatchSummary {
   days: number;
   seeds: number[];
   runCount: number;
+  runOutcomes: RunOutcome[];
   invariantFailureRuns: number;
   persistenceProbability: {
     fittonia: number;
@@ -111,6 +143,10 @@ export interface BatchSummary {
     trichorhina: number;
     bradysia: number;
     dalotia: number;
+  };
+  jointPersistenceProbability: {
+    allProducers: number;
+    atLeastOneDetritivore: number;
   };
   postStartGenerationProbability: {
     folsomia: number;
@@ -374,6 +410,125 @@ function mean(
   return runs.reduce((sum, run) => sum + selector(run), 0) / runs.length;
 }
 
+function runOutcome(run: IntegratedRunResult): RunOutcome {
+  const persistence = {
+    fittonia: run.summary.plants.fittonia.finalLiving > 0,
+    peperomia: run.summary.plants.peperomia.finalLiving > 0,
+    pilea: run.summary.plants.pilea.finalLiving > 0,
+    folsomia: run.summary.animals.folsomia.finalLiving > 0,
+    trichorhina: run.summary.animals.trichorhina.finalLiving > 0,
+    bradysia: run.summary.animals.bradysia.finalLiving > 0,
+    dalotia: run.summary.animals.dalotia.finalLiving > 0,
+    allProducers:
+      run.summary.plants.fittonia.finalLiving > 0 &&
+      run.summary.plants.peperomia.finalLiving > 0 &&
+      run.summary.plants.pilea.finalLiving > 0,
+    atLeastOneDetritivore:
+      run.summary.animals.folsomia.finalLiving > 0 ||
+      run.summary.animals.trichorhina.finalLiving > 0
+  };
+
+  return {
+    seed: run.seed,
+    invariantFailures: run.invariantFailures,
+    persistence,
+    postStartGeneration: {
+      folsomia: run.summary.animals.folsomia.postStartEver > 0,
+      trichorhina: run.summary.animals.trichorhina.postStartEver > 0,
+      bradysia: run.summary.animals.bradysia.postStartEver > 0,
+      dalotia: run.summary.animals.dalotia.postStartEver > 0
+    },
+    finalLiving: {
+      fittonia: run.summary.plants.fittonia.finalLiving,
+      peperomia: run.summary.plants.peperomia.finalLiving,
+      pilea: run.summary.plants.pilea.finalLiving,
+      folsomia: run.summary.animals.folsomia.finalLiving,
+      trichorhina: run.summary.animals.trichorhina.finalLiving,
+      bradysia: run.summary.animals.bradysia.finalLiving,
+      dalotia: run.summary.animals.dalotia.finalLiving
+    }
+  };
+}
+
+function outcomeProbability(
+  outcomes: RunOutcome[],
+  predicate: (outcome: RunOutcome) => boolean
+): number {
+  if (outcomes.length === 0) return 0;
+  return outcomes.filter(predicate).length / outcomes.length;
+}
+
+function outcomeMean(
+  outcomes: RunOutcome[],
+  selector: (outcome: RunOutcome) => number
+): number {
+  if (outcomes.length === 0) return 0;
+  return outcomes.reduce((sum, outcome) => sum + selector(outcome), 0) /
+    outcomes.length;
+}
+
+function summarizeOutcomes(
+  days: number,
+  seeds: number[],
+  outcomes: RunOutcome[]
+): BatchSummary {
+  return {
+    days,
+    seeds: [...seeds],
+    runCount: outcomes.length,
+    runOutcomes: [...outcomes],
+    invariantFailureRuns: outcomes.filter(
+      (outcome) => outcome.invariantFailures > 0
+    ).length,
+    persistenceProbability: {
+      fittonia: outcomeProbability(outcomes, (x) => x.persistence.fittonia),
+      peperomia: outcomeProbability(outcomes, (x) => x.persistence.peperomia),
+      pilea: outcomeProbability(outcomes, (x) => x.persistence.pilea),
+      folsomia: outcomeProbability(outcomes, (x) => x.persistence.folsomia),
+      trichorhina: outcomeProbability(outcomes, (x) => x.persistence.trichorhina),
+      bradysia: outcomeProbability(outcomes, (x) => x.persistence.bradysia),
+      dalotia: outcomeProbability(outcomes, (x) => x.persistence.dalotia)
+    },
+    jointPersistenceProbability: {
+      allProducers: outcomeProbability(
+        outcomes,
+        (x) => x.persistence.allProducers
+      ),
+      atLeastOneDetritivore: outcomeProbability(
+        outcomes,
+        (x) => x.persistence.atLeastOneDetritivore
+      )
+    },
+    postStartGenerationProbability: {
+      folsomia: outcomeProbability(
+        outcomes,
+        (x) => x.postStartGeneration.folsomia
+      ),
+      trichorhina: outcomeProbability(
+        outcomes,
+        (x) => x.postStartGeneration.trichorhina
+      ),
+      bradysia: outcomeProbability(
+        outcomes,
+        (x) => x.postStartGeneration.bradysia
+      ),
+      dalotia: outcomeProbability(
+        outcomes,
+        (x) => x.postStartGeneration.dalotia
+      )
+    },
+    meanFinalLiving: {
+      fittonia: outcomeMean(outcomes, (x) => x.finalLiving.fittonia),
+      peperomia: outcomeMean(outcomes, (x) => x.finalLiving.peperomia),
+      pilea: outcomeMean(outcomes, (x) => x.finalLiving.pilea),
+      folsomia: outcomeMean(outcomes, (x) => x.finalLiving.folsomia),
+      trichorhina: outcomeMean(outcomes, (x) => x.finalLiving.trichorhina),
+      bradysia: outcomeMean(outcomes, (x) => x.finalLiving.bradysia),
+      dalotia: outcomeMean(outcomes, (x) => x.finalLiving.dalotia)
+    }
+  };
+}
+
 export function runEcosystemBatch(options: BatchOptions): BatchSummary {
   if (options.seeds.length === 0) {
     throw new Error("Batch requires at least one seed");
@@ -393,36 +548,104 @@ export function runEcosystemBatch(options: BatchOptions): BatchSummary {
     return runIntegratedEcosystem(runOptions);
   });
 
-  const result: BatchSummary = {
-    days: options.days,
-    seeds: [...options.seeds],
-    runCount: runs.length,
-    invariantFailureRuns: runs.filter((run) => run.invariantFailures > 0).length,
-    persistenceProbability: {
-      fittonia: probability(runs, (run) => run.summary.plants.fittonia.finalLiving > 0),
-      peperomia: probability(runs, (run) => run.summary.plants.peperomia.finalLiving > 0),
-      pilea: probability(runs, (run) => run.summary.plants.pilea.finalLiving > 0),
-      folsomia: probability(runs, (run) => run.summary.animals.folsomia.finalLiving > 0),
-      trichorhina: probability(runs, (run) => run.summary.animals.trichorhina.finalLiving > 0),
-      bradysia: probability(runs, (run) => run.summary.animals.bradysia.finalLiving > 0),
-      dalotia: probability(runs, (run) => run.summary.animals.dalotia.finalLiving > 0)
+  return summarizeOutcomes(
+    options.days,
+    options.seeds,
+    runs.map(runOutcome)
+  );
+}
+
+export function mergeBatchSummaries(
+  summaries: BatchSummary[]
+): BatchSummary {
+  if (summaries.length === 0) {
+    throw new Error("At least one batch summary is required");
+  }
+
+  const days = summaries[0]!.days;
+  if (summaries.some((summary) => summary.days !== days)) {
+    throw new Error("Cannot merge batch summaries with different days");
+  }
+
+  const seeds = summaries.flatMap((summary) => summary.seeds);
+  if (new Set(seeds).size !== seeds.length) {
+    throw new Error("Cannot merge batch summaries with duplicate seeds");
+  }
+
+  const outcomes = summaries.flatMap((summary) => summary.runOutcomes);
+  return summarizeOutcomes(days, seeds, outcomes);
+}
+
+export interface AcceptanceCriterion {
+  actual: number;
+  target: number;
+  pass: boolean;
+}
+
+export interface MvpAcceptance {
+  pass: boolean;
+  criteria: {
+    zeroInvariantFailures: AcceptanceCriterion;
+    allProducersPersistence: AcceptanceCriterion;
+    detritivorePersistence: AcceptanceCriterion;
+    bradysiaPersistence: AcceptanceCriterion;
+    dalotiaPersistence: AcceptanceCriterion;
+    survivingAnimalGenerations: AcceptanceCriterion;
+  };
+}
+
+export function evaluateMvpAcceptance(
+  summary: BatchSummary
+): MvpAcceptance {
+  const survivingAnimalPairs = summary.runOutcomes.flatMap((outcome) => [
+    [outcome.persistence.folsomia, outcome.postStartGeneration.folsomia],
+    [outcome.persistence.trichorhina, outcome.postStartGeneration.trichorhina],
+    [outcome.persistence.bradysia, outcome.postStartGeneration.bradysia],
+    [outcome.persistence.dalotia, outcome.postStartGeneration.dalotia]
+  ] as const);
+  const survivingPairs = survivingAnimalPairs.filter(([survives]) => survives);
+  const generationRate =
+    survivingPairs.length === 0
+      ? 1
+      : survivingPairs.filter(([, generated]) => generated).length /
+        survivingPairs.length;
+
+  const criteria = {
+    zeroInvariantFailures: {
+      actual: summary.invariantFailureRuns,
+      target: 0,
+      pass: summary.invariantFailureRuns === 0
     },
-    postStartGenerationProbability: {
-      folsomia: probability(runs, (run) => run.summary.animals.folsomia.postStartEver > 0),
-      trichorhina: probability(runs, (run) => run.summary.animals.trichorhina.postStartEver > 0),
-      bradysia: probability(runs, (run) => run.summary.animals.bradysia.postStartEver > 0),
-      dalotia: probability(runs, (run) => run.summary.animals.dalotia.postStartEver > 0)
+    allProducersPersistence: {
+      actual: summary.jointPersistenceProbability.allProducers,
+      target: 0.8,
+      pass: summary.jointPersistenceProbability.allProducers >= 0.8
     },
-    meanFinalLiving: {
-      fittonia: mean(runs, (run) => run.summary.plants.fittonia.finalLiving),
-      peperomia: mean(runs, (run) => run.summary.plants.peperomia.finalLiving),
-      pilea: mean(runs, (run) => run.summary.plants.pilea.finalLiving),
-      folsomia: mean(runs, (run) => run.summary.animals.folsomia.finalLiving),
-      trichorhina: mean(runs, (run) => run.summary.animals.trichorhina.finalLiving),
-      bradysia: mean(runs, (run) => run.summary.animals.bradysia.finalLiving),
-      dalotia: mean(runs, (run) => run.summary.animals.dalotia.finalLiving)
+    detritivorePersistence: {
+      actual: summary.jointPersistenceProbability.atLeastOneDetritivore,
+      target: 0.8,
+      pass:
+        summary.jointPersistenceProbability.atLeastOneDetritivore >= 0.8
+    },
+    bradysiaPersistence: {
+      actual: summary.persistenceProbability.bradysia,
+      target: 0.7,
+      pass: summary.persistenceProbability.bradysia >= 0.7
+    },
+    dalotiaPersistence: {
+      actual: summary.persistenceProbability.dalotia,
+      target: 0.7,
+      pass: summary.persistenceProbability.dalotia >= 0.7
+    },
+    survivingAnimalGenerations: {
+      actual: generationRate,
+      target: 1,
+      pass: generationRate === 1
     }
   };
 
-  return result;
+  return {
+    pass: Object.values(criteria).every((criterion) => criterion.pass),
+    criteria
+  };
 }
