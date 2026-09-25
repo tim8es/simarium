@@ -290,7 +290,18 @@ export class FolsomiaLifecycleSystem implements SimSystem {
       substrateWater /
       Math.max(1e-12, substrateWater + this.p.moistureHalfSaturationWaterG);
 
-    const current = [...this.population.living()];
+    const metabolicTemperatureFactor = Math.max(0.2, developmentFactor);
+    const hydrationFraction =
+      1 - Math.exp(-this.p.hydrationRatePerSecond * moisture * dtSeconds);
+    const desiccationFraction =
+      1 -
+      Math.exp(
+        -this.p.desiccationRatePerSecond *
+          Math.max(0, 1 - moisture) *
+          dtSeconds
+      );
+
+    const current = this.population.living();
     let availableSubstrateWater = substrateWater;
     let totalWaterUptake = 0;
     let totalWaterLoss = 0;
@@ -312,9 +323,9 @@ export class FolsomiaLifecycleSystem implements SimSystem {
 
       const waterFlux = this.updateWater(
         individual,
-        moisture,
-        dtSeconds,
-        availableSubstrateWater
+        availableSubstrateWater,
+        hydrationFraction,
+        desiccationFraction
       );
       availableSubstrateWater -= waterFlux.uptakeG;
       totalWaterUptake += waterFlux.uptakeG;
@@ -338,7 +349,12 @@ export class FolsomiaLifecycleSystem implements SimSystem {
 
     for (const individual of current) {
       if (!individual.alive) continue;
-      this.metabolize(world, individual, temp, dtSeconds);
+      this.metabolize(
+        world,
+        individual,
+        metabolicTemperatureFactor,
+        dtSeconds
+      );
       if (!individual.alive) continue;
 
       this.feed(world, individual, dtSeconds);
@@ -373,31 +389,22 @@ export class FolsomiaLifecycleSystem implements SimSystem {
 
   private updateWater(
     individual: FolsomiaIndividual,
-    moisture: number,
-    dtSeconds: number,
-    availableSubstrateWater: number
+    availableSubstrateWater: number,
+    hydrationFraction: number,
+    desiccationFraction: number
   ): { uptakeG: number; lossG: number } {
     const target = stageWaterTarget(individual.stage, this.p.adultBodyWaterG);
     const deficit = Math.max(0, target - individual.material.waterG);
-    const uptakeFraction =
-      1 - Math.exp(-this.p.hydrationRatePerSecond * moisture * dtSeconds);
     const uptake = Math.min(
       availableSubstrateWater,
-      deficit * uptakeFraction
+      deficit * hydrationFraction
     );
 
     if (uptake > 0) {
       individual.material.waterG += uptake;
     }
 
-    const lossFraction =
-      1 -
-      Math.exp(
-        -this.p.desiccationRatePerSecond *
-          Math.max(0, 1 - moisture) *
-          dtSeconds
-      );
-    const waterLoss = individual.material.waterG * lossFraction;
+    const waterLoss = individual.material.waterG * desiccationFraction;
     if (waterLoss > 0) {
       individual.material.waterG -= waterLoss;
     }
@@ -408,21 +415,13 @@ export class FolsomiaLifecycleSystem implements SimSystem {
   private metabolize(
     world: WorldState,
     individual: FolsomiaIndividual,
-    temperatureC: number,
+    temperatureFactorForStep: number,
     dtSeconds: number
   ): void {
-    const tempFactor = Math.max(
-      0.2,
-      temperatureFactor(
-        temperatureC,
-        this.p.temperatureOptimumC,
-        this.p.temperatureSigmaC
-      )
-    );
     const requested =
       this.p.basalMetabolismCarbonMgPerSecond *
       stageMetabolismFactor(individual.stage) *
-      tempFactor *
+      temperatureFactorForStep *
       dtSeconds;
     const consumed = Math.min(individual.material.carbonMg, requested);
 
