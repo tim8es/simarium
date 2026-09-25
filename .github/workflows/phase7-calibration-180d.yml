@@ -42,15 +42,24 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - run: npm run build
-      - name: Run 5 independent 180-day calibration seeds
+      - name: Run 5 isolated 180-day calibration seeds
         shell: bash
         run: |
           START=$((${{ matrix.shard }} * 5))
-          /usr/bin/time -v node dist/tools/ecosystem-batch.js \
-            --days 180 \
-            --seeds "${START}:5" \
-            --sample 10 \
-            --format json \
+          parts=()
+          for OFFSET in 0 1 2 3 4; do
+            SEED=$((START + OFFSET))
+            PART="calibration-seed-${SEED}.json"
+            /usr/bin/time -v node dist/tools/ecosystem-batch.js \
+              --days 180 \
+              --seeds "${SEED}:1" \
+              --sample 10 \
+              --format json \
+              > "${PART}"
+            parts+=("${PART}")
+          done
+          node dist/tools/ecosystem-validation-report.js \
+            --summary-only "${parts[@]}" \
             > "calibration-shard-${{ matrix.shard }}.json"
           cat "calibration-shard-${{ matrix.shard }}.json"
       - uses: actions/upload-artifact@v4
