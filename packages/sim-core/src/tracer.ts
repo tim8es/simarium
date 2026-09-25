@@ -9,7 +9,7 @@ import type { MassLedger, TransferEvent } from "./ledger.js";
 
 export class MassTracer {
   private readonly tracers = new Map<string, Map<string, Material>>();
-  private detachObserver?: () => void;
+  private detachObserver: (() => void) | undefined;
 
   attach(ledger: MassLedger): void {
     this.detach();
