@@ -218,6 +218,7 @@ export interface BradysiaParameters {
   basalMetabolismCarbonMgPerSecond: number;
   adultFlightMetabolismMultiplier: number;
   adultCarbonTargetMg: number;
+  pupationCarbonFractionOfAdult: number;
   eggCarbonMg: number;
 
   adultBodyWaterG: number;
@@ -329,7 +330,9 @@ export class BradysiaLifecycleSystem implements SimSystem {
 
     if (
       individual.stage === "larva" &&
-      individual.stageAgeSeconds >= this.p.larvalDevelopmentDays * DAY
+      individual.stageAgeSeconds >= this.p.larvalDevelopmentDays * DAY &&
+      individual.material.carbonMg >=
+        this.p.adultCarbonTargetMg * this.p.pupationCarbonFractionOfAdult
     ) {
       this.population.transitionStage(individual, "pupa", world.timeSeconds);
       return;
