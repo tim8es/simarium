@@ -16,7 +16,8 @@
       "dalotiaLarva": 0.01375,
       "dalotiaAdult": 0.0275
     },
-    "bradysiaMatingRadiusCells": 1
+    "bradysiaMatingRadiusCells": 1,
+    "dalotiaMatingRadiusCells": 1
   },
   "plants": {
     "fittonia_albivenis": {
