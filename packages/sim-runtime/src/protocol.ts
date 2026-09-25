@@ -2,12 +2,15 @@ import type { RenderWorldDeltaDto, RenderWorldSnapshotDto } from "./render-dto.j
 import { isUserActionEnvelope, type UserActionEnvelope } from "./user-actions.js";
 import { parseRuntimeSnapshot, type JsonValue, type RuntimeSnapshotV2 } from "./snapshot.js";
 
+export const SIMULATION_SPEEDS = [1, 5, 20, 100] as const;
+export type SimulationSpeed = (typeof SIMULATION_SPEEDS)[number];
+
 export type UiToWorkerMessage =
   | { type: "INIT"; requestId: string; seed: number; simulationVersion: string; speciesDataVersion: string; presetVersion?: string; config?: JsonValue }
   | { type: "LOAD_WORLD"; requestId: string; snapshot: RuntimeSnapshotV2 }
   | { type: "START"; requestId: string }
   | { type: "PAUSE"; requestId: string }
-  | { type: "SET_SPEED"; requestId: string; speed: number }
+  | { type: "SET_SPEED"; requestId: string; speed: SimulationSpeed }
   | { type: "STEP"; requestId: string; ticks: number }
   | { type: "USER_ACTION"; requestId: string; action: UserActionEnvelope }
   | { type: "REQUEST_ENTITY"; requestId: string; entityId: string }
@@ -29,6 +32,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 function nonEmpty(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
+}
+function isSimulationSpeed(value: unknown): value is SimulationSpeed {
+  return SIMULATION_SPEEDS.some((speed) => speed === value);
 }
 
 export function parseUiToWorkerMessage(value: unknown): UiToWorkerMessage {
@@ -62,8 +68,8 @@ export function parseUiToWorkerMessage(value: unknown): UiToWorkerMessage {
     case "REQUEST_STATS":
       return { type: value.type, requestId: value.requestId };
     case "SET_SPEED":
-      if (typeof value.speed !== "number" || !Number.isFinite(value.speed) || value.speed <= 0) {
-        throw new Error("SET_SPEED.speed must be positive");
+      if (!isSimulationSpeed(value.speed)) {
+        throw new Error("SET_SPEED.speed must be one of 1, 5, 20, 100");
       }
       return { type: "SET_SPEED", requestId: value.requestId, speed: value.speed };
     case "STEP":
