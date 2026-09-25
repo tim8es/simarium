@@ -36,8 +36,8 @@ export class SpatialHabitat implements LocalEncounterIndex {
 
   set(ref: string, position: HabitatPosition): void {
     this.positions.set(ref, {
-      x: this.wrap(position.x, this.width),
-      z: this.wrap(position.z, this.depth),
+      x: this.reflect(position.x, this.width),
+      z: this.reflect(position.z, this.depth),
       layer: position.layer
     });
   }
@@ -70,10 +70,39 @@ export class SpatialHabitat implements LocalEncounterIndex {
     const position = this.positions.get(ref);
     if (!position) return;
     const direction = world.rng.nextInt(5);
-    if (direction === 0) position.x = this.wrap(position.x - 1, this.width);
-    if (direction === 1) position.x = this.wrap(position.x + 1, this.width);
-    if (direction === 2) position.z = this.wrap(position.z - 1, this.depth);
-    if (direction === 3) position.z = this.wrap(position.z + 1, this.depth);
+    if (direction === 0) position.x = this.reflect(position.x - 1, this.width);
+    if (direction === 1) position.x = this.reflect(position.x + 1, this.width);
+    if (direction === 2) position.z = this.reflect(position.z - 1, this.depth);
+    if (direction === 3) position.z = this.reflect(position.z + 1, this.depth);
+  }
+
+  moveDiffusive(ref: string, world: WorldState, expectedEvents: number): void {
+    const position = this.positions.get(ref);
+    if (!position || expectedEvents <= 0) return;
+
+    if (expectedEvents < 0.5) {
+      const probability = 1 - Math.exp(-expectedEvents);
+      if (world.rng.nextFloat() < probability) {
+        this.moveRandomNeighbor(ref, world);
+      }
+      return;
+    }
+
+    // Each microscopic event historically chose one of ±x, ±z or no-op
+    // with equal probability. Over a long ecological timestep the net
+    // displacement therefore approaches a 2D normal random walk with
+    // Var(dx) = Var(dz) = 0.4 * eventCount. Sampling the net displacement
+    // avoids iterating thousands of invisible microsteps.
+    const sigma = Math.sqrt(0.4 * expectedEvents);
+    const u1 = Math.max(Number.EPSILON, world.rng.nextFloat());
+    const u2 = world.rng.nextFloat();
+    const radius = Math.sqrt(-2 * Math.log(u1));
+    const angle = 2 * Math.PI * u2;
+    const dx = Math.round(radius * Math.cos(angle) * sigma);
+    const dz = Math.round(radius * Math.sin(angle) * sigma);
+
+    position.x = this.reflect(position.x + dx, this.width);
+    position.z = this.reflect(position.z + dz, this.depth);
   }
 
   isLocal(
@@ -85,10 +114,8 @@ export class SpatialHabitat implements LocalEncounterIndex {
     const b = this.positions.get(preyRef);
     if (!a || !b || a.layer !== b.layer) return false;
 
-    const dxRaw = Math.abs(a.x - b.x);
-    const dzRaw = Math.abs(a.z - b.z);
-    const dx = Math.min(dxRaw, this.width - dxRaw);
-    const dz = Math.min(dzRaw, this.depth - dzRaw);
+    const dx = Math.abs(a.x - b.x);
+    const dz = Math.abs(a.z - b.z);
     return Math.max(dx, dz) <= radiusCells;
   }
 
@@ -99,8 +126,12 @@ export class SpatialHabitat implements LocalEncounterIndex {
     ]);
   }
 
-  private wrap(value: number, size: number): number {
-    return ((value % size) + size) % size;
+  private reflect(value: number, size: number): number {
+    if (size <= 1) return 0;
+    const edge = size - 1;
+    const period = edge * 2;
+    const normalized = ((value % period) + period) % period;
+    return normalized <= edge ? normalized : period - normalized;
   }
 }
 
@@ -211,9 +242,6 @@ export class SpatialEcologySystem implements SimSystem {
     dtSeconds: number
   ): void {
     if (ratePerSecond <= 0) return;
-    const probability = 1 - Math.exp(-ratePerSecond * dtSeconds);
-    if (world.rng.nextFloat() < probability) {
-      this.habitat.moveRandomNeighbor(ref, world);
-    }
+    this.habitat.moveDiffusive(ref, world, ratePerSecond * dtSeconds);
   }
 }
