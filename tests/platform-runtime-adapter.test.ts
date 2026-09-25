@@ -39,6 +39,83 @@ describe("concrete simulation worker adapter", () => {
     expect(restoredEnd.virtualTime).toBe(directEnd.virtualTime);
   });
 
+  it("preserves pending USER_ACTION state and sequence watermarks across save/load", () => {
+    const direct = new Phase1SimulationRuntimeAdapter();
+    direct.init({
+      type: "INIT",
+      requestId: "init",
+      seed: 55,
+      simulationVersion: "0.1.0-test",
+      speciesDataVersion: "species-test",
+      config: { fixedDtSeconds: 60 }
+    });
+    direct.step(5);
+    direct.applyUserAction({
+      sequence: 7,
+      targetTick: 10,
+      action: { type: "add_water", waterG: 40 }
+    });
+
+    const saved = direct.saveSnapshot();
+    expect(saved.userActionQueue).toEqual({
+      pending: [{
+        sequence: 7,
+        targetTick: 10,
+        action: { type: "add_water", waterG: 40 }
+      }],
+      lastSequence: 7,
+      lastTargetTick: 10
+    });
+
+    direct.step(10);
+    const directEnd = direct.saveSnapshot();
+
+    const restored = new Phase1SimulationRuntimeAdapter();
+    restored.loadSnapshot(saved);
+    restored.step(10);
+    const restoredEnd = restored.saveSnapshot();
+
+    expect(restoredEnd.coreState).toEqual(directEnd.coreState);
+    expect(restoredEnd.userActionQueue).toEqual(directEnd.userActionQueue);
+    expect(() => restored.applyUserAction({
+      sequence: 7,
+      targetTick: restoredEnd.tick,
+      action: { type: "add_water", waterG: 1 }
+    })).toThrow(/sequence must increase/);
+  });
+
+  it("clears stale pending actions when INIT replaces the world", () => {
+    const adapter = new Phase1SimulationRuntimeAdapter();
+    adapter.init({
+      type: "INIT",
+      requestId: "first",
+      seed: 1,
+      simulationVersion: "0.1.0-test",
+      speciesDataVersion: "species-test"
+    });
+    adapter.applyUserAction({
+      sequence: 5,
+      targetTick: 10,
+      action: { type: "add_water", waterG: 100 }
+    });
+
+    adapter.init({
+      type: "INIT",
+      requestId: "second",
+      seed: 2,
+      simulationVersion: "0.1.0-test",
+      speciesDataVersion: "species-test"
+    });
+    adapter.step(11);
+    const saved = adapter.saveSnapshot();
+    expect(saved.userActionQueue).toEqual({
+      pending: [],
+      lastSequence: -1,
+      lastTargetTick: -1
+    });
+    expect((saved.coreState as { ledger: { cumulativeBoundaryFlux: { waterG: number } } }).ledger.cumulativeBoundaryFlux.waterG).toBe(0);
+  });
+
   it("routes supported material actions through boundary flux and rejects unavailable ecology actions", () => {
     const adapter = new Phase1SimulationRuntimeAdapter();
     adapter.init({
