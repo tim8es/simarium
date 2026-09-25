@@ -21,7 +21,11 @@ export const CANONICAL_UNITS = new Set([
   "mg_N",
   "mg_P",
   "1/s",
-  "relative_PAR"
+  "relative_PAR",
+  "dimensionless",
+  "mg_C/s",
+  "mg_N/mg_C",
+  "mg_P/mg_C"
 ]);
 
 export interface SpeciesCatalogEntry {
