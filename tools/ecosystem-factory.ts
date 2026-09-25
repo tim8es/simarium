@@ -557,7 +557,10 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
   return {
     world,
     scheduler,
-    invariants: new InvariantMonitor(world),
+    invariants: new InvariantMonitor(world, {
+      absoluteTolerance: integratedFixture.numerics.invariantAbsoluteTolerance,
+      relativeTolerance: integratedFixture.numerics.invariantRelativeTolerance
+    }),
     habitat,
     plants: { fittonia, peperomia, pilea },
     animals: { folsomia, trichorhina, bradysia, dalotia }
