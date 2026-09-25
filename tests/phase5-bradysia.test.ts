@@ -258,4 +258,28 @@ describe("Phase 5 Bradysia impatiens lifecycle", () => {
     ).toBe(true);
   });
 
+  it("applies documented immature survival before adult emergence", () => {
+    const population = createLarvalPopulation();
+    for (const individual of population.living()) {
+      individual.stage = "pupa";
+      individual.stageAgeSeconds = (p("pupalDevelopmentDays") + 1) * 86400;
+    }
+    const world = createWorld(population);
+
+    new FixedStepScheduler(world, [
+      new BradysiaLifecycleSystem(
+        population,
+        parameters({ immatureSurvivalProbability: 0 })
+      )
+    ]).step(1);
+
+    expect(population.living()).toHaveLength(0);
+    expect(
+      population.eventLog().some(
+        (event) =>
+          event.type === "death" && event.cause === "developmental_mortality"
+      )
+    ).toBe(true);
+  });
+
 });
