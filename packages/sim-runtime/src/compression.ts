@@ -4,7 +4,9 @@ export type SnapshotEncoding = "json" | "gzip-json";
 export interface EncodedSnapshot { encoding: SnapshotEncoding; bytes: Uint8Array }
 
 async function transform(bytes: Uint8Array, stream: CompressionStream | DecompressionStream): Promise<Uint8Array> {
-  const source = new Blob([bytes]).stream();
+  const input = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(input).set(bytes);
+  const source = new Blob([input]).stream();
   const readable = source.pipeThrough(stream);
   return new Uint8Array(await new Response(readable).arrayBuffer());
 }
