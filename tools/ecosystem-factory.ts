@@ -364,7 +364,9 @@ function dalotiaParameters(): DalotiaParameters {
     maxAdultPreyPerDay: value(p.maxAdultPreyPerDay),
     maxLarvalPreyPerDay: value(p.maxLarvalPreyPerDay),
     preyHalfSaturationCount: value(p.preyHalfSaturationCount),
-    captureProbability: value(p.captureProbability),
+    captureProbability: value(
+      integratedFixture.calibration.dalotiaLocalCaptureProbability
+    ),
     assimilationEfficiency: value(p.assimilationEfficiency),
     reserveTargetFraction: value(p.reserveTargetFraction),
     basalMetabolismCarbonMgPerSecond:
