@@ -248,6 +248,7 @@ export interface DalotiaParameters {
   preyHalfSaturationCount: number;
   captureProbability: number;
   assimilationEfficiency: number;
+  reserveTargetFraction: number;
 
   basalMetabolismCarbonMgPerSecond: number;
   adultCarbonTargetMg: number;
@@ -308,7 +309,9 @@ export class DalotiaPredatorSystem implements SimSystem {
       p.assimilationEfficiency < 0 ||
       p.assimilationEfficiency > 1 ||
       p.femaleProbability < 0 ||
-      p.femaleProbability > 1
+      p.femaleProbability > 1 ||
+      p.reserveTargetFraction <= 0 ||
+      p.reserveTargetFraction > 1
     ) {
       throw new Error("Probability/efficiency parameters must be in [0,1]");
     }
@@ -468,6 +471,24 @@ export class DalotiaPredatorSystem implements SimSystem {
     predator: DalotiaIndividual,
     dtSeconds: number
   ): void {
+    const reserveTarget =
+      predator.material.carbonMg * this.p.reserveTargetFraction;
+    const hunger =
+      reserveTarget > 0
+        ? Math.max(0, 1 - predator.reserveCarbonMg / reserveTarget)
+        : 0;
+    const growthNeed =
+      predator.stage === "larva"
+        ? Math.max(
+            0,
+            1 -
+              predator.material.carbonMg /
+                Math.max(1e-12, this.p.adultCarbonTargetMg)
+          )
+        : 0;
+    const feedingDrive = Math.max(hunger, growthNeed);
+    if (feedingDrive <= 0) return;
+
     const candidates = this.collectPrey(predator);
     const available = candidates.length;
     if (available === 0) return;
@@ -484,7 +505,8 @@ export class DalotiaPredatorSystem implements SimSystem {
       maxPerDay *
       (dtSeconds / DAY) *
       densityFactor *
-      this.p.captureProbability;
+      this.p.captureProbability *
+      feedingDrive;
 
     let attempts = Math.floor(predator.attackAccumulator);
     predator.attackAccumulator -= attempts;
