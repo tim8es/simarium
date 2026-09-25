@@ -178,6 +178,13 @@
       "status": "CALIBRATED",
       "source": "diet_2020",
       "notes": "Engineering critical-mass gate: larvae that have not accumulated sufficient biomass remain larvae instead of pupating on thermal time alone. Value must be sensitivity-tested."
+    },
+    "immatureSurvivalProbability": {
+      "value": 0.464,
+      "unit": "dimensionless",
+      "status": "MEASURED",
+      "source": "physiological_time_2026",
+      "notes": "Laboratory immature survival reported around 46.4% across the study temperature range. Applied at adult emergence as an aggregate immature-survival draw because stage-specific survival fractions are not available."
     }
   },
   "initialPopulation": {
