@@ -390,6 +390,8 @@ export class DalotiaPredatorSystem implements SimSystem {
 
     const current = this.population.living();
     let preyChanged = false;
+    let totalMetabolicCarbon = 0;
+    const carbonExhausted: DalotiaIndividual[] = [];
     for (const individual of current) {
       individual.ageSeconds += dtSeconds;
       individual.stageAgeSeconds += dtSeconds * development;
@@ -410,8 +412,15 @@ export class DalotiaPredatorSystem implements SimSystem {
       }
 
       this.waterBalance(world, individual, moisture, dtSeconds);
-      this.metabolize(world, individual, development, dtSeconds);
-      if (!individual.alive) continue;
+      totalMetabolicCarbon += this.metabolize(
+        individual,
+        development,
+        dtSeconds
+      );
+      if (individual.material.carbonMg <= 1e-12) {
+        carbonExhausted.push(individual);
+        continue;
+      }
 
       if (individual.stage === "larva" || individual.stage === "adult") {
         preyChanged = this.hunt(world, individual, dtSeconds) || preyChanged;
@@ -421,6 +430,36 @@ export class DalotiaPredatorSystem implements SimSystem {
       }
 
       this.evaluateStress(world, individual, moisture, dtSeconds);
+    }
+
+    if (totalMetabolicCarbon > 0) {
+      const ledgerCarbon = world.ledger.getPool(this.p.biomassPool).carbonMg;
+      const livingCarbon = this.population.totalLivingMaterial().carbonMg;
+      const reconciledMetabolicCarbon = Math.max(
+        0,
+        Math.min(ledgerCarbon, ledgerCarbon - livingCarbon)
+      );
+      const reconciliationTolerance =
+        PREDATION_AGGREGATE_TOLERANCE +
+        Math.abs(totalMetabolicCarbon) * PREDATION_AGGREGATE_TOLERANCE;
+      if (
+        reconciledMetabolicCarbon >
+        totalMetabolicCarbon + reconciliationTolerance
+      ) {
+        throw new Error(
+          `Dalotia metabolic reconciliation exceeds accumulated flux: accumulated=${totalMetabolicCarbon} reconciled=${reconciledMetabolicCarbon}`
+        );
+      }
+      if (reconciledMetabolicCarbon > 0) {
+        world.ledger.transfer(
+          this.p.biomassPool,
+          this.p.atmospherePool,
+          { ...zeroMaterial(), carbonMg: reconciledMetabolicCarbon }
+        );
+      }
+    }
+    for (const individual of carbonExhausted) {
+      this.die(world, individual, "carbon_exhaustion");
     }
 
     this.population.assertMatchesAggregate(
@@ -509,11 +548,10 @@ export class DalotiaPredatorSystem implements SimSystem {
   }
 
   private metabolize(
-    world: WorldState,
     individual: DalotiaIndividual,
     temperatureSuitability: number,
     dtSeconds: number
-  ): void {
+  ): number {
     const cost = Math.min(
       individual.material.carbonMg,
       this.p.basalMetabolismCarbonMgPerSecond *
@@ -523,18 +561,13 @@ export class DalotiaPredatorSystem implements SimSystem {
     );
 
     if (cost > 0) {
-      world.ledger.transfer(
-        this.p.biomassPool,
-        this.p.atmospherePool,
-        { ...zeroMaterial(), carbonMg: cost }
-      );
       individual.material.carbonMg -= cost;
-      individual.reserveCarbonMg = Math.max(0, individual.reserveCarbonMg - cost);
+      individual.reserveCarbonMg = Math.max(
+        0,
+        individual.reserveCarbonMg - cost
+      );
     }
-
-    if (individual.material.carbonMg <= 1e-12) {
-      this.die(world, individual, "carbon_exhaustion");
-    }
+    return cost;
   }
 
   private hunt(
