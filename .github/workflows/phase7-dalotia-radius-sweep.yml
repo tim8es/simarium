@@ -42,10 +42,13 @@ jobs:
         shell: bash
         run: |
           label="dalotia-radius-${{ matrix.radius }}-seed-${{ matrix.seed }}"
+          set +e
           /usr/bin/time -v node dist/tools/ecosystem-batch.js \
             --days 150 \
             --seeds "${{ matrix.seed }}:1" \
             --sample 10 \
             --format json > "$label.json" 2> "$label.time.txt"
+          code=$?
           cat "$label.json"
           cat "$label.time.txt"
+          exit "$code"
