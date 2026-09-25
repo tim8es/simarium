@@ -53,9 +53,13 @@ Checked for the MVP species list and key ecological assumptions.
   https://academic.oup.com/biolinnean/article/137/2/216/6680021
 
 ### Trichorhina tomentosa
-- GBIF/accepted taxonomic sources should be used in implementation data.
-- Supporting overview: real dwarf white isopod species; tropical, moisture-dependent detritivore; parthenogenetic populations are widely reported.
+- British Myriapod and Isopod Group: *T. tomentosa* is a very small off-white terrestrial isopod (up to about 5 mm), associated with damp litter, dead wood and rotting stumps; only females are known and the species is considered parthenogenetic. Native range is tropical Central/South America, with greenhouse populations elsewhere.
+  https://bmig.org.uk/species/trichorhina-tomentosa
+- GBIF is retained as an additional taxonomic occurrence source.
   https://www.gbif.org/species/search?q=Trichorhina%20tomentosa
+- eLife (2021) experimentally used *T. tomentosa* as a fungivorous grazer and quantified grazing on fungal mycelium/fruiting structures. This directly supports fungal grazing but not the Phase-4 carbon ingestion coefficient.
+  https://elifesciences.org/articles/68058
+- Species-specific quantitative maturation, brood-size and body-mass literature was not strong enough to freeze those values. Phase-4 timing/mass coefficients are therefore explicitly CALIBRATED or ASSUMED and must remain in sensitivity analysis.
 
 ### Bradysia impatiens
 - University of Florida IFAS: biology of dark-winged fungus gnats; larvae feed on fungi and can feed on roots; life-cycle data.
