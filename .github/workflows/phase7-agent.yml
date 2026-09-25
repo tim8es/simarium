@@ -1,4 +1,5 @@
 name: Phase 7 Agent Diagnostics
+# rerun after ecology fixes
 
 on:
   push:
