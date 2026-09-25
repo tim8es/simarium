@@ -4,9 +4,11 @@ on:
   pull_request:
     paths:
       - "packages/sim-runtime/**"
+      - "workers/**"
       - "tests/platform-runtime*.test.ts"
       - "tools/runtime-snapshot-benchmark.ts"
       - "package.json"
+      - "tsconfig.json"
       - ".github/workflows/runtime-ci.yml"
 
 permissions:
@@ -28,5 +30,5 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run build
       - name: Run runtime tests
-        run: npx vitest run tests/platform-runtime.test.ts tests/platform-runtime-speed.test.ts
+        run: npx vitest run tests/platform-runtime*.test.ts
       - run: npm run runtime:benchmark
