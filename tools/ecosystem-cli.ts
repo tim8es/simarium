@@ -1,4 +1,5 @@
-import { parseSeedSpec } from "./ecosystem-report.js";
+import { runEcosystemBatch } from "./ecosystem-analysis.js";
+import { batchSummaryToCsv, parseSeedSpec } from "./ecosystem-report.js";
 
 export type EcosystemOutputFormat = "json" | "csv";
 
@@ -56,4 +57,19 @@ export function parseBatchCliArgs(argv: string[]): BatchCliOptions {
   }
 
   return result;
+}
+
+
+export function executeBatchCli(argv: string[]): string {
+  const options = parseBatchCliArgs(argv);
+  const summary = runEcosystemBatch({
+    seeds: options.seeds,
+    days: options.days,
+    sampleEveryDays: options.sampleEveryDays
+  });
+
+  if (options.format === "csv") {
+    return batchSummaryToCsv(summary);
+  }
+  return JSON.stringify(summary, null, 2) + "\n";
 }
