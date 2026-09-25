@@ -1,0 +1,99 @@
+name: Ecosystem Validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ecosystem-validation.yml"
+      - "packages/sim-core/src/**"
+      - "data/experiments/**"
+      - "tools/ecosystem-*.ts"
+      - "tests/phase7-*.test.ts"
+      - "docs/VALIDATION.md"
+
+permissions:
+  contents: read
+
+jobs:
+  validation-shard:
+    name: 180d validation shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+
+      - name: Run 10 independent 180-day validation seeds
+        shell: bash
+        run: |
+          START=$((100 + ${{ matrix.shard }} * 10))
+          node dist/tools/ecosystem-batch.js \
+            --days 180 \
+            --seeds "${START}:10" \
+            --sample 10 \
+            --format json \
+            > "validation-shard-${{ matrix.shard }}.json"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validation-shard-${{ matrix.shard }}
+          path: validation-shard-${{ matrix.shard }}.json
+          retention-days: 14
+
+  merge-validation:
+    name: Merge and enforce MVP acceptance
+    needs: validation-shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: validation-shard-*
+          path: validation-shards
+          merge-multiple: true
+
+      - name: Merge shard reports
+        id: merge
+        shell: bash
+        run: |
+          set +e
+          node dist/tools/ecosystem-validation-report.js \
+            validation-shards/validation-shard-*.json \
+            > validation-report.json
+          CODE=$?
+          echo "exit_code=${CODE}" >> "${GITHUB_OUTPUT}"
+          cat validation-report.json
+          exit 0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ecosystem-validation-report
+          path: validation-report.json
+          retention-days: 30
+
+      - name: Enforce unchanged MVP acceptance thresholds
+        shell: bash
+        run: |
+          test "${{ steps.merge.outputs.exit_code }}" -eq 0
