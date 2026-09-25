@@ -47,7 +47,7 @@ function createAdultPair(includeMale = true): BradysiaPopulation {
     adultAgeSeconds: 0,
     birthTimeSeconds: -22 * 86400,
     material,
-    reserveCarbonMg: material.carbonMg * 0.35,
+    reserveCarbonMg: material.carbonMg * 0.6,
     starvationSeconds: 0,
     dehydrationSeconds: 0,
     hasOviposited: false
@@ -62,7 +62,7 @@ function createAdultPair(includeMale = true): BradysiaPopulation {
       adultAgeSeconds: 0,
       birthTimeSeconds: -22 * 86400,
       material,
-      reserveCarbonMg: material.carbonMg * 0.35,
+      reserveCarbonMg: material.carbonMg * 0.6,
       starvationSeconds: 0,
       dehydrationSeconds: 0,
       hasOviposited: false
@@ -197,6 +197,19 @@ describe("Phase 5 Bradysia impatiens lifecycle", () => {
     expect(pairedEggs).toHaveLength(p("fecundityEggsPerFemale"));
     expect(unpairedEggs).toHaveLength(0);
     expect(dryEggs).toHaveLength(0);
+  });
+
+  it("suppresses oviposition when adult energetic reserve is below the reproductive floor", () => {
+    const population = createAdultPair(true);
+    const female = population.living().find((x) => x.sex === "female")!;
+    female.reserveCarbonMg = female.material.carbonMg * 0.05;
+    const world = createWorld(population);
+
+    new FixedStepScheduler(world, [
+      new BradysiaLifecycleSystem(population, parameters())
+    ]).runFor(24 * 3600);
+
+    expect(population.all().filter((x) => x.parentId !== undefined)).toHaveLength(0);
   });
 
   it("uses root tissue as fallback when fungal food is unavailable", () => {
