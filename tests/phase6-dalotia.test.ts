@@ -12,6 +12,7 @@ import {
   InvariantMonitor,
   MassLedger,
   ScalarGrid3D,
+  SpatialHabitat,
   WorldState,
   seedBradysiaLarvae,
   seedDalotiaLarvae,
@@ -397,5 +398,30 @@ describe("Phase 6 Dalotia coriaria predator", () => {
       )
     ).toBe(true);
   });
+
+  it("requires a local adult male for reproduction when spatial encounters are enabled", () => {
+    const dalotia = adultPredators(true);
+    const prey = preyPopulations(60, 60);
+    const world = createWorld(dalotia, prey);
+    const habitat = new SpatialHabitat(12, 1);
+    habitat.set("dalotia_coriaria#1", { x: 0, z: 0, layer: "substrate" });
+    habitat.set("dalotia_coriaria#2", { x: 8, z: 0, layer: "substrate" });
+
+    const system = new DalotiaPredatorSystem(
+      dalotia,
+      prey,
+      parameters(),
+      habitat,
+      1
+    );
+    const scheduler = new FixedStepScheduler(world, [system]);
+
+    scheduler.runFor(3 * 86400);
+    expect(dalotia.all().filter((x) => x.parentId !== undefined)).toHaveLength(0);
+
+    habitat.set("dalotia_coriaria#2", { x: 1, z: 0, layer: "substrate" });
+    scheduler.runFor(2 * 86400);
+    expect(dalotia.all().filter((x) => x.parentId !== undefined).length).toBeGreaterThan(0);
+  }, 30_000);
 
 });
