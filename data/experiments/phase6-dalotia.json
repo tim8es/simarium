@@ -108,11 +108,11 @@
       "notes": "Density-response shape, not a measured arena-independent constant."
     },
     "captureProbability": {
-      "value": 0.75,
+      "value": 0.2,
       "unit": "dimensionless",
       "status": "CALIBRATED",
       "source": "predation_2015",
-      "notes": "Headless encounter/capture proxy pending spatial navigation."
+      "notes": "CALIBRATED local encounter/capture proxy. The literature constrains maximum daily consumption but not a terrarium-wide per-encounter probability. Phase-7 calibration seeds 0-4 were swept separately from validation seeds with the 3-cell local prey kernel; 0.20 produced Bradysia/Dalotia coexistence in multiple 150-day runs without the universal prey wipeout seen at higher capture values. This remains a model-internal encounter coefficient, not a measured attack-success probability."
     },
     "assimilationEfficiency": {
       "value": 0.7,
