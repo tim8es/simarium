@@ -16,6 +16,12 @@ export interface UserActionEnvelope {
   action: UserAction;
 }
 
+export interface UserActionQueueState {
+  pending: UserActionEnvelope[];
+  lastSequence: number;
+  lastTargetTick: number;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -102,6 +108,53 @@ export class DeterministicUserActionQueue {
 
   snapshot(): UserActionEnvelope[] {
     return structuredClone(this.pending);
+  }
+
+  stateSnapshot(): UserActionQueueState {
+    return {
+      pending: this.snapshot(),
+      lastSequence: this.lastSequence,
+      lastTargetTick: this.lastTargetTick
+    };
+  }
+
+  clear(): void {
+    this.pending.splice(0, this.pending.length);
+    this.lastSequence = -1;
+    this.lastTargetTick = -1;
+  }
+
+  restoreState(value: unknown): void {
+    if (!isRecord(value) || !Array.isArray(value.pending)) {
+      throw new Error("Invalid user action queue state");
+    }
+    if (!Number.isInteger(value.lastSequence) || (value.lastSequence as number) < -1) {
+      throw new Error("User action queue lastSequence must be an integer >= -1");
+    }
+    if (!Number.isInteger(value.lastTargetTick) || (value.lastTargetTick as number) < -1) {
+      throw new Error("User action queue lastTargetTick must be an integer >= -1");
+    }
+
+    const restored = new DeterministicUserActionQueue();
+    for (const envelope of value.pending) {
+      if (!isUserActionEnvelope(envelope)) {
+        throw new Error("Invalid pending user action in queue state");
+      }
+      restored.enqueue(envelope);
+    }
+
+    const pendingLast = restored.pending.at(-1);
+    if (pendingLast && (value.lastSequence as number) < pendingLast.sequence) {
+      throw new Error("User action queue lastSequence is behind pending actions");
+    }
+    if (pendingLast && (value.lastTargetTick as number) < pendingLast.targetTick) {
+      throw new Error("User action queue lastTargetTick is behind pending actions");
+    }
+
+    this.clear();
+    this.pending.push(...restored.snapshot());
+    this.lastSequence = value.lastSequence as number;
+    this.lastTargetTick = value.lastTargetTick as number;
   }
 }
 
