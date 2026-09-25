@@ -111,28 +111,28 @@
       "notes": "Maps world substrate-water mass to a dimensionless suitability proxy; not a direct RH conversion."
     },
     "reproductionMoistureThreshold": {
-      "value": 0.80,
+      "value": 0.8,
       "unit": "dimensionless",
       "status": "CALIBRATED",
       "source": "drought_reproduction_2011",
       "notes": "Represents the strong moisture sensitivity of reproduction, while keeping the world-model proxy explicit."
     },
     "desiccationRatePerSecond": {
-      "value": 1.5e-6,
+      "value": 0.0000015,
       "unit": "1/s",
       "status": "CALIBRATED",
       "source": "drought_2001",
       "notes": "Fractional body-water loss under unsuitable moisture."
     },
     "hydrationRatePerSecond": {
-      "value": 2.0e-5,
+      "value": 0.00002,
       "unit": "1/s",
       "status": "CALIBRATED",
       "source": "drought_2001",
       "notes": "Proxy for rapid water-balance restoration in highly humid substrate."
     },
     "adultDryMassMg": {
-      "value": 0.040,
+      "value": 0.04,
       "unit": "mg_dry",
       "status": "MEASURED",
       "source": "adult_mass_2025",
@@ -146,7 +146,7 @@
       "notes": "Assumes carbon is ~45% of adult dry mass; conversion is not species-specific."
     },
     "adultBodyWaterG": {
-      "value": 0.00020,
+      "value": 0.0002,
       "unit": "g_H2O",
       "status": "ASSUMED",
       "source": "adult_mass_2025",
@@ -167,25 +167,32 @@
       "notes": "Subset of total juvenile carbon."
     },
     "nitrogenPerCarbon": {
-      "value": 0.20,
+      "value": 0.2,
       "unit": "mg_N/mg_C",
       "status": "ASSUMED",
       "source": "generic_invertebrate_stoichiometry_proxy",
       "notes": "Sensitivity-analysis parameter."
     },
     "phosphorusPerCarbon": {
-      "value": 0.020,
+      "value": 0.02,
       "unit": "mg_P/mg_C",
       "status": "ASSUMED",
       "source": "generic_invertebrate_stoichiometry_proxy",
       "notes": "Sensitivity-analysis parameter."
     },
     "eggCarbonMg": {
-      "value": 0.00040,
+      "value": 0.0004,
       "unit": "mg_C",
       "status": "CALIBRATED",
       "source": "model_internal",
       "notes": "Egg material allocation; must be fitted to fecundity/body-mass constraints."
+    },
+    "maturationCarbonFractionOfAdult": {
+      "value": 0.65,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "model_internal",
+      "notes": "Engineering critical-mass gate. Thermal time alone cannot mature a severely underweight juvenile; sensitivity-test until species-specific juvenile/adult mass data are available."
     }
   },
   "initialPopulation": {
@@ -197,15 +204,60 @@
     "temperatureC": 20,
     "fixedDtSeconds": 300,
     "initialPools": {
-      "atmosphere": { "carbonMg": 10000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 100 },
-      "substrate": { "carbonMg": 100000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 50000 },
-      "surface_water": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 5000 },
-      "litter": { "carbonMg": 400, "nitrogenMg": 16, "phosphorusMg": 1.6, "waterG": 20 },
-      "linnemannia_biomass": { "carbonMg": 30, "nitrogenMg": 1.2, "phosphorusMg": 0.12, "waterG": 0.5 },
-      "bacillus_biomass": { "carbonMg": 20, "nitrogenMg": 0.8, "phosphorusMg": 0.08, "waterG": 0.3 },
-      "folsomia_biomass": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
-      "folsomia_feed_buffer": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
-      "animal_corpses": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 }
+      "atmosphere": {
+        "carbonMg": 10000,
+        "nitrogenMg": 0,
+        "phosphorusMg": 0,
+        "waterG": 100
+      },
+      "substrate": {
+        "carbonMg": 100000,
+        "nitrogenMg": 0,
+        "phosphorusMg": 0,
+        "waterG": 50000
+      },
+      "surface_water": {
+        "carbonMg": 0,
+        "nitrogenMg": 0,
+        "phosphorusMg": 0,
+        "waterG": 5000
+      },
+      "litter": {
+        "carbonMg": 400,
+        "nitrogenMg": 16,
+        "phosphorusMg": 1.6,
+        "waterG": 20
+      },
+      "linnemannia_biomass": {
+        "carbonMg": 30,
+        "nitrogenMg": 1.2,
+        "phosphorusMg": 0.12,
+        "waterG": 0.5
+      },
+      "bacillus_biomass": {
+        "carbonMg": 20,
+        "nitrogenMg": 0.8,
+        "phosphorusMg": 0.08,
+        "waterG": 0.3
+      },
+      "folsomia_biomass": {
+        "carbonMg": 0,
+        "nitrogenMg": 0,
+        "phosphorusMg": 0,
+        "waterG": 0
+      },
+      "folsomia_feed_buffer": {
+        "carbonMg": 0,
+        "nitrogenMg": 0,
+        "phosphorusMg": 0,
+        "waterG": 0
+      },
+      "animal_corpses": {
+        "carbonMg": 0,
+        "nitrogenMg": 0,
+        "phosphorusMg": 0,
+        "waterG": 0
+      }
     }
   }
 }
