@@ -358,7 +358,8 @@ export class DalotiaPredatorSystem implements SimSystem {
     private readonly p: DalotiaParameters,
     private readonly spatial?: LocalEncounterIndex,
     private readonly matingRadiusCells = 1,
-    private readonly preyEncounterRadiusCells = 1
+    private readonly preyEncounterRadiusCells = 1,
+    private readonly spatialEncounterEfficiency = 1
   ) {
     if (
       p.captureProbability < 0 ||
@@ -370,7 +371,9 @@ export class DalotiaPredatorSystem implements SimSystem {
       p.immatureSurvivalProbability < 0 ||
       p.immatureSurvivalProbability > 1 ||
       p.reserveTargetFraction <= 0 ||
-      p.reserveTargetFraction > 1
+      p.reserveTargetFraction > 1 ||
+      spatialEncounterEfficiency < 0 ||
+      spatialEncounterEfficiency > 1
     ) {
       throw new Error("Probability/efficiency parameters must be in [0,1]");
     }
@@ -610,6 +613,7 @@ export class DalotiaPredatorSystem implements SimSystem {
       (dtSeconds / DAY) *
       densityFactor *
       this.p.captureProbability *
+      (this.spatial === undefined ? 1 : this.spatialEncounterEfficiency) *
       feedingDrive;
 
     let attempts = Math.floor(predator.attackAccumulator);
