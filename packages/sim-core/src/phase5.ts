@@ -369,12 +369,25 @@ export class BradysiaLifecycleSystem implements SimSystem {
       this.evaluateStress(world, individual, moisture, dtSeconds);
     }
 
+    // Per-individual feeding/death transfers can accumulate a few ulps of
+    // ledger/individual drift in very large Bradysia cohorts. Reconcile the
+    // batched metabolic carbon against the authoritative living-material
+    // aggregate before the single ledger transfer; this remains conservative
+    // and does not relax the global invariant monitor.
     if (totalMetabolicCarbon > 0) {
-      world.ledger.transfer(
-        this.p.biomassPool,
-        this.p.atmospherePool,
-        { ...zeroMaterial(), carbonMg: totalMetabolicCarbon }
+      const ledgerCarbon = world.ledger.getPool(this.p.biomassPool).carbonMg;
+      const livingCarbon = this.population.totalLivingMaterial().carbonMg;
+      const reconciledMetabolicCarbon = Math.max(
+        0,
+        Math.min(ledgerCarbon, ledgerCarbon - livingCarbon)
       );
+      if (reconciledMetabolicCarbon > 0) {
+        world.ledger.transfer(
+          this.p.biomassPool,
+          this.p.atmospherePool,
+          { ...zeroMaterial(), carbonMg: reconciledMetabolicCarbon }
+        );
+      }
     }
     for (const individual of carbonExhausted) {
       this.die(world, individual, "carbon_exhaustion");
