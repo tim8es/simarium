@@ -240,6 +240,46 @@ describe("Phase 6 Dalotia coriaria predator", () => {
     ).toBe(true);
   });
 
+  it("reconciles machine-scale prey aggregate residuals without creating material", () => {
+    const dalotia = adultPredators(false);
+    const prey = preyPopulations(1, 0);
+    const world = createWorld(dalotia, prey);
+
+    // Reproduce the long-run floating-point shape: the authoritative ledger
+    // can be a few ulps below the concrete individual's redistributed N mass.
+    world.ledger.transfer("bradysia_biomass", "animal_corpses", {
+      carbonMg: 0,
+      nitrogenMg: 2e-12,
+      phosphorusMg: 0,
+      waterG: 0
+    });
+    const invariant = new InvariantMonitor(world);
+
+    new FixedStepScheduler(world, [
+      new DalotiaPredatorSystem(
+        dalotia,
+        prey,
+        parameters({
+          maxAdultPreyPerDay: 100,
+          preyHalfSaturationCount: 0.01,
+          captureProbability: 1,
+          reserveTargetFraction: 0.95
+        })
+      )
+    ]).runFor(86400);
+
+    invariant.check(world);
+    expect(prey.bradysia.living()).toHaveLength(0);
+    expect(
+      dalotia.eventLog().some(
+        (event) =>
+          event.type === "predation" &&
+          event.preySpecies === "bradysia_impatiens"
+      )
+    ).toBe(true);
+    expect(world.ledger.getPool("bradysia_biomass").nitrogenMg).toBe(0);
+  });
+
   it("requires a male and moist substrate for egg production", () => {
     const preyA = preyPopulations();
     const pair = adultPredators(true);
