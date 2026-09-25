@@ -1,114 +1,100 @@
-schema_version: 1
-data_version: 0.1.0
+schema_version: 2
+data_version: 0.6.0
 status: parameterization_in_progress
+# Compatibility mirror of data/species.json. JSON is authoritative.
 
 species:
   - id: fittonia_albivenis
     scientific_name: Fittonia albivenis
     type: plant
     ecological_roles: [producer, litter_source]
-    reproduction:
-      mvp_mode: clonal
-      sexual_cycle_modeled: false
     life_stages: [ramet_young, ramet_adult, senescent]
-    sources:
-      - docs/BIOLOGY_SOURCES.md#fittonia-albivenis
-    runtime_parameter_status: TBD
+    traits: [clonal, ramet_clonal_lifecycle, producer, litter_source, moisture_sensitive, temperature_response]
+    profile_path: data/species-profiles/fittonia_albivenis.json
+    sources: [docs/BIOLOGY_SOURCES.md#fittonia-albivenis]
+    runtime_parameter_status: PARTIAL
 
   - id: peperomia_caperata
     scientific_name: Peperomia caperata
     type: plant
     ecological_roles: [producer, litter_source]
-    reproduction:
-      mvp_mode: clonal
-      sexual_cycle_modeled: false
     life_stages: [ramet_young, ramet_adult, senescent]
-    sources:
-      - docs/BIOLOGY_SOURCES.md#peperomia-caperata
-    runtime_parameter_status: TBD
+    traits: [clonal, ramet_clonal_lifecycle, producer, litter_source, moisture_sensitive, temperature_response]
+    profile_path: data/species-profiles/peperomia_caperata.json
+    sources: [docs/BIOLOGY_SOURCES.md#peperomia-caperata]
+    runtime_parameter_status: PARTIAL
 
   - id: pilea_depressa
     scientific_name: Pilea depressa
     type: plant
     ecological_roles: [producer, litter_source, groundcover]
-    reproduction:
-      mvp_mode: clonal
-      sexual_cycle_modeled: false
     life_stages: [ramet_young, ramet_adult, senescent]
-    sources:
-      - docs/BIOLOGY_SOURCES.md#pilea-depressa
-    runtime_parameter_status: TBD
+    traits: [clonal, ramet_clonal_lifecycle, producer, litter_source, groundcover, moisture_sensitive, temperature_response]
+    profile_path: data/species-profiles/pilea_depressa.json
+    sources: [docs/BIOLOGY_SOURCES.md#pilea-depressa]
+    runtime_parameter_status: PARTIAL
 
   - id: folsomia_candida
     scientific_name: Folsomia candida
     type: animal
     ecological_roles: [fungivore, microbivore, prey]
-    reproduction:
-      mode: parthenogenetic
-      mate_required: false
     life_stages: [egg, juvenile, adult]
-    locomotion_modes: [substrate_walk]
-    sources:
-      - docs/BIOLOGY_SOURCES.md#folsomia-candida
+    traits: [parthenogenetic, egg_juvenile_adult, fungivore, microbivore, substrate_walker, moisture_sensitive, temperature_response]
+    profile_path: data/species-profiles/folsomia_candida.json
+    sources: [docs/BIOLOGY_SOURCES.md#folsomia-candida]
     runtime_parameter_status: PARTIAL
 
   - id: trichorhina_tomentosa
     scientific_name: Trichorhina tomentosa
     type: animal
     ecological_roles: [detritivore, fungivore]
-    reproduction:
-      mode: parthenogenetic_population_model
-      mate_required: false
     life_stages: [manca, juvenile, adult]
-    locomotion_modes: [substrate_walk, under_litter]
-    sources:
-      - docs/BIOLOGY_SOURCES.md#trichorhina-tomentosa
-    runtime_parameter_status: TBD
+    traits: [parthenogenetic, manca_juvenile_adult, detritivore, fungivore, substrate_walker, under_litter, moisture_sensitive, temperature_response]
+    profile_path: data/species-profiles/trichorhina_tomentosa.json
+    sources: [docs/BIOLOGY_SOURCES.md#trichorhina-tomentosa]
+    runtime_parameter_status: PARTIAL
 
   - id: bradysia_impatiens
     scientific_name: Bradysia impatiens
     type: animal
     ecological_roles: [fungivore_larva, root_feeder_larva, prey]
-    reproduction:
-      mode: sexual
-      mate_required: true
     life_stages: [egg, larva, pupa, adult]
-    locomotion_modes: [substrate_larva, flight_adult]
-    sources:
-      - docs/BIOLOGY_SOURCES.md#bradysia-impatiens
+    traits: [sexual, egg_larva_pupa_adult, fungivore, root_feeder, substrate_walker, flyer, moisture_sensitive, temperature_response]
+    profile_path: data/species-profiles/bradysia_impatiens.json
+    sources: [docs/BIOLOGY_SOURCES.md#bradysia-impatiens]
     runtime_parameter_status: PARTIAL
 
   - id: dalotia_coriaria
     scientific_name: Dalotia coriaria
     type: animal
     ecological_roles: [predator]
-    reproduction:
-      mode: sexual
-      mate_required: true
     life_stages: [egg, larva, pupa, adult]
-    locomotion_modes: [substrate_walk, short_flight_adult]
-    sources:
-      - docs/BIOLOGY_SOURCES.md#dalotia-coriaria
+    traits: [sexual, egg_larva_pupa_adult, predator, substrate_walker, flyer, moisture_sensitive, temperature_response]
+    profile_path: data/species-profiles/dalotia_coriaria.json
+    sources: [docs/BIOLOGY_SOURCES.md#dalotia-coriaria]
     runtime_parameter_status: PARTIAL
 
   - id: linnemannia_elongata
     scientific_name: Linnemannia elongata
     type: fungus
-    representation: biomass_field
     ecological_roles: [saprotroph, fungal_food]
-    sources:
-      - docs/BIOLOGY_SOURCES.md#linnemannia-elongata
-    runtime_parameter_status: TBD
+    life_stages: [biomass_field]
+    traits: [biomass_field, saprotroph, temperature_response, moisture_sensitive]
+    profile_path: data/species-profiles/linnemannia_elongata.json
+    sources: [docs/BIOLOGY_SOURCES.md#linnemannia-elongata]
+    runtime_parameter_status: PARTIAL
 
   - id: bacillus_subtilis
     scientific_name: Bacillus subtilis
     type: bacterium
-    representation: biomass_field
     ecological_roles: [decomposer]
-    sources:
-      - docs/BIOLOGY_SOURCES.md#bacillus-subtilis
-    runtime_parameter_status: TBD
+    life_stages: [biomass_field]
+    traits: [biomass_field, saprotroph, temperature_response, moisture_sensitive]
+    profile_path: data/species-profiles/bacillus_subtilis.json
+    sources: [docs/BIOLOGY_SOURCES.md#bacillus-subtilis]
+    runtime_parameter_status: PARTIAL
 
 parameter_policy:
   allowed_statuses: [MEASURED, DERIVED, ASSUMED, CALIBRATED, TBD]
-  rule: No runtime-critical parameter may remain TBD when its implementation phase begins.
+  tbd_rule: TBD uses value=null; never invent a placeholder number.
+  calibrated_rule: Literature evidence is compared and proposed separately; calibrated runtime values are not silently replaced.

@@ -1,6 +1,6 @@
 {
-  "schema_version": 1,
-  "data_version": "0.5.0",
+  "schema_version": 2,
+  "data_version": "0.6.0",
   "status": "parameterization_in_progress",
   "species": [
     {
@@ -19,7 +19,16 @@
       "sources": [
         "docs/BIOLOGY_SOURCES.md#fittonia-albivenis"
       ],
-      "runtime_parameter_status": "PARTIAL"
+      "runtime_parameter_status": "PARTIAL",
+      "traits": [
+        "clonal",
+        "ramet_clonal_lifecycle",
+        "producer",
+        "litter_source",
+        "moisture_sensitive",
+        "temperature_response"
+      ],
+      "profile_path": "data/species-profiles/fittonia_albivenis.json"
     },
     {
       "id": "peperomia_caperata",
@@ -37,7 +46,16 @@
       "sources": [
         "docs/BIOLOGY_SOURCES.md#peperomia-caperata"
       ],
-      "runtime_parameter_status": "PARTIAL"
+      "runtime_parameter_status": "PARTIAL",
+      "traits": [
+        "clonal",
+        "ramet_clonal_lifecycle",
+        "producer",
+        "litter_source",
+        "moisture_sensitive",
+        "temperature_response"
+      ],
+      "profile_path": "data/species-profiles/peperomia_caperata.json"
     },
     {
       "id": "pilea_depressa",
@@ -56,7 +74,17 @@
       "sources": [
         "docs/BIOLOGY_SOURCES.md#pilea-depressa"
       ],
-      "runtime_parameter_status": "PARTIAL"
+      "runtime_parameter_status": "PARTIAL",
+      "traits": [
+        "clonal",
+        "ramet_clonal_lifecycle",
+        "producer",
+        "litter_source",
+        "groundcover",
+        "moisture_sensitive",
+        "temperature_response"
+      ],
+      "profile_path": "data/species-profiles/pilea_depressa.json"
     },
     {
       "id": "folsomia_candida",
@@ -75,7 +103,17 @@
       "sources": [
         "docs/BIOLOGY_SOURCES.md#folsomia-candida"
       ],
-      "runtime_parameter_status": "PARTIAL"
+      "runtime_parameter_status": "PARTIAL",
+      "traits": [
+        "parthenogenetic",
+        "egg_juvenile_adult",
+        "fungivore",
+        "microbivore",
+        "substrate_walker",
+        "moisture_sensitive",
+        "temperature_response"
+      ],
+      "profile_path": "data/species-profiles/folsomia_candida.json"
     },
     {
       "id": "trichorhina_tomentosa",
@@ -93,7 +131,18 @@
       "sources": [
         "docs/BIOLOGY_SOURCES.md#trichorhina-tomentosa"
       ],
-      "runtime_parameter_status": "PARTIAL"
+      "runtime_parameter_status": "PARTIAL",
+      "traits": [
+        "parthenogenetic",
+        "manca_juvenile_adult",
+        "detritivore",
+        "fungivore",
+        "substrate_walker",
+        "under_litter",
+        "moisture_sensitive",
+        "temperature_response"
+      ],
+      "profile_path": "data/species-profiles/trichorhina_tomentosa.json"
     },
     {
       "id": "bradysia_impatiens",
@@ -113,7 +162,18 @@
       "sources": [
         "docs/BIOLOGY_SOURCES.md#bradysia-impatiens"
       ],
-      "runtime_parameter_status": "PARTIAL"
+      "runtime_parameter_status": "PARTIAL",
+      "traits": [
+        "sexual",
+        "egg_larva_pupa_adult",
+        "fungivore",
+        "root_feeder",
+        "substrate_walker",
+        "flyer",
+        "moisture_sensitive",
+        "temperature_response"
+      ],
+      "profile_path": "data/species-profiles/bradysia_impatiens.json"
     },
     {
       "id": "dalotia_coriaria",
@@ -131,7 +191,17 @@
       "sources": [
         "docs/BIOLOGY_SOURCES.md#dalotia-coriaria"
       ],
-      "runtime_parameter_status": "PARTIAL"
+      "runtime_parameter_status": "PARTIAL",
+      "traits": [
+        "sexual",
+        "egg_larva_pupa_adult",
+        "predator",
+        "substrate_walker",
+        "flyer",
+        "moisture_sensitive",
+        "temperature_response"
+      ],
+      "profile_path": "data/species-profiles/dalotia_coriaria.json"
     },
     {
       "id": "linnemannia_elongata",
@@ -144,7 +214,17 @@
       "sources": [
         "docs/BIOLOGY_SOURCES.md#linnemannia-elongata"
       ],
-      "runtime_parameter_status": "PARTIAL"
+      "runtime_parameter_status": "PARTIAL",
+      "life_stages": [
+        "biomass_field"
+      ],
+      "traits": [
+        "biomass_field",
+        "saprotroph",
+        "temperature_response",
+        "moisture_sensitive"
+      ],
+      "profile_path": "data/species-profiles/linnemannia_elongata.json"
     },
     {
       "id": "bacillus_subtilis",
@@ -156,7 +236,17 @@
       "sources": [
         "docs/BIOLOGY_SOURCES.md#bacillus-subtilis"
       ],
-      "runtime_parameter_status": "PARTIAL"
+      "runtime_parameter_status": "PARTIAL",
+      "life_stages": [
+        "biomass_field"
+      ],
+      "traits": [
+        "biomass_field",
+        "saprotroph",
+        "temperature_response",
+        "moisture_sensitive"
+      ],
+      "profile_path": "data/species-profiles/bacillus_subtilis.json"
     }
   ]
 }

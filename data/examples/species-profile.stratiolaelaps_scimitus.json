@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "data_version": "0.6.0",
+  "id": "stratiolaelaps_scimitus",
+  "runtime_membership": "EXAMPLE_ONLY",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Stratiolaelaps scimitus",
+    "synonyms": [
+      "Cosmolaelaps scimitus Womersley, 1956"
+    ],
+    "common_names": [
+      "soil predatory mite"
+    ],
+    "taxonomy": {
+      "kingdom": "Animalia",
+      "phylum": "Arthropoda",
+      "class": "Arachnida",
+      "order": "Mesostigmata",
+      "family": "Laelapidae",
+      "genus": "Stratiolaelaps",
+      "species": "scimitus"
+    },
+    "taxon_source": "gbif"
+  },
+  "traits": [
+    "sexual",
+    "parthenogenetic",
+    "predator",
+    "substrate_walker",
+    "moisture_sensitive",
+    "temperature_response"
+  ],
+  "biology": {
+    "stages": [
+      "egg",
+      "larva",
+      "protonymph",
+      "deutonymph",
+      "adult"
+    ],
+    "development_timing": {
+      "egg_development_days_21_23c": {
+        "value": 2.47,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "cabrera2005",
+        "notes": "Mean egg duration at 21-23 C.",
+        "conditions": "21-23 C; ad libitum prey in laboratory culture.",
+        "confidence": "high"
+      },
+      "larval_development_days_21_23c": {
+        "value": 1.11,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "cabrera2005",
+        "notes": "Mean non-feeding larval duration.",
+        "conditions": "21-23 C laboratory culture.",
+        "confidence": "high"
+      },
+      "protonymph_development_days_21_23c": {
+        "value": 4.7,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "cabrera2005",
+        "notes": "Mean protonymph duration for successful prey treatments.",
+        "confidence": "high"
+      },
+      "deutonymph_development_days_21_23c": {
+        "value": 4.61,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "cabrera2005",
+        "notes": "Mean deutonymph duration for successful prey treatments.",
+        "confidence": "high"
+      }
+    },
+    "lifespan": {
+      "adult_female_longevity_days_21_23c": {
+        "value": 27.3,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "cabrera2005",
+        "notes": "Mean total adult female longevity in the cited prey comparison.",
+        "confidence": "high"
+      }
+    },
+    "reproduction": {
+      "mode": "arrhenotokous_mixed",
+      "mate_required": false,
+      "parameters": {
+        "total_eggs_per_female_21_23c": {
+          "value": 26.5,
+          "unit": "count",
+          "status": "MEASURED",
+          "source": "cabrera2005",
+          "notes": "Mean total eggs; diet affected pre-oviposition but not this reported total.",
+          "confidence": "high"
+        },
+        "fecundity_25c_nematode_prey": {
+          "value": 92.8,
+          "unit": "count",
+          "status": "MEASURED",
+          "source": "sci_reports_2020",
+          "notes": "Mean total eggs on Meloidogyne juveniles at 25 ± 1 C, illustrating strong condition/prey dependence.",
+          "conditions": "25 ± 1 C, 80% RH, nematode prey.",
+          "confidence": "high"
+        }
+      },
+      "notes": "Unfertilized females can produce males, while fertilized females produce both sexes; a single mate_required boolean is therefore only a coarse runtime hint."
+    },
+    "body_mass": {
+      "summary": "Species example intentionally avoids inventing a body-mass constant; source a direct adult mass before runtime use.",
+      "parameters": {
+        "adult_wet_mass_mg": {
+          "value": null,
+          "unit": "mg_wet",
+          "status": "TBD",
+          "source": "kstate",
+          "notes": "No direct mass measurement is used in this example."
+        }
+      }
+    },
+    "water_dependence": {
+      "summary": "Soil/humus/litter predator; moist culture conditions are standard, but no generic moisture coefficient is frozen.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "Development/reproduction are strongly temperature-dependent; exact response curve belongs in species data if the taxon is ever promoted to runtime.",
+      "parameters": {
+        "life_table_temperature_c": {
+          "value": 25,
+          "unit": "degC",
+          "status": "MEASURED",
+          "source": "sci_reports_2020",
+          "notes": "Temperature of one detailed life-table experiment; not a universal optimum.",
+          "uncertainty": "±1 C experimental control",
+          "conditions": "80% RH.",
+          "confidence": "high"
+        }
+      }
+    }
+  },
+  "ecology": {
+    "diet": [
+      "small soil arthropods",
+      "nematodes"
+    ],
+    "prey": [
+      "fungus-gnat larvae",
+      "potworms",
+      "mites",
+      "nematodes"
+    ],
+    "predators": [],
+    "habitat": [
+      "soil",
+      "humus",
+      "litter",
+      "growing media"
+    ],
+    "locomotion": [
+      "substrate walking"
+    ],
+    "activity_layer": [
+      "upper substrate/litter"
+    ],
+    "substrate_preference": [
+      "moist organic substrate"
+    ]
+  },
+  "simulation": {
+    "metabolism": {},
+    "reserve_thresholds": {},
+    "feeding_rates": {},
+    "assimilation": {},
+    "critical_mass_thresholds": {},
+    "reproduction": {},
+    "reproduction_costs": {},
+    "mortality_conditions": {},
+    "notes": [
+      "EXAMPLE_ONLY: no runtime calibration values are supplied. This profile exists to prove that the schema supports a five-stage mite lifecycle and mixed sexual/arrhenotokous reproduction without changing simulation algorithms."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "adult_female_length_mm": {
+        "value": 0.4,
+        "unit": "mm",
+        "status": "ASSUMED",
+        "source": "kstate",
+        "notes": "Extension-scale rendering anchor; useful for visualization, not a high-confidence morphometric dataset.",
+        "confidence": "medium"
+      }
+    },
+    "coloration": "Light to pale brown adults; immature stages paler.",
+    "stage_differences": [
+      "Six-legged larva; eight-legged nymphal and adult stages; female larger than male."
+    ],
+    "locomotion_style": "Fast substrate walking and prey-search behavior.",
+    "reference_images_asset_notes": [
+      "Taxonomic caution: commercial material historically labeled 'Hypoaspis miles' can be misidentified. Do not encode Hypoaspis miles as an unquestioned synonym of S. scimitus."
+    ]
+  },
+  "sources": [
+    {
+      "id": "gbif",
+      "category": "taxonomic_database",
+      "citation": "GBIF / Catalogue of Life: Stratiolaelaps scimitus (Womersley, 1956).",
+      "url": "https://www.gbif.org/species/6887808",
+      "confidence": "high"
+    },
+    {
+      "id": "walter2003",
+      "category": "peer_reviewed",
+      "citation": "Walter & Campbell (2003), taxonomic clarification of commercial Stratiolaelaps cultures.",
+      "url": "https://doi.org/10.1016/S1049-9644(02)00171-8",
+      "confidence": "high",
+      "notes": "Important warning that S. scimitus and S. miles should not be casually conflated."
+    },
+    {
+      "id": "cabrera2005",
+      "category": "peer_reviewed",
+      "citation": "Cabrera, Cloyd & Zaborski (2005), development and reproduction of Stratiolaelaps scimitus on alternative prey.",
+      "url": "https://doi.org/10.1007/s10493-005-0242-x",
+      "confidence": "high"
+    },
+    {
+      "id": "sci_reports_2020",
+      "category": "peer_reviewed",
+      "citation": "Scientific Reports (2020), life table and predation of Stratiolaelaps scimitus on Meloidogyne incognita.",
+      "url": "https://doi.org/10.1038/s41598-020-62643-2",
+      "confidence": "high"
+    },
+    {
+      "id": "kstate",
+      "category": "university_extension",
+      "citation": "Kansas State Research and Extension: Stratiolaelaps scimitus biological control agent.",
+      "url": "https://bookstore.ksre.ksu.edu/download/stratiolaelaps-scimitus-biological-control-agent-of-fungus-gnats-and-the-western-flower-thrips_MF3632",
+      "confidence": "medium"
+    }
+  ]
+}
