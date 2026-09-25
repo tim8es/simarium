@@ -9,6 +9,11 @@ Checked for the MVP species list and key ecological assumptions.
   https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:105033-2
 - NC State Extension Plant Toolbox: low-growing creeping tropical plant; terrarium suitability.
   https://plants.ces.ncsu.edu/plants/fittonia-albivenis/
+- Hao et al. (2025), Plant, Cell & Environment: direct physiological/photosynthetic study of *F. albivenis* under prolonged far-red/high-light treatments; includes photosynthetic light-response supporting information. This supports shade/light-response model structure but does not by itself supply every Phase-2 growth coefficient.
+  DOI: https://doi.org/10.1111/pce.70113
+  PMID: https://pubmed.ncbi.nlm.nih.gov/40793932/
+- Nature Communications (2024), structure of red-shifted *F. albivenis* photosystem I. Methods report a documented chamber condition of 23 C, 20 umol photons m^-2 s^-1 and 16 h light / 8 h dark before leaf harvest. This is an experimental condition, not evidence of a species optimum.
+  https://www.nature.com/articles/s41467-024-50655-9
 
 ### Peperomia caperata
 - Royal Botanic Gardens, Kew — Plants of the World Online: accepted species; native to southeastern Brazil; wet tropical biome.
@@ -50,12 +55,20 @@ Checked for the MVP species list and key ecological assumptions.
 ### Linnemannia elongata
 - Index Fungorum: current name *Linnemannia elongata*; basionym/synonym *Mortierella elongata*.
   https://www.indexfungorum.org/names/NamesRecord.asp?RecordID=833768
-- University of Florida IFAS: widespread soil fungus, saprotrophic and root-associated.
+- University of Florida IFAS: widespread soil fungus, saprotrophic and root-associated; reports culture growth well at roughly 20–25 C and use of simple carbon sources, with ecological roles including soil carbon/nutrient cycling.
   https://ask.ifas.ufl.edu/publication/SS679
+- Bajpai et al. (1992): *Mortierella elongata* NRRL 5513 reached stationary mycelial growth at about 48 h when cultured at 25 C in the study medium. Culture kinetics are useful constraints but are not direct terrarium decomposition rates.
+  https://doi.org/10.1007/BF01569606
 
 ### Bacillus subtilis
 - Soil/ecology literature supports *B. subtilis* as a common soil bacterium and an organism associated with organic matter particles. The MVP uses it as an explicit bacterial decomposer proxy, not as a claim that one bacterial species represents the full soil microbiome.
   https://www.microbiologyresearch.org/content/journal/micro/10.1099/00221287-81-1-183
+- Wita et al. (2019): one environmental *B. subtilis* isolate showed high cellulolytic activity, with maximum activity reported at 32 C in that experiment. This is strain-/assay-specific and is not treated as a universal species optimum.
+  https://doi.org/10.21307/pjm-2019-012
+  PMID: https://pubmed.ncbi.nlm.nih.gov/31050258/
+- Pold et al. (2020): soil-bacterial carbon-use efficiency varies substantially with taxon, substrate and temperature. Simarium uses this only as a proxy constraint for an initial coarse decomposer CUE and labels the value ASSUMED, not *B. subtilis*-measured.
+  https://doi.org/10.1128/mBio.02293-19
+  PMID: https://pubmed.ncbi.nlm.nih.gov/31964725/
 
 ## Modeling notes
 
