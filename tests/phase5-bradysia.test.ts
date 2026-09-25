@@ -120,6 +120,7 @@ function parameters(
     preOvipositionHours: p("preOvipositionHours"),
     fecundityEggsPerFemale: p("fecundityEggsPerFemale"),
     femaleProbability: p("femaleProbability"),
+    immatureSurvivalProbability: p("immatureSurvivalProbability"),
 
     larvalFeedingCarbonMgPerSecond: p("larvalFeedingCarbonMgPerSecond"),
     assimilationEfficiency: p("assimilationEfficiency"),
