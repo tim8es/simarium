@@ -148,4 +148,13 @@ describe("Phase 7 local encounter index", () => {
   });
 
 
+  it("does not treat opposite terrarium walls as adjacent", () => {
+    const habitat = new SpatialHabitat(60, 30);
+    habitat.set("predator", { x: 0, z: 10, layer: "substrate" });
+    habitat.set("prey", { x: 59, z: 10, layer: "substrate" });
+
+    expect(habitat.isLocal("predator", "prey", 1)).toBe(false);
+  });
+
+
 });
