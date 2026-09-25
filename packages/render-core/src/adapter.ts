@@ -116,6 +116,16 @@ export class RenderAdapter {
     return result;
   }
 
+  /**
+   * Allocation-free renderer hot path. The callback receives adapter-owned
+   * render projection data, never authoritative simulation objects.
+   */
+  forEachRenderableEntity(visitor: (entity: Readonly<RenderEntity>) => void): void {
+    for (const entity of this.entities.values()) {
+      if (entity.alive && entity.visible) visitor(entity);
+    }
+  }
+
   getMetrics(): RenderAdapterMetrics {
     let aliveEntities = 0;
     let visibleEntities = 0;
