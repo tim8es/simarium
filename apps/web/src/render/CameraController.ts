@@ -84,7 +84,22 @@ export class CameraController {
         this.camera.position.lerp(this.desiredCamera, blend);
         this.camera.lookAt(this.target);
       }
-    } else if (this.orbit.enabled) {
+      return;
+    }
+
+    if (this.mode === "macro" && this.followTargetId) {
+      const entity = this.adapter.getEntity(this.followTargetId);
+      if (entity) {
+        this.desiredCamera.set(...entity.position).sub(this.target);
+        this.target.add(this.desiredCamera);
+        this.camera.position.add(this.desiredCamera);
+        this.orbit.target.copy(this.target);
+      }
+      this.orbit.update();
+      return;
+    }
+
+    if (this.orbit.enabled) {
       this.orbit.update();
     } else if (this.fly.enabled) {
       this.fly.update(dtSeconds);
