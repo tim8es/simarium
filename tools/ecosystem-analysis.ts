@@ -1,4 +1,6 @@
 import {
+  MassTracer,
+  zeroMaterial,
   type PlantRametPopulation
 } from "../packages/sim-core/src/index.js";
 import {
@@ -61,7 +63,14 @@ export interface PlantRunMetrics extends PopulationRunMetrics {
   clones: number;
 }
 
+export interface LitterNitrogenTracerMetrics {
+  seededMg: number;
+  maxPlantStructuralMg: number;
+  reachedPlantTissue: boolean;
+}
+
 export interface EcosystemRunSummary {
+  litterNitrogenTracer: LitterNitrogenTracerMetrics;
   plants: {
     fittonia: PlantRunMetrics;
     peperomia: PlantRunMetrics;
@@ -298,11 +307,15 @@ function plantMetrics(
   };
 }
 
-function buildRunSummary(samples: EcosystemSnapshot[]): EcosystemRunSummary {
+function buildRunSummary(
+  samples: EcosystemSnapshot[],
+  litterNitrogenTracer: LitterNitrogenTracerMetrics
+): EcosystemRunSummary {
   const final = samples.at(-1);
   if (!final) throw new Error("Cannot summarize a run without samples");
 
   return {
+    litterNitrogenTracer,
     plants: {
       fittonia: plantMetrics(
         final.plants.fittonia,
@@ -360,6 +373,26 @@ export function runIntegratedEcosystem(
   }
 
   const eco = createIntegratedEcosystem(options.seed);
+
+  const tracer = new MassTracer();
+  tracer.attach(eco.world.ledger);
+  const tracerId = "integrated_litter_nitrogen";
+  const litterNitrogenMg = eco.world.ledger.getPool("litter").nitrogenMg;
+  const seededNitrogenMg = Math.min(1, litterNitrogenMg);
+  tracer.seed(
+    tracerId,
+    "litter",
+    { ...zeroMaterial(), nitrogenMg: seededNitrogenMg },
+    eco.world.ledger
+  );
+
+  const plantStructuralTracerMg = (): number =>
+    ["fittonia_structural", "peperomia_structural", "pilea_structural"]
+      .map((poolName) => tracer.get(tracerId, poolName).nitrogenMg)
+      .reduce((sum, value) => sum + value, 0);
+
+  let maxPlantStructuralTracerMg = plantStructuralTracerMg();
+
   const stepsPerDay = 86400 / eco.world.config.fixedDtSeconds;
   if (!Number.isInteger(stepsPerDay)) {
     throw new Error("Integrated fixed timestep must divide one day exactly");
@@ -379,6 +412,11 @@ export function runIntegratedEcosystem(
       break;
     }
 
+    maxPlantStructuralTracerMg = Math.max(
+      maxPlantStructuralTracerMg,
+      plantStructuralTracerMg()
+    );
+
     if (day % sampleEveryDays === 0 || day === options.days) {
       samples.push(collectEcosystemSnapshot(eco, day));
     }
@@ -389,7 +427,11 @@ export function runIntegratedEcosystem(
     days: options.days,
     invariantFailures,
     samples,
-    summary: buildRunSummary(samples),
+    summary: buildRunSummary(samples, {
+      seededMg: seededNitrogenMg,
+      maxPlantStructuralMg: maxPlantStructuralTracerMg,
+      reachedPlantTissue: maxPlantStructuralTracerMg > 0
+    }),
     ecosystem: eco
   };
 }
