@@ -47,6 +47,7 @@ export interface DalotiaIndividual {
   eggsLaid: number;
   eggAccumulator: number;
   attackAccumulator: number;
+  hasMated: boolean;
 }
 
 export interface DalotiaRecord {
@@ -710,6 +711,16 @@ export class DalotiaPredatorSystem implements SimSystem {
     if (female.adultAgeSeconds < this.p.preOvipositionDays * DAY) return;
     if (female.adultAgeSeconds > this.p.reproductivePeriodDays * DAY) return;
     if (female.eggsLaid >= this.p.lifetimeFecundity) return;
+    // A local encounter is required to establish mating, but continuous
+    // male co-location is not required for every subsequent egg-allocation
+    // step. Pair-assay evidence supports sexual reproduction but does not
+    // measure a remating interval, so mating persistence is an explicit
+    // model assumption rather than repeated endpoint mating.
+    if (!female.hasMated && this.hasMate(female)) {
+      female.hasMated = true;
+    }
+    if (!female.hasMated) return;
+
     if (moisture < this.p.reproductionMoistureThreshold) return;
 
     const reserveFraction =
@@ -729,9 +740,14 @@ export class DalotiaPredatorSystem implements SimSystem {
     if (count <= 0) return;
     count = Math.min(count, this.p.lifetimeFecundity - female.eggsLaid);
 
+    const minimumReserve =
+      female.material.carbonMg * this.p.reproductionReserveFraction;
+    const reproductiveReserve = Math.max(
+      0,
+      female.reserveCarbonMg - minimumReserve
+    );
     const maxAffordable = Math.floor(
-      Math.max(0, female.material.carbonMg * 0.45) /
-        Math.max(1e-12, this.p.eggCarbonMg)
+      reproductiveReserve / Math.max(1e-12, this.p.eggCarbonMg)
     );
     count = Math.min(count, maxAffordable);
     if (count <= 0) return;
@@ -786,7 +802,8 @@ export class DalotiaPredatorSystem implements SimSystem {
           dehydrationSeconds: 0,
           eggsLaid: 0,
           eggAccumulator: 0,
-          attackAccumulator: 0
+          attackAccumulator: 0,
+          hasMated: false
         })
       );
     }
@@ -877,7 +894,8 @@ export function seedDalotiaLarvae(input: {
       dehydrationSeconds: 0,
       eggsLaid: 0,
       eggAccumulator: 0,
-      attackAccumulator: 0
+      attackAccumulator: 0,
+      hasMated: false
     });
   }
   return population;
