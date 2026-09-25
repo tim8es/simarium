@@ -16,9 +16,9 @@ Goal: make the model implementable without hidden biological invention.
 - [x] VALIDATION.md
 - [x] RENDERING.md
 - [x] ASSUMPTIONS.md
-- [ ] machine-readable species database
-- [ ] parameter evidence table
-- [ ] preset schema
+- [x] machine-readable species database skeleton
+- [x] parameter evidence backlog/table contract
+- [x] preset specification
 - [ ] runtime schemas/unit validation
 
 ### Exit gate
@@ -286,8 +286,9 @@ Coding a phase is allowed only when:
 
 # Immediate next work
 
-1. Build machine-readable species database skeleton.
-2. Fill literature-backed parameters for *Folsomia candida* and *Dalotia coriaria* first because their lifecycle literature is comparatively accessible.
-3. Define JSON/YAML schemas for species and presets.
-4. Implement Phase 1 conservation kernel.
-5. Do not start detailed Three.js art until Phase 8 benchmark.
+1. Define executable JSON/YAML validation schemas and unit validation.
+2. Implement Phase 1 conservation kernel; it does not depend on species parameter completion.
+3. In parallel, parameterize *Fittonia albivenis*, *Linnemannia elongata* and *Bacillus subtilis* for Phase 2.
+4. Validate the producer -> litter -> decomposer -> available nutrient -> producer loop.
+5. Then parameterize and implement *Folsomia candida*.
+6. Do not start detailed Three.js art until the rendering benchmark gate is satisfied.
