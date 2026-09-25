@@ -1,5 +1,6 @@
 export * from "./compression.js";
 export * from "./persistence.js";
+export * from "./phase1-adapter.js";
 export * from "./protocol.js";
 export * from "./render-dto.js";
 export * from "./share.js";
