@@ -1,0 +1,57 @@
+{
+  "id": "phase4_trichorhina_detritivore",
+  "status": "experiment",
+  "purpose": "Individual dwarf-white isopod lifecycle and litter-fragmentation proof. Quantitative life-history coefficients are provisional because species-specific literature coverage is sparse.",
+  "references": {
+    "bmig": "https://bmig.org.uk/species/trichorhina-tomentosa",
+    "fungal_grazing_elife": "https://elifesciences.org/articles/68058",
+    "husbandry_timing_proxy": "https://postpods.co.uk/blogs/isopods-useful-articles/isopod-breeding-troubleshooting-why-arent-my-isopods-breeding",
+    "isopod_reproduction": "https://www.isopartyshop.com/reproduction"
+  },
+  "parameters": {
+    "temperatureOptimumC": { "value": 24, "unit": "degC", "status": "CALIBRATED", "source": "bmig", "notes": "Warm tropical/greenhouse habitat anchor; not a measured physiological optimum." },
+    "temperatureSigmaC": { "value": 6, "unit": "degC", "status": "CALIBRATED", "source": "bmig", "notes": "Sensitivity parameter." },
+    "mancaDevelopmentDays": { "value": 14, "unit": "day", "status": "CALIBRATED", "source": "model_internal", "notes": "No strong species-specific duration source found." },
+    "adultDevelopmentDays": { "value": 75, "unit": "day", "status": "CALIBRATED", "source": "husbandry_timing_proxy", "notes": "Low-confidence proxy based on reported 2-3 month maturation for dwarf isopods." },
+    "broodIntervalDays": { "value": 60, "unit": "day", "status": "CALIBRATED", "source": "husbandry_timing_proxy", "notes": "Engineering starting value." },
+    "broodSize": { "value": 12, "unit": "dimensionless", "status": "CALIBRATED", "source": "model_internal", "notes": "Conservative starting brood size; commercial claims vary widely and are not treated as measured evidence." },
+    "adultLifespanDays": { "value": 365, "unit": "day", "status": "ASSUMED", "source": "bmig", "notes": "Lifespan remains unresolved; sensitivity parameter." },
+    "feedingCarbonRateMgPerSecond": { "value": 2e-8, "unit": "mg_C/s", "status": "CALIBRATED", "source": "fungal_grazing_elife", "notes": "Grazing is documented, but this carbon ingestion rate is not directly measured." },
+    "assimilationEfficiency": { "value": 0.50, "unit": "dimensionless", "status": "ASSUMED", "source": "generic_detritivore_proxy", "notes": "Remaining ingested material is egested into fine detritus." },
+    "reserveTargetFraction": { "value": 0.20, "unit": "dimensionless", "status": "CALIBRATED", "source": "model_internal", "notes": "Hunger control parameter." },
+    "reproductionReserveFraction": { "value": 0.15, "unit": "dimensionless", "status": "CALIBRATED", "source": "model_internal", "notes": "Minimum reserve fraction before brood production." },
+    "basalMetabolismCarbonMgPerSecond": { "value": 1.2e-9, "unit": "mg_C/s", "status": "CALIBRATED", "source": "model_internal", "notes": "Sensitivity parameter." },
+    "moistureHalfSaturationWaterG": { "value": 1500, "unit": "g_H2O", "status": "CALIBRATED", "source": "bmig", "notes": "Maps substrate water to suitability; not direct RH." },
+    "reproductionMoistureThreshold": { "value": 0.75, "unit": "dimensionless", "status": "CALIBRATED", "source": "bmig", "notes": "Represents dependence on damp substrate." },
+    "desiccationRatePerSecond": { "value": 2e-6, "unit": "1/s", "status": "CALIBRATED", "source": "bmig", "notes": "Engineering water-loss coefficient." },
+    "hydrationRatePerSecond": { "value": 1.5e-5, "unit": "1/s", "status": "CALIBRATED", "source": "bmig", "notes": "Engineering water-balance coefficient." },
+    "adultCarbonMg": { "value": 0.135, "unit": "mg_C", "status": "ASSUMED", "source": "bmig", "notes": "Mass is not supplied by the taxonomic source; chosen as a provisional value for a 3-5 mm soft-bodied isopod." },
+    "initialJuvenileCarbonMg": { "value": 0.070, "unit": "mg_C", "status": "CALIBRATED", "source": "model_internal", "notes": "Below provisional adult target." },
+    "initialReserveCarbonMg": { "value": 0.012, "unit": "mg_C", "status": "CALIBRATED", "source": "model_internal", "notes": "Subset of total carbon." },
+    "nitrogenPerCarbon": { "value": 0.16, "unit": "mg_N/mg_C", "status": "ASSUMED", "source": "generic_crustacean_proxy", "notes": "Sensitivity parameter." },
+    "phosphorusPerCarbon": { "value": 0.018, "unit": "mg_P/mg_C", "status": "ASSUMED", "source": "generic_crustacean_proxy", "notes": "Sensitivity parameter." },
+    "adultBodyWaterG": { "value": 0.00070, "unit": "g_H2O", "status": "ASSUMED", "source": "model_internal", "notes": "Provisional body-water target." },
+    "mancaCarbonMg": { "value": 0.0020, "unit": "mg_C", "status": "CALIBRATED", "source": "model_internal", "notes": "Brood material allocation parameter." },
+    "fineDetritusRateMultiplier": { "value": 3.0, "unit": "dimensionless", "status": "CALIBRATED", "source": "fragmentation_surface_area_model", "notes": "Property of the fine-detritus pool, not an isopod-triggered decomposition bonus." }
+  },
+  "initialPopulation": { "count": 12, "stage": "juvenile", "ageDays": 50 },
+  "world": {
+    "temperatureC": 24,
+    "fixedDtSeconds": 600,
+    "initialPools": {
+      "atmosphere": { "carbonMg": 10000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 100 },
+      "substrate": { "carbonMg": 100000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 50000 },
+      "surface_water": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 5000 },
+      "litter": { "carbonMg": 1000, "nitrogenMg": 30, "phosphorusMg": 3, "waterG": 50 },
+      "fine_detritus": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "linnemannia_biomass": { "carbonMg": 30, "nitrogenMg": 1.2, "phosphorusMg": 0.12, "waterG": 0.5 },
+      "bacillus_biomass": { "carbonMg": 20, "nitrogenMg": 0.8, "phosphorusMg": 0.08, "waterG": 0.3 },
+      "trichorhina_biomass": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "trichorhina_feed_buffer": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "animal_corpses": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "coarse_decomposition_buffer": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "fine_decomposition_buffer": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "available_nutrients": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 }
+    }
+  }
+}
