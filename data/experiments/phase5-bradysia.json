@@ -1,0 +1,53 @@
+{
+  "id": "phase5_bradysia_lifecycle",
+  "status": "experiment",
+  "purpose": "Sexual fungus-gnat lifecycle with explicit egg/larva/pupa/adult stages, fungal/root feeding, mating, oviposition and short adult lifespan.",
+  "references": {
+    "wilkinson_daugherty_1970": "https://doi.org/10.1093/aesa/63.3.656",
+    "temperature_1970": "https://doi.org/10.1093/aesa/63.4.1079",
+    "ecotox_2018": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6182620/",
+    "diet_2020": "PMID:33080018",
+    "ifas": "https://ask.ifas.ufl.edu/publication/IN372",
+    "physiological_time_2026": "https://www.mdpi.com/2079-7737/15/19/1696"
+  },
+  "parameters": {
+    "referenceTemperatureC": { "value": 24, "unit": "degC", "status": "MEASURED", "source": "wilkinson_daugherty_1970", "notes": "Approximate 75 F reference condition." },
+    "temperatureSigmaC": { "value": 7, "unit": "degC", "status": "CALIBRATED", "source": "temperature_1970", "notes": "Response-shape parameter around the reference condition." },
+    "eggDevelopmentDays": { "value": 4.0, "unit": "day", "status": "MEASURED", "source": "wilkinson_daugherty_1970", "notes": "Mean incubation at about 24 C." },
+    "larvalDevelopmentDays": { "value": 14.1, "unit": "day", "status": "DERIVED", "source": "wilkinson_daugherty_1970", "notes": "Sum of four reported larval instar means: 3.3 + 3.1 + 1.8 + 5.9 d." },
+    "pupalDevelopmentDays": { "value": 3.5, "unit": "day", "status": "MEASURED", "source": "wilkinson_daugherty_1970", "notes": "Mean pupa duration at about 24 C." },
+    "adultLifespanDays": { "value": 5.9, "unit": "day", "status": "MEASURED", "source": "wilkinson_daugherty_1970", "notes": "Mean adult longevity at about 24 C." },
+    "preOvipositionHours": { "value": 18, "unit": "hour", "status": "CALIBRATED", "source": "wilkinson_daugherty_1970", "notes": "Direct evidence is <24 h when males are present; 18 h is a bounded implementation value." },
+    "fecundityEggsPerFemale": { "value": 75, "unit": "dimensionless", "status": "MEASURED", "source": "wilkinson_daugherty_1970", "notes": "Mean at about 24 C; reported range 12-156." },
+    "femaleProbability": { "value": 0.667, "unit": "dimensionless", "status": "MEASURED", "source": "physiological_time_2026", "notes": "Recent laboratory report gives female:male ratio about 2:1." },
+    "larvalFeedingCarbonMgPerSecond": { "value": 5e-8, "unit": "mg_C/s", "status": "CALIBRATED", "source": "ecotox_2018", "notes": "Larvae are mycophagous and can consume plant tissue; carbon rate is not directly measured." },
+    "assimilationEfficiency": { "value": 0.60, "unit": "dimensionless", "status": "ASSUMED", "source": "generic_insect_proxy", "notes": "Sensitivity-analysis parameter." },
+    "fungusPreference": { "value": 0.85, "unit": "dimensionless", "status": "CALIBRATED", "source": "ifas", "notes": "Fungi treated as preferred food; root tissue is fallback." },
+    "basalMetabolismCarbonMgPerSecond": { "value": 8e-10, "unit": "mg_C/s", "status": "CALIBRATED", "source": "model_internal", "notes": "Sensitivity parameter." },
+    "adultCarbonTargetMg": { "value": 0.030, "unit": "mg_C", "status": "ASSUMED", "source": "model_internal", "notes": "No robust species-specific body-carbon estimate was found in the Phase-5 pass." },
+    "initialLarvaCarbonMg": { "value": 0.005, "unit": "mg_C", "status": "CALIBRATED", "source": "model_internal", "notes": "Initial individual material for lifecycle tests." },
+    "initialReserveCarbonMg": { "value": 0.001, "unit": "mg_C", "status": "CALIBRATED", "source": "model_internal", "notes": "Subset of larval carbon." },
+    "eggCarbonMg": { "value": 0.00012, "unit": "mg_C", "status": "CALIBRATED", "source": "model_internal", "notes": "Material cost per egg; bounded by female body material and fecundity." },
+    "nitrogenPerCarbon": { "value": 0.18, "unit": "mg_N/mg_C", "status": "ASSUMED", "source": "generic_insect_stoichiometry_proxy", "notes": "Sensitivity parameter." },
+    "phosphorusPerCarbon": { "value": 0.018, "unit": "mg_P/mg_C", "status": "ASSUMED", "source": "generic_insect_stoichiometry_proxy", "notes": "Sensitivity parameter." },
+    "adultBodyWaterG": { "value": 0.00008, "unit": "g_H2O", "status": "ASSUMED", "source": "model_internal", "notes": "Provisional body-water target." },
+    "moistureHalfSaturationWaterG": { "value": 1800, "unit": "g_H2O", "status": "CALIBRATED", "source": "ecotox_2018", "notes": "Maps substrate-water pool to oviposition/development suitability; not a direct RH conversion." },
+    "ovipositionMoistureThreshold": { "value": 0.75, "unit": "dimensionless", "status": "CALIBRATED", "source": "ecotox_2018", "notes": "Moist substrate is a lifecycle requirement." },
+    "adultFlightMetabolismMultiplier": { "value": 2.0, "unit": "dimensionless", "status": "ASSUMED", "source": "model_internal", "notes": "Represents aerial activity cost without yet simulating 3D flight paths." }
+  },
+  "initialPopulation": { "count": 12, "stage": "larva", "ageDays": 2 },
+  "world": {
+    "temperatureC": 24,
+    "fixedDtSeconds": 300,
+    "initialPools": {
+      "atmosphere": { "carbonMg": 10000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 100 },
+      "substrate": { "carbonMg": 100000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 50000 },
+      "litter": { "carbonMg": 400, "nitrogenMg": 12, "phosphorusMg": 1.2, "waterG": 20 },
+      "linnemannia_biomass": { "carbonMg": 80, "nitrogenMg": 3.2, "phosphorusMg": 0.32, "waterG": 1 },
+      "plant_root_tissue": { "carbonMg": 100, "nitrogenMg": 4, "phosphorusMg": 0.4, "waterG": 10 },
+      "bradysia_biomass": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "bradysia_feed_buffer": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "animal_corpses": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 }
+    }
+  }
+}
