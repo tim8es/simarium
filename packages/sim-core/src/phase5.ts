@@ -59,6 +59,7 @@ export class BradysiaPopulation {
   private nextId = 1;
   private readonly individuals: BradysiaIndividual[] = [];
   private readonly livingIndividuals = new Set<BradysiaIndividual>();
+  private readonly adultMaleIds = new Set<number>();
   private readonly records = new Map<number, BradysiaLifeRecord>();
   private readonly events: BradysiaEvent[] = [];
 
@@ -72,6 +73,9 @@ export class BradysiaPopulation {
     };
     this.individuals.push(individual);
     this.livingIndividuals.add(individual);
+    if (individual.stage === "adult" && individual.sex === "male") {
+      this.adultMaleIds.add(id);
+    }
 
     const record: BradysiaLifeRecord = {
       id,
@@ -119,6 +123,12 @@ export class BradysiaPopulation {
     return this.events;
   }
 
+  hasAdultMale(excludeId?: number): boolean {
+    if (this.adultMaleIds.size === 0) return false;
+    if (excludeId === undefined) return true;
+    return this.adultMaleIds.size > 1 || !this.adultMaleIds.has(excludeId);
+  }
+
   transitionStage(
     individual: BradysiaIndividual,
     next: BradysiaStage,
@@ -143,6 +153,9 @@ export class BradysiaPopulation {
     timeSeconds: number
   ): void {
     individual.sex = sex;
+    if (individual.stage === "adult" && sex === "male") {
+      this.adultMaleIds.add(individual.id);
+    }
     this.record(individual.id).sex = sex;
     this.events.push({ type: "sex", timeSeconds, id: individual.id, sex });
   }
@@ -170,6 +183,7 @@ export class BradysiaPopulation {
     if (!individual.alive) return;
     individual.alive = false;
     this.livingIndividuals.delete(individual);
+    this.adultMaleIds.delete(individual.id);
     const record = this.record(individual.id);
     record.deathTimeSeconds = timeSeconds;
     record.deathCause = cause;
@@ -513,15 +527,7 @@ export class BradysiaLifecycleSystem implements SimSystem {
     if (female.adultAgeSeconds < this.p.preOvipositionHours * HOUR) return;
     if (moisture < this.p.ovipositionMoistureThreshold) return;
 
-    const malePresent = this.population
-      .living()
-      .some(
-        (candidate) =>
-          candidate.id !== female.id &&
-          candidate.stage === "adult" &&
-          candidate.sex === "male"
-      );
-    if (!malePresent) return;
+    if (!this.population.hasAdultMale(female.id)) return;
 
     const eggC = this.p.eggCarbonMg;
     const count = this.p.fecundityEggsPerFemale;
