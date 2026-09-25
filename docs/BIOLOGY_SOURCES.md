@@ -62,8 +62,18 @@ Checked for the MVP species list and key ecological assumptions.
 - Species-specific quantitative maturation, brood-size and body-mass literature was not strong enough to freeze those values. Phase-4 timing/mass coefficients are therefore explicitly CALIBRATED or ASSUMED and must remain in sensitivity analysis.
 
 ### Bradysia impatiens
-- University of Florida IFAS: biology of dark-winged fungus gnats; larvae feed on fungi and can feed on roots; life-cycle data.
+- University of Florida IFAS: biology of dark-winged fungus gnats; larvae preferentially use fungi but can feed on living root/stem tissue. At about 24 C, classic work reported mean fecundity around 75 eggs/female and a life cycle near 27 days; optimized fluctuating temperatures shortened it to about 19 days.
   https://ask.ifas.ufl.edu/publication/IN372
+- Wilkinson & Daugherty (1970): direct life-history study. At about 24 C, mean durations were egg 4.0 d; larval instars 3.3, 3.1, 1.8 and 5.9 d; pupa 3.5 d; adult longevity 5.9 d. Preoviposition was under 24 h when males were present; fecundity ranged 12-156 and averaged about 75 eggs/female.
+  https://doi.org/10.1093/aesa/63.3.656
+- Wilkinson & Daugherty temperature study (1970): development was measured across constant 12.8-32.2 C and a fluctuating 18.9-30 C regime; fastest egg-to-adult development was about 19.2 d under the variable regime.
+  https://doi.org/10.1093/aesa/63.4.1079
+- Römbke et al. (2018): modern ecotoxicology/culture method; adults live only a few days, larvae are mainly mycophagous but can eat plant matter, and moist substrate is required for culture and development.
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC6182620/
+- Gou et al. (2020): diet strongly changes development, survival, longevity and reproduction; a favorable laboratory diet yielded R0 about 39.9 offspring/individual and generation time about 19.5 d at 25 C.
+  https://pubmed.ncbi.nlm.nih.gov/33080018/
+- 2026 physiological-time study reports laboratory fecundity 59.2 eggs/female, immature survival around 46.4% across 10-30 C and an approximately 2:1 female:male sex ratio under its conditions. These values are condition-dependent and are not treated as universal constants.
+  https://www.mdpi.com/2079-7737/15/19/1696
 - UC IPM: fungus-gnat larvae feed on roots/algae; predators include Dalotia.
   https://ipm.ucanr.edu/agriculture/floriculture-and-ornamental-nurseries/fungus-gnats/
 
