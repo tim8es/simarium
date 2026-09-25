@@ -225,6 +225,20 @@
       "status": "CALIBRATED",
       "source": "life_history_2013",
       "notes": "Adult females require sufficient energetic reserve to continue oviposition. Prevents unrealistically funding a full clutch from structural body mass in the absence of prey."
+    },
+    "pupationMinAdultCarbonFraction": {
+      "value": 0.5,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "model_internal",
+      "notes": "Engineering critical-mass gate preventing thermal-time-only pupation in prey-starved larvae."
+    },
+    "reproductionMinReserveFraction": {
+      "value": 0.1,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "model_internal",
+      "notes": "Minimum reserve-carbon fraction before oviposition; prevents structural biomass alone from funding reproduction."
     }
   },
   "world": {
