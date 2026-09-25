@@ -77,7 +77,7 @@
       "unit": "day",
       "status": "MEASURED",
       "source": "life_history_2013",
-      "notes": "Separate experiment reached mean cumulative ~94 eggs by day 25."
+      "notes": "Separate experiment reached mean cumulative ~94 eggs by day 25. Runtime requires at least one local adult-male encounter after the preoviposition threshold, then preserves mating state through the reproductive period instead of requiring repeated male co-location every timestep. This mating-persistence behavior is ASSUMED because the cited fecundity experiments maintained mating pairs and do not quantify a remating interval."
     },
     "preOvipositionDays": {
       "value": 1,
@@ -224,7 +224,7 @@
       "unit": "dimensionless",
       "status": "CALIBRATED",
       "source": "life_history_2013",
-      "notes": "Adult females require sufficient energetic reserve to continue oviposition. Prevents unrealistically funding a full clutch from structural body mass in the absence of prey."
+      "notes": "Adult females require sufficient energetic reserve to continue oviposition. Prevents unrealistically funding a full clutch from structural body mass in the absence of prey. Runtime egg allocation is funded only from reserve carbon above this floor; structural body carbon below the reserve floor is not treated as freely available reproductive energy."
     },
     "reserveTargetFraction": {
       "value": 0.45,
