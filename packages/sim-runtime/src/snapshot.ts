@@ -36,6 +36,7 @@ export interface RuntimeSnapshotV2 {
   rngState: SerializedRngState;
   coreState: JsonValue;
   sections: DeterministicStateSections;
+  userActionQueue?: JsonValue;
 }
 
 export type RuntimeSnapshot = RuntimeSnapshotV1 | RuntimeSnapshotV2;
@@ -159,6 +160,9 @@ function validateV2(value: Record<string, unknown>): RuntimeSnapshotV2 {
   const rngState = parseRngState(value.rngState);
   assertJsonValue(value.coreState, "coreState");
   const sections = parseSections(value.sections);
+  if (value.userActionQueue !== undefined) {
+    assertJsonValue(value.userActionQueue, "userActionQueue");
+  }
 
   const snapshot: RuntimeSnapshotV2 = {
     schemaVersion: 2,
@@ -173,6 +177,7 @@ function validateV2(value: Record<string, unknown>): RuntimeSnapshotV2 {
     sections
   };
   if (value.presetVersion !== undefined) snapshot.presetVersion = value.presetVersion;
+  if (value.userActionQueue !== undefined) snapshot.userActionQueue = value.userActionQueue as JsonValue;
   return snapshot;
 }
 
@@ -222,6 +227,7 @@ export interface CreateRuntimeSnapshotInput {
   rngState: SerializedRngState;
   coreState: JsonValue;
   sections: DeterministicStateSections;
+  userActionQueue?: JsonValue;
   createdAt?: string;
 }
 
@@ -239,6 +245,7 @@ export function createRuntimeSnapshot(input: CreateRuntimeSnapshotInput): Runtim
     sections: input.sections
   };
   if (input.presetVersion !== undefined) candidate.presetVersion = input.presetVersion;
+  if (input.userActionQueue !== undefined) candidate.userActionQueue = input.userActionQueue;
   return parseRuntimeSnapshot(candidate);
 }
 
