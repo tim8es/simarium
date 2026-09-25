@@ -43,6 +43,38 @@ describe("MassLedger", () => {
     ).toThrow(/Insufficient carbonMg/);
   });
 
+
+  it("clamps only machine-scale overdrafts to the exact source remainder", () => {
+    const ledger = new MassLedger({
+      a: { carbonMg: 0.012, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
+      b: { ...zero }
+    });
+    let observedCarbon = -1;
+    ledger.observeTransfers((event) => {
+      observedCarbon = event.amount.carbonMg;
+    });
+
+    ledger.transfer("a", "b", {
+      carbonMg: 0.0120000000018,
+      nitrogenMg: 0,
+      phosphorusMg: 0,
+      waterG: 0
+    });
+
+    expect(ledger.getPool("a").carbonMg).toBe(0);
+    expect(ledger.getPool("b").carbonMg).toBe(0.012);
+    expect(observedCarbon).toBe(0.012);
+
+    expect(() =>
+      ledger.transfer("b", "a", {
+        carbonMg: 0.01201,
+        nitrogenMg: 0,
+        phosphorusMg: 0,
+        waterG: 0
+      })
+    ).toThrow(/Insufficient carbonMg/);
+  });
+
   it("records explicit boundary flux separately from internal transfer", () => {
     const ledger = new MassLedger({
       a: { carbonMg: 1, nitrogenMg: 0, phosphorusMg: 0, waterG: 1 }
