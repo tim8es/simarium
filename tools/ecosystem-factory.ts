@@ -294,11 +294,12 @@ function bradysiaParameters(): BradysiaParameters {
     biomassPool: "bradysia_biomass",
     feedBufferPool: "bradysia_feed_buffer",
     fungusPool: "linnemannia_biomass",
-    rootTissuePools: [
-      "fittonia_structural",
-      "peperomia_structural",
-      "pilea_structural"
-    ],
+    // The current plant model has no explicit root compartment. Treating all
+    // structural shoot+root biomass as larval root food made essentially the
+    // entire producer standing crop globally edible. Until explicit root pools
+    // exist, the integrated ecosystem keeps Bradysia on the modeled fungal
+    // resource rather than inventing accessible root mass.
+    rootTissuePools: [],
     litterPool: "litter",
     atmospherePool: "atmosphere",
     substratePool: "substrate",
@@ -314,6 +315,7 @@ function bradysiaParameters(): BradysiaParameters {
     fecundityEggsPerFemale: value(p.fecundityEggsPerFemale),
     femaleProbability: value(p.femaleProbability),
     immatureSurvivalProbability: value(p.immatureSurvivalProbability),
+    reproductionReserveFraction: value(p.reproductionReserveFraction),
     larvalFeedingCarbonMgPerSecond:
       value(p.larvalFeedingCarbonMgPerSecond),
     assimilationEfficiency: value(p.assimilationEfficiency),
