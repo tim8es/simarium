@@ -245,6 +245,7 @@ function folsomiaParameters(): FolsomiaParameters {
     hydrationRatePerSecond: value(p.hydrationRatePerSecond),
     adultBodyWaterG: value(p.adultBodyWaterG),
     adultCarbonTargetMg: value(p.adultCarbonMg),
+    maturationCarbonFractionOfAdult: value(p.maturationCarbonFractionOfAdult),
     eggCarbonMg: value(p.eggCarbonMg)
   };
 }
