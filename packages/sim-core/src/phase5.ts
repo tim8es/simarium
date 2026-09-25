@@ -8,6 +8,7 @@ import {
 } from "./material.js";
 import type { SimSystem } from "./systems.js";
 import type { WorldState } from "./world.js";
+import type { LocalEncounterIndex } from "./spatial.js";
 
 export type BradysiaStage = "egg" | "larva" | "pupa" | "adult";
 export type BradysiaSex = "female" | "male";
@@ -285,7 +286,9 @@ export class BradysiaLifecycleSystem implements SimSystem {
 
   constructor(
     readonly population: BradysiaPopulation,
-    private readonly p: BradysiaParameters
+    private readonly p: BradysiaParameters,
+    private readonly spatial?: LocalEncounterIndex,
+    private readonly matingRadiusCells = 1
   ) {
     if (!Number.isInteger(p.fecundityEggsPerFemale) || p.fecundityEggsPerFemale < 1) {
       throw new Error("fecundityEggsPerFemale must be a positive integer");
@@ -508,6 +511,28 @@ export class BradysiaLifecycleSystem implements SimSystem {
     }
   }
 
+  private hasMate(female: BradysiaIndividual): boolean {
+    if (this.spatial === undefined) {
+      return this.population.hasAdultMale(female.id);
+    }
+
+    const femaleRef = `bradysia_impatiens#${female.id}`;
+    for (const ref of this.spatial.nearbyRefs(femaleRef, this.matingRadiusCells)) {
+      if (!ref.startsWith("bradysia_impatiens#")) continue;
+      const id = Number(ref.slice("bradysia_impatiens#".length));
+      if (!Number.isInteger(id) || id <= 0 || id === female.id) continue;
+      const candidate = this.population.get(id);
+      if (
+        candidate.alive &&
+        candidate.stage === "adult" &&
+        candidate.sex === "male"
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private consumeFood(
     world: WorldState,
     individual: BradysiaIndividual,
@@ -539,7 +564,7 @@ export class BradysiaLifecycleSystem implements SimSystem {
     if (female.adultAgeSeconds < this.p.preOvipositionHours * HOUR) return;
     if (moisture < this.p.ovipositionMoistureThreshold) return;
 
-    if (!this.population.hasAdultMale(female.id)) return;
+    if (!this.hasMate(female)) return;
 
     const eggC = this.p.eggCarbonMg;
     const count = this.p.fecundityEggsPerFemale;
