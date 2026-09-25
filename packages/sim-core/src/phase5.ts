@@ -329,6 +329,9 @@ export class BradysiaLifecycleSystem implements SimSystem {
       Math.max(1e-12, substrateWater + this.p.moistureHalfSaturationWaterG);
 
     const current = this.population.living();
+    let totalMetabolicCarbon = 0;
+    const carbonExhausted: BradysiaIndividual[] = [];
+
     for (const individual of current) {
       individual.ageSeconds += dtSeconds;
       individual.stageAgeSeconds += dtSeconds * development;
@@ -346,8 +349,15 @@ export class BradysiaLifecycleSystem implements SimSystem {
       }
 
       this.waterBalance(world, individual, moisture, dtSeconds);
-      this.metabolize(world, individual, development, dtSeconds);
-      if (!individual.alive) continue;
+      totalMetabolicCarbon += this.metabolize(
+        individual,
+        development,
+        dtSeconds
+      );
+      if (individual.material.carbonMg <= 1e-12) {
+        carbonExhausted.push(individual);
+        continue;
+      }
 
       if (individual.stage === "larva") {
         this.feedLarva(world, individual, dtSeconds);
@@ -357,6 +367,17 @@ export class BradysiaLifecycleSystem implements SimSystem {
       }
 
       this.evaluateStress(world, individual, moisture, dtSeconds);
+    }
+
+    if (totalMetabolicCarbon > 0) {
+      world.ledger.transfer(
+        this.p.biomassPool,
+        this.p.atmospherePool,
+        { ...zeroMaterial(), carbonMg: totalMetabolicCarbon }
+      );
+    }
+    for (const individual of carbonExhausted) {
+      this.die(world, individual, "carbon_exhaustion");
     }
 
     this.population.assertMatchesAggregate(
@@ -453,11 +474,10 @@ export class BradysiaLifecycleSystem implements SimSystem {
   }
 
   private metabolize(
-    world: WorldState,
     individual: BradysiaIndividual,
     temperatureSuitability: number,
     dtSeconds: number
-  ): void {
+  ): number {
     const flightMultiplier =
       individual.stage === "adult" ? this.p.adultFlightMetabolismMultiplier : 1;
     const cost = Math.min(
@@ -470,18 +490,10 @@ export class BradysiaLifecycleSystem implements SimSystem {
     );
 
     if (cost > 0) {
-      world.ledger.transfer(
-        this.p.biomassPool,
-        this.p.atmospherePool,
-        { ...zeroMaterial(), carbonMg: cost }
-      );
       individual.material.carbonMg -= cost;
       individual.reserveCarbonMg = Math.max(0, individual.reserveCarbonMg - cost);
     }
-
-    if (individual.material.carbonMg <= 1e-12) {
-      this.die(world, individual, "carbon_exhaustion");
-    }
+    return cost;
   }
 
   private feedLarva(
