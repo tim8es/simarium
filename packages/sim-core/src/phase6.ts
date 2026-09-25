@@ -71,6 +71,7 @@ export class DalotiaPopulation {
   private nextId = 1;
   private readonly individuals: DalotiaIndividual[] = [];
   private readonly livingIndividuals = new Set<DalotiaIndividual>();
+  private readonly adultMaleIds = new Set<number>();
   private readonly records = new Map<number, DalotiaRecord>();
   private readonly events: DalotiaEvent[] = [];
 
@@ -84,6 +85,9 @@ export class DalotiaPopulation {
     };
     this.individuals.push(individual);
     this.livingIndividuals.add(individual);
+    if (individual.stage === "adult" && individual.sex === "male") {
+      this.adultMaleIds.add(id);
+    }
 
     const record: DalotiaRecord = {
       id,
@@ -124,6 +128,12 @@ export class DalotiaPopulation {
     return this.events;
   }
 
+  hasAdultMale(excludeId?: number): boolean {
+    if (this.adultMaleIds.size === 0) return false;
+    if (excludeId === undefined) return true;
+    return this.adultMaleIds.size > 1 || !this.adultMaleIds.has(excludeId);
+  }
+
   transitionStage(
     individual: DalotiaIndividual,
     next: DalotiaStage,
@@ -148,6 +158,9 @@ export class DalotiaPopulation {
     timeSeconds: number
   ): void {
     individual.sex = sex;
+    if (individual.stage === "adult" && sex === "male") {
+      this.adultMaleIds.add(individual.id);
+    }
     this.record(individual.id).sex = sex;
     this.events.push({ type: "sex", timeSeconds, id: individual.id, sex });
   }
@@ -191,6 +204,7 @@ export class DalotiaPopulation {
     if (!individual.alive) return;
     individual.alive = false;
     this.livingIndividuals.delete(individual);
+    this.adultMaleIds.delete(individual.id);
     const record = this.record(individual.id);
     record.deathTimeSeconds = timeSeconds;
     record.deathCause = cause;
@@ -654,15 +668,7 @@ export class DalotiaPredatorSystem implements SimSystem {
         : 0;
     if (reserveFraction < this.p.reproductionReserveFraction) return;
 
-    const malePresent = this.population
-      .living()
-      .some(
-        (candidate) =>
-          candidate.id !== female.id &&
-          candidate.stage === "adult" &&
-          candidate.sex === "male"
-      );
-    if (!malePresent) return;
+    if (!this.population.hasAdultMale(female.id)) return;
 
     const eggsPerDay =
       this.p.lifetimeFecundity /
