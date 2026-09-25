@@ -115,3 +115,55 @@ Passed:
 - C/N/P/H2O invariants remain valid.
 
 Phase 3 is an engineering lifecycle proof. Population-rate calibration against OECD/literature distributions remains part of later full-ecosystem calibration.
+
+
+## Phase 4 completion evidence
+
+Accepted lifecycle/fragmentation test head:
+`de869a7a0d632445e72ecd23008269415edfb796`
+
+GitHub Actions run:
+`36146342332` — PASS.
+
+Validated:
+- *Trichorhina tomentosa* individual maturation and parthenogenetic brood production;
+- moisture-dependent reproduction;
+- feeding transfers coarse litter/fungal matter through a real feed buffer;
+- unassimilated material becomes a fine-detritus pool;
+- fine detritus decomposes faster because of its pool property, not because an isopod toggles a global decomposition bonus;
+- senescent animals transfer remaining C/N/P/H2O to corpse biomass.
+
+## Phase 5 completion evidence
+
+Accepted test head:
+`2245cc72c4838898f79421e0ee3070b692711742`
+
+GitHub Actions run:
+`36146748002` — PASS.
+
+Validated:
+- *Bradysia impatiens* larva -> pupa -> adult transitions;
+- deterministic sex assignment;
+- mating requires a living male;
+- oviposition requires sufficiently moist substrate;
+- egg material is paid from the female;
+- larvae prefer fungal food and can fall back to real root-tissue biomass;
+- adult lifespan ends in corpse biomass without rescue.
+
+## Phase 6 completion evidence
+
+Accepted test head:
+`0f36339b2b825f2472f7c5076e45b89bae6b6625`
+
+GitHub Actions run:
+`36147187701` — PASS.
+
+Validated:
+- *Dalotia coriaria* larva -> pupa -> adult lifecycle and sex assignment;
+- density-limited predation on concrete *Bradysia impatiens* and *Folsomia candida* individuals;
+- prey death is recorded as predation;
+- prey C/N/P/H2O is transferred into predator biomass and detritus;
+- sexual reproduction requires a mate and suitable moisture;
+- predators die without prey rather than receiving hidden food.
+
+The current predation encounter function is a headless density proxy. Spatially local encounters remain an explicit Phase-7/renderer-integration requirement and are not represented as already solved.
