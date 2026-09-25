@@ -157,4 +157,21 @@ describe("Phase 7 local encounter index", () => {
   });
 
 
+  it("indexes only nearby entity refs on the bounded habitat", () => {
+    const habitat = new SpatialHabitat(60, 30);
+    habitat.set("predator", { x: 10, z: 10, layer: "substrate" });
+    habitat.set("near-a", { x: 11, z: 10, layer: "substrate" });
+    habitat.set("near-b", { x: 9, z: 9, layer: "substrate" });
+    habitat.set("far", { x: 40, z: 20, layer: "substrate" });
+    habitat.set("air", { x: 10, z: 10, layer: "air" });
+
+    expect(new Set(habitat.nearbyRefs("predator", 1))).toEqual(
+      new Set(["predator", "near-a", "near-b"])
+    );
+
+    habitat.remove("near-a");
+    expect(habitat.nearbyRefs("predator", 1)).not.toContain("near-a");
+  });
+
+
 });
