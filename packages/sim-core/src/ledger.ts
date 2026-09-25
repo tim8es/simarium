@@ -13,8 +13,18 @@ export interface LedgerSnapshot {
   cumulativeBoundaryFlux: Material;
 }
 
+export interface TransferEvent {
+  from: string;
+  to: string;
+  amount: Material;
+  sourceBefore: Material;
+}
+
+export type TransferObserver = (event: TransferEvent) => void;
+
 export class MassLedger {
   private readonly pools = new Map<string, Material>();
+  private readonly observers = new Set<TransferObserver>();
   private boundaryFlux: Material;
 
   constructor(
@@ -41,12 +51,18 @@ export class MassLedger {
     return [...this.pools.keys()];
   }
 
+  observeTransfers(observer: TransferObserver): () => void {
+    this.observers.add(observer);
+    return () => this.observers.delete(observer);
+  }
+
   transfer(from: string, to: string, amount: Material): void {
     if (from === to) return;
     assertNonNegativeMaterial(amount, "transfer");
 
     const source = this.requirePool(from);
     const destination = this.requirePool(to);
+    const sourceBefore = cloneMaterial(source);
 
     for (const key of MATERIAL_KEYS) {
       if (source[key] + 1e-12 < amount[key]) {
@@ -61,6 +77,14 @@ export class MassLedger {
       destination[key] += amount[key];
       if (Math.abs(source[key]) < 1e-12) source[key] = 0;
     }
+
+    const event: TransferEvent = {
+      from,
+      to,
+      amount: cloneMaterial(amount),
+      sourceBefore
+    };
+    for (const observer of this.observers) observer(event);
   }
 
   applyBoundaryFlux(poolName: string, delta: Material): void {
