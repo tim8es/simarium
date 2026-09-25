@@ -4,6 +4,7 @@ import phase2 from "../data/experiments/phase2-producer-loop.json";
 import phase2Multi from "../data/experiments/phase2-multiplant.json";
 import phase3Folsomia from "../data/experiments/phase3-folsomia.json";
 import phase4Trichorhina from "../data/experiments/phase4-trichorhina.json";
+import phase5Bradysia from "../data/experiments/phase5-bradysia.json";
 import {
   assertCanonicalUnit,
   validateSpeciesCatalog
@@ -64,6 +65,17 @@ describe("species data contracts", () => {
   it("validates provenance for the Trichorhina phase-4 experiment", () => {
     const allowedStatuses = new Set(["MEASURED", "DERIVED", "ASSUMED", "CALIBRATED", "TBD"]);
     for (const [name, parameter] of Object.entries(phase4Trichorhina.parameters)) {
+      expect(Number.isFinite(parameter.value), name).toBe(true);
+      expect(() => assertCanonicalUnit(parameter.unit)).not.toThrow();
+      expect(allowedStatuses.has(parameter.status), name).toBe(true);
+      expect(parameter.source.length, name).toBeGreaterThan(0);
+      expect(parameter.notes.length, name).toBeGreaterThan(0);
+    }
+  });
+
+  it("validates provenance for the Bradysia phase-5 experiment", () => {
+    const allowedStatuses = new Set(["MEASURED", "DERIVED", "ASSUMED", "CALIBRATED", "TBD"]);
+    for (const [name, parameter] of Object.entries(phase5Bradysia.parameters)) {
       expect(Number.isFinite(parameter.value), name).toBe(true);
       expect(() => assertCanonicalUnit(parameter.unit)).not.toThrow();
       expect(allowedStatuses.has(parameter.status), name).toBe(true);
