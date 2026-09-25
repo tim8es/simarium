@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { indexedDB } from "fake-indexeddb";
 import {
   FixedStepScheduler,
@@ -168,6 +168,25 @@ describe("worker protocol and renderer transport", () => {
     expect(halfway.entities[0]!.position.x).toBe(1);
   });
 
+  it("clears optional selected/environment state through deltas", () => {
+    const a: RenderWorldSnapshotDto = {
+      ...renderSnapshot(10, 0),
+      selectedEntityId: "folsomia_candida#1",
+      environment: { humidity: 0.9 }
+    };
+    const b = renderSnapshot(11, 1);
+    const delta = diffRenderSnapshots(a, b);
+    expect(delta.selectedEntityId).toBeNull();
+    expect(delta.environment).toBeNull();
+
+    const buffer = new RenderSnapshotBuffer();
+    buffer.push(a);
+    buffer.apply(delta);
+    const applied = buffer.sample(1)!;
+    expect(applied.selectedEntityId).toBeUndefined();
+    expect(applied.environment).toBeUndefined();
+  });
+
   it("emits full snapshots sparsely and deltas for ordinary steps", async () => {
     class FakeAdapter implements SimulationRuntimeAdapter {
       tick = 0;
@@ -193,6 +212,65 @@ describe("worker protocol and renderer transport", () => {
     expect(emitted.some((message) => message.type === "WORLD_SNAPSHOT")).toBe(true);
     expect(emitted.some((message) => message.type === "WORLD_DELTA")).toBe(true);
     runtime.dispose();
+  });
+
+  it("pauses before async LOAD_WORLD and serializes following commands", async () => {
+    vi.useFakeTimers();
+    let releaseLoad!: () => void;
+    const loadGate = new Promise<void>((resolve) => { releaseLoad = resolve; });
+
+    class AsyncLoadAdapter implements SimulationRuntimeAdapter {
+      tick = 0;
+      stepCalls = 0;
+      init(_message: Extract<UiToWorkerMessage, { type: "INIT" }>): void {}
+      async loadSnapshot(snapshot: RuntimeSnapshotV2): Promise<void> {
+        await loadGate;
+        this.tick = snapshot.tick;
+      }
+      step(ticks: number): void {
+        this.stepCalls += 1;
+        this.tick += ticks;
+      }
+      applyUserAction(_action: UserActionEnvelope): void {}
+      renderSnapshot(): RenderWorldSnapshotDto { return renderSnapshot(this.tick, this.tick); }
+      entityDetails(entityId: string): JsonValue { return { entityId }; }
+      stats(): JsonValue { return { tick: this.tick }; }
+      saveSnapshot(): RuntimeSnapshotV2 {
+        const world = createPhase1World({ seed: 1 });
+        world.tick = this.tick;
+        world.timeSeconds = this.tick * 60;
+        return snapshotForWorld(world);
+      }
+    }
+
+    const adapter = new AsyncLoadAdapter();
+    const runtime = new SimulationWorkerRuntime(adapter, () => {}, {
+      ticksPerSecondAt1x: 100,
+      pulseIntervalMs: 10
+    });
+    await runtime.handle({ type: "INIT", requestId: "init", seed: 1, simulationVersion: "0.1", speciesDataVersion: "1" });
+    await runtime.handle({ type: "START", requestId: "start" });
+    await vi.advanceTimersByTimeAsync(20);
+    expect(adapter.stepCalls).toBeGreaterThan(0);
+
+    const savedWorld = createPhase1World({ seed: 1 });
+    savedWorld.tick = 50;
+    savedWorld.timeSeconds = 3000;
+    const loadPromise = runtime.handle({ type: "LOAD_WORLD", requestId: "load", snapshot: snapshotForWorld(savedWorld) });
+    await Promise.resolve();
+    const callsAtLoadStart = adapter.stepCalls;
+    const stepPromise = runtime.handle({ type: "STEP", requestId: "step-after-load", ticks: 1 });
+
+    await vi.advanceTimersByTimeAsync(50);
+    expect(adapter.stepCalls).toBe(callsAtLoadStart);
+
+    releaseLoad();
+    await loadPromise;
+    await stepPromise;
+    expect(adapter.tick).toBe(51);
+
+    runtime.dispose();
+    vi.useRealTimers();
   });
 });
 
