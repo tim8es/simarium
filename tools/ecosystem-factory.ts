@@ -229,6 +229,7 @@ function folsomiaParameters(): FolsomiaParameters {
     temperatureOptimumC: value(p.temperatureOptimumC),
     temperatureSigmaC: value(p.temperatureSigmaC),
     eggDevelopmentDays: value(p.eggDevelopmentDays),
+    eggHatchProbability: value(p.eggHatchProbability),
     adultDevelopmentDays: value(p.adultDevelopmentDays),
     reproductionIntervalDays: value(p.reproductionIntervalDays),
     clutchSize: value(p.clutchSize),
