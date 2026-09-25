@@ -225,6 +225,13 @@
       "status": "CALIBRATED",
       "source": "life_history_2013",
       "notes": "Adult females require sufficient energetic reserve to continue oviposition. Prevents unrealistically funding a full clutch from structural body mass in the absence of prey."
+    },
+    "reserveTargetFraction": {
+      "value": 0.45,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "model_internal",
+      "notes": "Adult/larval feeding drive falls toward zero as reserve carbon approaches this fraction of body carbon; prevents satiated predators from continuing at assay maximum kill rates."
     }
   },
   "world": {
