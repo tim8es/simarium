@@ -161,6 +161,7 @@ function parameters(
     preyHalfSaturationCount: p("preyHalfSaturationCount"),
     captureProbability: p("captureProbability"),
     assimilationEfficiency: p("assimilationEfficiency"),
+    reserveTargetFraction: p("reserveTargetFraction"),
 
     basalMetabolismCarbonMgPerSecond: p("basalMetabolismCarbonMgPerSecond"),
     adultCarbonTargetMg: p("adultCarbonTargetMg"),
