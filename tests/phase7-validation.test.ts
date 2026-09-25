@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { runEcosystemBatch } from "../tools/ecosystem-analysis.ts";
 import {
-  mergeValidationShardDocuments
+  mergeValidationShardDocuments,
+  renderValidationReport
 } from "../tools/ecosystem-validation.ts";
 
 describe("Phase 7 validation shard aggregation", () => {
@@ -48,5 +49,29 @@ describe("Phase 7 validation shard aggregation", () => {
         JSON.stringify(incompatible)
       ])
     ).toThrow(/days/i);
+  }, 30_000);
+
+  it("renders a deterministic machine-readable merged validation report", () => {
+    const a = runEcosystemBatch({
+      seeds: [7620],
+      days: 2,
+      sampleEveryDays: 1
+    });
+    const b = runEcosystemBatch({
+      seeds: [7621],
+      days: 2,
+      sampleEveryDays: 1
+    });
+
+    const rendered = renderValidationReport([
+      JSON.stringify(a),
+      JSON.stringify(b)
+    ]);
+    const parsed = JSON.parse(rendered);
+
+    expect(parsed.summary.runCount).toBe(2);
+    expect(parsed.summary.seeds).toEqual([7620, 7621]);
+    expect(typeof parsed.acceptance.pass).toBe("boolean");
+    expect(rendered.endsWith("\n")).toBe(true);
   }, 30_000);
 });
