@@ -7,6 +7,15 @@ on:
       - agent/phase7-ecology
     paths:
       - ".github/workflows/phase7-calibration-180d.yml"
+      - "packages/sim-core/src/phase3.ts"
+      - "packages/sim-core/src/phase5.ts"
+      - "packages/sim-core/src/phase6.ts"
+      - "tools/ecosystem-factory.ts"
+      - "tools/ecosystem-analysis.ts"
+      - "data/experiments/phase3-folsomia.json"
+      - "data/experiments/phase5-bradysia.json"
+      - "data/experiments/phase6-dalotia.json"
+      - "data/experiments/phase7-integrated.json"
 
 permissions:
   contents: read
