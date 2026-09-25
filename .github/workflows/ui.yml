@@ -1,0 +1,26 @@
+name: UI CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - "tests/ui-observation.test.ts"
+      - "docs/UI_CONTRACTS.md"
+      - "package.json"
+      - ".github/workflows/ui.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run test:ui
+      - run: npm run web:build

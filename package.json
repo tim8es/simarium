@@ -9,6 +9,7 @@
     "build:core": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:ui": "vitest run tests/ui-observation.test.ts",
     "web:dev": "vite apps/web",
     "web:build": "tsc -p apps/web/tsconfig.json --noEmit && vite build apps/web",
     "headless": "npm run build:core --silent && node dist/tools/headless.js",
