@@ -143,4 +143,17 @@ describe("Phase 7 ecosystem analysis", () => {
       ])
     ).toThrow(/days/i);
   }, 30_000);
+
+  it("carries a litter nitrogen tracer into living plant structural tissue in the integrated world", () => {
+    const run = runIntegratedEcosystem({
+      seed: 7001,
+      days: 60,
+      sampleEveryDays: 5
+    });
+
+    expect(run.summary.litterNitrogenTracer.seededMg).toBeGreaterThan(0);
+    expect(run.summary.litterNitrogenTracer.maxPlantStructuralMg).toBeGreaterThan(0);
+    expect(run.summary.litterNitrogenTracer.reachedPlantTissue).toBe(true);
+  }, 60_000);
+
 });
