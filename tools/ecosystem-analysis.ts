@@ -382,13 +382,16 @@ export function runEcosystemBatch(options: BatchOptions): BatchSummary {
     throw new Error("Batch seeds must be unique");
   }
 
-  const runs = options.seeds.map((seed) =>
-    runIntegratedEcosystem({
+  const runs = options.seeds.map((seed) => {
+    const runOptions: IntegratedRunOptions = {
       seed,
-      days: options.days,
-      sampleEveryDays: options.sampleEveryDays
-    })
-  );
+      days: options.days
+    };
+    if (options.sampleEveryDays !== undefined) {
+      runOptions.sampleEveryDays = options.sampleEveryDays;
+    }
+    return runIntegratedEcosystem(runOptions);
+  });
 
   const result: BatchSummary = {
     days: options.days,
