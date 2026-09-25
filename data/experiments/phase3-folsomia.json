@@ -55,11 +55,11 @@
       "notes": "Engineering starting value to be calibrated against 28-day reproduction output distributions."
     },
     "adultLifespanDays": {
-      "value": 180,
+      "value": 111,
       "unit": "day",
-      "status": "CALIBRATED",
+      "status": "DERIVED",
       "source": "temperature_2023",
-      "notes": "Longevity is strongly temperature-dependent; this is deliberately provisional at ~20-21 C."
+      "notes": "Rounded life-span anchor for the 20-24 C operating range: Roeben et al. (2023) measured mean life span 110.5 ± 7.2 d at 20 C, while the same paper summarizes Fountain & Hopkin (2005) at 111 d for 24 C. This replaces the previous provisional 180 d value; it is not tuned against validation seeds and remains temperature-context dependent."
     },
     "feedingCarbonRateMgPerSecond": {
       "value": 2e-8,
