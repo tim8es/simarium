@@ -361,6 +361,8 @@ function dalotiaParameters(): DalotiaParameters {
     basalMetabolismCarbonMgPerSecond:
       value(p.basalMetabolismCarbonMgPerSecond),
     adultCarbonTargetMg: value(p.adultCarbonTargetMg),
+    pupationCarbonFractionOfAdult: value(p.pupationCarbonFractionOfAdult),
+    reproductionReserveFraction: value(p.reproductionReserveFraction),
     eggCarbonMg: value(p.eggCarbonMg),
     adultBodyWaterG: value(p.adultBodyWaterG),
     moistureHalfSaturationWaterG:
