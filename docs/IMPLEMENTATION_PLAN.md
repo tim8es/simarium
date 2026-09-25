@@ -188,9 +188,10 @@ Current Phase-7 evidence (2026-09-25):
 - litter-N tracer reaches living plant structural tissue in every completed 30/60-day run;
 - all animal taxa produce post-start generations in completed 60-day calibration and validation runs;
 - Dalotia records real Bradysia/Folsomia predation;
-- 180-day multi-seed execution remains too slow after day 60 and has not produced acceptable gate evidence.
+- 90-day calibration checkpoints on seeds 0-2 locate the growth inflection between days 60 and 90: Folsomia reaches ~7.7k-8.2k, Bradysia ~8.9k-12.2k, fungal carbon is exhausted, available N falls to ~0.005 mg, and Dalotia is extinct in 2/3 runs;
+- 90-day wall time is already ~1:05-2:02 per seed with ~244-353 MB max RSS, so 180-day multi-seed execution is not practically usable.
 
-Do not mark Phase 7 complete until a practical 180-day run set finishes and the unchanged VALIDATION.md probability gates can be evaluated.
+Do not mark Phase 7 complete until the 90-day growth/resource-collapse failure is removed, a practical 180-day run set finishes, and the unchanged VALIDATION.md probability gates can be evaluated.
 
 ## Phase 8 — Rendering benchmark
 
@@ -314,9 +315,10 @@ Coding a phase is allowed only when:
 
 # Immediate next work
 
-1. Continue Phase-7 calibration on calibration seeds only: add 90/120/150-day checkpoints to locate the population/runtime growth inflection before another 180-day batch.
-2. Investigate long-horizon Folsomia resource limitation and reproduction sensitivity without population caps or rescue rules.
-3. Investigate Bradysia seed-sensitive extinction while preserving critical-mass, reserve-funded reproduction and real food limitation.
-4. Measure Dalotia encounter/reproduction bottlenecks and predator/prey phase relationships; do not tune on validation seeds.
-5. Re-run a separate 180-day validation set only after calibration is frozen, then evaluate the unchanged VALIDATION.md gates and record CI/batch artifacts.
-6. Only after Phase 7 passes, proceed to the remaining renderer/bridge/product integration work.
+1. Fix the calibration-seed 90-day resource-collapse/growth inflection before running longer validation: microbial fungal carbon is exhausted while Folsomia/Bradysia cohorts continue to expand.
+2. Make Folsomia food limitation feed back into realized reproduction/survival more strongly, without population caps or rescue rules.
+3. Make Bradysia cohort survival/development respond to fungal exhaustion so large egg/larval backlogs cannot persist without food; preserve critical-mass and reserve-funded reproduction.
+4. Diagnose Dalotia establishment failure: it produces post-start offspring but is extinct in 2/3 calibration seeds by day 90 despite abundant prey.
+5. Re-run 90-day calibration seeds first. Only when that profile is bounded should 120/150-day calibration and a separate frozen 180-day validation set be attempted.
+6. Keep VALIDATION.md thresholds unchanged unless a separate documented model decision justifies a change.
+7. Only after Phase 7 passes, proceed to the remaining renderer/bridge/product integration work.
