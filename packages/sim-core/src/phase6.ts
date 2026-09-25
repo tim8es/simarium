@@ -729,7 +729,9 @@ export class DalotiaPredatorSystem implements SimSystem {
         : 0;
     if (reserveFraction < this.p.reproductionReserveFraction) return;
 
-    // Once mated, stored sperm is sufficient for later reserve-funded\n    // oviposition; do not require the male to remain locally co-located.\n    const eggsPerDay =
+    // Once mated, stored sperm is sufficient for later reserve-funded
+    // oviposition; do not require the male to remain locally co-located.
+    const eggsPerDay =
       this.p.lifetimeFecundity /
       Math.max(1e-12, this.p.reproductivePeriodDays);
     female.eggAccumulator += eggsPerDay * (dtSeconds / DAY);
