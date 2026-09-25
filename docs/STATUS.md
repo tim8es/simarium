@@ -256,3 +256,40 @@ Open issues:
 - the documented VALIDATION.md probability gates cannot be honestly evaluated from the completed 60-day sample.
 
 No VALIDATION.md acceptance threshold was changed. The next calibration pass should locate the long-horizon growth inflection with 90/120/150-day checkpoints on calibration seeds before another 180-day validation set.
+
+
+### 90-day calibration checkpoint — growth inflection located
+
+Temporary calibration workflow run `36170698773` executed seeds `0-2` at 90 days. These are calibration seeds only; no validation seed was used for parameter tuning.
+
+All three completed 90-day runs still had:
+- invariant failures: `0/3`;
+- litter-N tracer return to living plant tissue: `3/3`;
+- all three plant species persistent: `3/3`;
+- at least one detritivore persistent: `3/3`;
+- post-start generations recorded for all four animal taxa.
+
+However, the ecological/runtime failure becomes clear between days 60 and 90:
+
+| seed | Folsomia | Bradysia | Dalotia | fungal C (mg) | available N (mg) | wall time | max RSS |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 7,653 | 8,931 | 1 | 0 | 0.00482 | 1:06 | 244 MB |
+| 1 | 8,010 | 12,179 | 0 | 0 | 0.00483 | 1:05 | 252 MB |
+| 2 | 8,214 | 11,931 | 0 | 0 | 0.00495 | 2:02 | 353 MB |
+
+Interpretation:
+- the 60-day reduction in Folsomia/Bradysia growth was real but only delayed the long-horizon amplification;
+- fungal food is exhausted by day 90 in all three calibration seeds;
+- available mineral N is nearly exhausted;
+- Bradysia still holds very large egg/larval cohorts despite fungal exhaustion, so delayed starvation/carbon-exhaustion creates a large computational backlog;
+- Dalotia is extinct by day 90 in seeds 1 and 2 despite having produced post-start offspring earlier;
+- predation remains far too weak to regulate the prey wave (only tens of kills per run);
+- runtime and memory grow sharply with the prey cohorts.
+
+This is a model failure, not an acceptance-threshold problem. No gate should be relaxed.
+
+The next causal work is therefore:
+1. make Folsomia reproduction/feeding respond more strongly to exhausted microbial food rather than accumulating large cohorts;
+2. prevent Bradysia egg/larval cohort accumulation after fungal resource collapse through biologically explicit food/starvation/development constraints, not a population cap;
+3. diagnose why Dalotia post-start offspring do not establish a persistent predator population despite abundant prey;
+4. repeat 90-day calibration first; do not spend validation seeds or 180-day CI until the 90-day growth inflection is removed.
