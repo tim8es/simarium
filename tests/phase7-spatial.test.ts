@@ -51,6 +51,7 @@ function parameters(): DalotiaParameters {
     preyHalfSaturationCount: 1,
     captureProbability: 1,
     assimilationEfficiency: d("assimilationEfficiency"),
+    reserveTargetFraction: d("reserveTargetFraction"),
     basalMetabolismCarbonMgPerSecond: d("basalMetabolismCarbonMgPerSecond"),
     adultCarbonTargetMg: d("adultCarbonTargetMg"),
     eggCarbonMg: d("eggCarbonMg"),
