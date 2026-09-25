@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseBatchCliArgs } from "../tools/ecosystem-cli.ts";
+import { executeBatchCli, parseBatchCliArgs } from "../tools/ecosystem-cli.ts";
 
 describe("Phase 7 batch CLI contract", () => {
   it("parses explicit validation arguments", () => {
@@ -30,4 +30,26 @@ describe("Phase 7 batch CLI contract", () => {
     expect(() => parseBatchCliArgs(["--format", "xml"])).toThrow(/format/i);
     expect(() => parseBatchCliArgs(["--sample", "0"])).toThrow(/sample/i);
   });
+
+  it("executes a bounded batch and renders JSON or CSV", () => {
+    const json = executeBatchCli([
+      "--days", "2",
+      "--seeds", "7400:2",
+      "--sample", "1",
+      "--format", "json"
+    ]);
+    const parsed = JSON.parse(json);
+    expect(parsed.runCount).toBe(2);
+    expect(parsed.days).toBe(2);
+    expect(parsed.invariantFailureRuns).toBe(0);
+
+    const csv = executeBatchCli([
+      "--days", "2",
+      "--seeds", "7410:2",
+      "--sample", "1",
+      "--format", "csv"
+    ]);
+    expect(csv).toContain("metric,species,value");
+    expect(csv).toContain("persistence_probability,dalotia,");
+  }, 30_000);
 });
