@@ -11,11 +11,20 @@
     "headless": "npm run build --silent && node dist/tools/headless.js",
     "ecosystem:batch": "npm run build --silent && node dist/tools/ecosystem-batch.js",
     "ecosystem:smoke": "npm run ecosystem:batch -- --days 30 --seeds 0:10 --sample 5 --format json",
-    "ecosystem:merge": "npm run build --silent && node dist/tools/ecosystem-validation-report.js"
+    "ecosystem:merge": "npm run build --silent && node dist/tools/ecosystem-validation-report.js",
+    "dev:render": "vite apps/web",
+    "typecheck:render": "tsc -p apps/web/tsconfig.json --noEmit",
+    "build:render": "npm run typecheck:render && vite build apps/web",
+    "preview:render": "vite preview apps/web"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "@types/three": "^0.180.0",
     "typescript": "^5.9.2",
+    "vite": "^7.1.7",
     "vitest": "^3.2.4"
   }
 }
