@@ -20,4 +20,10 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm test
       - run: npm run build
+      - name: Run integrated ecosystem smoke batch
+        run: node dist/tools/ecosystem-batch.js --days 30 --seeds 0:10 --sample 5 --format json > ecosystem-smoke.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ecosystem-smoke
+          path: ecosystem-smoke.json
       - run: npm run headless -- --days 365 --dt 60
