@@ -119,6 +119,14 @@ export class DalotiaPopulation {
     return this.individuals;
   }
 
+  get(id: number): DalotiaIndividual {
+    const individual = this.individuals[id - 1];
+    if (!individual || individual.id !== id) {
+      throw new Error(`Unknown Dalotia individual: ${id}`);
+    }
+    return individual;
+  }
+
   record(id: number): DalotiaRecord {
     const record = this.records.get(id);
     if (!record) throw new Error(`Unknown Dalotia record: ${id}`);
@@ -320,7 +328,8 @@ export class DalotiaPredatorSystem implements SimSystem {
     readonly population: DalotiaPopulation,
     readonly prey: DalotiaPreyContext,
     private readonly p: DalotiaParameters,
-    private readonly spatial?: LocalEncounterIndex
+    private readonly spatial?: LocalEncounterIndex,
+    private readonly matingRadiusCells = 1
   ) {
     if (
       p.captureProbability < 0 ||
@@ -658,6 +667,28 @@ export class DalotiaPredatorSystem implements SimSystem {
     );
   }
 
+  private hasMate(female: DalotiaIndividual): boolean {
+    if (this.spatial === undefined) {
+      return this.population.hasAdultMale(female.id);
+    }
+
+    const femaleRef = `dalotia_coriaria#${female.id}`;
+    for (const ref of this.spatial.nearbyRefs(femaleRef, this.matingRadiusCells)) {
+      if (!ref.startsWith("dalotia_coriaria#")) continue;
+      const id = Number(ref.slice("dalotia_coriaria#".length));
+      if (!Number.isInteger(id) || id <= 0 || id === female.id) continue;
+      const candidate = this.population.get(id);
+      if (
+        candidate.alive &&
+        candidate.stage === "adult" &&
+        candidate.sex === "male"
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private reproduce(
     world: WorldState,
     female: DalotiaIndividual,
@@ -676,7 +707,7 @@ export class DalotiaPredatorSystem implements SimSystem {
         : 0;
     if (reserveFraction < this.p.reproductionReserveFraction) return;
 
-    if (!this.population.hasAdultMale(female.id)) return;
+    if (!this.hasMate(female)) return;
 
     const eggsPerDay =
       this.p.lifetimeFecundity /
