@@ -534,7 +534,12 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
       trichorhina,
       trichorhinaParameters()
     ),
-    new BradysiaLifecycleSystem(bradysia, bradysiaParameters()),
+    new BradysiaLifecycleSystem(
+      bradysia,
+      bradysiaParameters(),
+      habitat,
+      integratedFixture.spatial.bradysiaMatingRadiusCells
+    ),
 
     new SpatialEcologySystem(
       habitat,
