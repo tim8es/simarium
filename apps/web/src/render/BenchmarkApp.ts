@@ -74,8 +74,8 @@ export class BenchmarkApp {
   };
 
   private readonly frame = (nowMs: number): void => {
-    const frameMs = Math.min(100, nowMs - this.previousFrameMs);
-    const dtSeconds = frameMs / 1000;
+    const rawFrameMs = Math.max(0, nowMs - this.previousFrameMs);
+    const dtSeconds = Math.min(0.1, rawFrameMs / 1000);
     this.previousFrameMs = nowMs;
 
     this.sourceAccumulator += dtSeconds;
@@ -88,7 +88,7 @@ export class BenchmarkApp {
     this.cameraController.update(dtSeconds);
     const sceneMetrics = this.benchmarkScene.update(this.cameraController.camera);
     this.renderer.render(this.benchmarkScene.scene, this.cameraController.camera);
-    this.hud.update(frameMs, this.renderer, this.adapter.getMetrics(), sceneMetrics, nowMs);
+    this.hud.update(rawFrameMs, this.renderer, this.adapter.getMetrics(), sceneMetrics, nowMs);
 
     this.frameHandle = requestAnimationFrame(this.frame);
   };
