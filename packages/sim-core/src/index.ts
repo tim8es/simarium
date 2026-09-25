@@ -6,4 +6,5 @@ export * from "./rng.js";
 export * from "./scheduler.js";
 export * from "./serialization.js";
 export * from "./systems.js";
+export * from "./tracer.js";
 export * from "./world.js";
