@@ -558,7 +558,8 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
       dalotia,
       { bradysia, folsomia },
       dalotiaParameters(),
-      habitat
+      habitat,
+      integratedFixture.spatial.dalotiaMatingRadiusCells
     )
   ];
 
