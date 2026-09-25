@@ -315,8 +315,7 @@ Substrate cells additionally track:
 - volumetric water proxy;
 - temperature;
 - organic matter;
-- NH4;
-- NO3;
+- available N;
 - available P;
 - fungal biomass;
 - bacterial biomass.
@@ -611,8 +610,7 @@ Required overlays:
 - light;
 - CO2;
 - O2 in sealed mode;
-- NH4;
-- NO3;
+- available N;
 - available P;
 - litter;
 - fungal biomass;
@@ -736,6 +734,9 @@ Starting search ranges:
 The optimizer/search may tune initial biomass and environmental parameters, but may not add rescue rules.
 
 ## 27. Architecture
+
+Detailed contracts are defined in `ARCHITECTURE.md`, `SIMULATION_MODEL.md`, `WORLD_MODEL.md`, `SPECIES_DATA_MODEL.md`, `PRESET_SPEC.md`, `VALIDATION.md`, `RENDERING.md`, and `ASSUMPTIONS.md`.
+
 
 ```text
 Simulation Core
