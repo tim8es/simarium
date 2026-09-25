@@ -232,6 +232,13 @@
       "status": "CALIBRATED",
       "source": "model_internal",
       "notes": "Adult/larval feeding drive falls toward zero as reserve carbon approaches this fraction of body carbon; prevents satiated predators from continuing at assay maximum kill rates."
+    },
+    "immatureSurvivalProbability": {
+      "value": 0.766075388027,
+      "unit": "dimensionless",
+      "status": "DERIVED",
+      "source": "life_history_2013",
+      "notes": "Derived as mean adult output per female (69.1) divided by mean fecundity (90.2). Applied at adult emergence as an aggregate immature-survival draw."
     }
   },
   "world": {
