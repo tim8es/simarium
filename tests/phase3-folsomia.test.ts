@@ -86,6 +86,7 @@ function parameters(overrides: Partial<FolsomiaParameters> = {}): FolsomiaParame
     hydrationRatePerSecond: p("hydrationRatePerSecond"),
 
     adultBodyWaterG: p("adultBodyWaterG"),
+    adultCarbonTargetMg: p("adultCarbonMg"),
     eggCarbonMg: p("eggCarbonMg"),
     ...overrides
   };
