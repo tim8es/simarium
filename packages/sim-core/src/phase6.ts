@@ -251,6 +251,8 @@ export interface DalotiaParameters {
 
   basalMetabolismCarbonMgPerSecond: number;
   adultCarbonTargetMg: number;
+  pupationCarbonFractionOfAdult: number;
+  reproductionReserveFraction: number;
   eggCarbonMg: number;
   adultBodyWaterG: number;
 
@@ -379,7 +381,9 @@ export class DalotiaPredatorSystem implements SimSystem {
     }
     if (
       individual.stage === "larva" &&
-      individual.stageAgeSeconds >= this.p.larvalDevelopmentDays * DAY
+      individual.stageAgeSeconds >= this.p.larvalDevelopmentDays * DAY &&
+      individual.material.carbonMg >=
+        this.p.adultCarbonTargetMg * this.p.pupationCarbonFractionOfAdult
     ) {
       this.population.transitionStage(individual, "pupa", world.timeSeconds);
       return;
@@ -584,6 +588,12 @@ export class DalotiaPredatorSystem implements SimSystem {
     if (female.adultAgeSeconds > this.p.reproductivePeriodDays * DAY) return;
     if (female.eggsLaid >= this.p.lifetimeFecundity) return;
     if (moisture < this.p.reproductionMoistureThreshold) return;
+
+    const reserveFraction =
+      female.material.carbonMg > 0
+        ? female.reserveCarbonMg / female.material.carbonMg
+        : 0;
+    if (reserveFraction < this.p.reproductionReserveFraction) return;
 
     const malePresent = this.population
       .living()
