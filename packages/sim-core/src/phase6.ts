@@ -359,7 +359,7 @@ export class DalotiaPredatorSystem implements SimSystem {
       substrateWater /
       Math.max(1e-12, substrateWater + this.p.moistureHalfSaturationWaterG);
 
-    const current = [...this.population.living()];
+    const current = this.population.living();
     for (const individual of current) {
       individual.ageSeconds += dtSeconds;
       individual.stageAgeSeconds += dtSeconds * development;
@@ -399,8 +399,13 @@ export class DalotiaPredatorSystem implements SimSystem {
     this.prey.bradysia.assertMatchesAggregate(
       world.ledger.getPool(this.p.bradysiaBiomassPool)
     );
+    // Match the owning Folsomia lifecycle's machine-scale audit tolerance.
+    // The stricter default here can trip solely from floating-point summation
+    // order after millions of otherwise conservative transfers. Global
+    // C/N/P/H2O conservation is still enforced independently by InvariantMonitor.
     this.prey.folsomia.assertMatchesAggregate(
-      world.ledger.getPool(this.p.folsomiaBiomassPool)
+      world.ledger.getPool(this.p.folsomiaBiomassPool),
+      1e-8
     );
   }
 
