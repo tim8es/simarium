@@ -1,0 +1,118 @@
+{
+  "id": "phase2_fittonia_decomposer_loop",
+  "status": "experiment",
+  "purpose": "Mechanistic vertical-slice calibration fixture; not a validated biological preset.",
+  "references": {
+    "fittonia_far_red_2025": "doi:10.1111/pce.70113",
+    "fittonia_psi_2024": "doi:10.1038/s41467-024-50655-9",
+    "linnemannia_ifas": "https://ask.ifas.ufl.edu/publication/SS679",
+    "linnemannia_growth_1992": "doi:10.1007/BF01569606",
+    "bacterial_cue_proxy": "doi:10.1128/mBio.02293-19",
+    "bacillus_cellulolytic_2019": "doi:10.21307/pjm-2019-012"
+  },
+  "parameters": {
+    "relativeLight": {
+      "value": 0.2,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "fittonia_far_red_2025",
+      "notes": "Normalized model light for the first vertical slice; not a measured PAR conversion."
+    },
+    "lightHalfSaturation": {
+      "value": 0.2,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "fittonia_far_red_2025",
+      "notes": "Initial shape parameter for a shade-tolerant response."
+    },
+    "temperatureOptimumC": {
+      "value": 23,
+      "unit": "degC",
+      "status": "ASSUMED",
+      "source": "fittonia_psi_2024",
+      "notes": "23 C is a documented experimental growth-chamber condition, not claimed as the species optimum."
+    },
+    "temperatureSigmaC": {
+      "value": 5,
+      "unit": "degC",
+      "status": "CALIBRATED",
+      "source": "fittonia_far_red_2025",
+      "notes": "Sensitivity-analysis parameter."
+    },
+    "maxPhotosynthesisCarbonMgPerSecond": {
+      "value": 0.0001,
+      "unit": "mg_C/s",
+      "status": "CALIBRATED",
+      "source": "fittonia_far_red_2025",
+      "notes": "Engineering starting value; must be recalibrated against quantitative light-response data."
+    },
+    "structuralGrowthRatePerSecond": {
+      "value": 0.0000023148,
+      "unit": "1/s",
+      "status": "CALIBRATED",
+      "source": "fittonia_far_red_2025",
+      "notes": "Equivalent to a 5-day first-order allocation time constant."
+    },
+    "nitrogenMgPerCarbonMg": {
+      "value": 0.04,
+      "unit": "mg_N/mg_C",
+      "status": "ASSUMED",
+      "source": "generic_plant_stoichiometry_proxy",
+      "notes": "Must undergo sensitivity analysis; not species-specific."
+    },
+    "phosphorusMgPerCarbonMg": {
+      "value": 0.004,
+      "unit": "mg_P/mg_C",
+      "status": "ASSUMED",
+      "source": "generic_plant_stoichiometry_proxy",
+      "notes": "Must undergo sensitivity analysis; not species-specific."
+    },
+    "senescenceRatePerSecond": {
+      "value": 9.645e-8,
+      "unit": "1/s",
+      "status": "CALIBRATED",
+      "source": "fittonia_far_red_2025",
+      "notes": "Initial ~120-day characteristic time; delayed senescence is documented, exact lifespan is not."
+    },
+    "decompositionRatePerSecond": {
+      "value": 3.858e-7,
+      "unit": "1/s",
+      "status": "CALIBRATED",
+      "source": "linnemannia_ifas",
+      "notes": "Initial ~30-day characteristic time for labile litter in the vertical-slice fixture."
+    },
+    "carbonUseEfficiency": {
+      "value": 0.4,
+      "unit": "dimensionless",
+      "status": "ASSUMED",
+      "source": "bacterial_cue_proxy",
+      "notes": "Proxy for coarse microbial community behavior; explicitly not species-specific."
+    },
+    "fungalShare": {
+      "value": 0.6,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "linnemannia_ifas",
+      "notes": "Initial partition parameter, not a measured community fraction."
+    },
+    "microbialTurnoverRatePerSecond": {
+      "value": 5.787e-7,
+      "unit": "1/s",
+      "status": "CALIBRATED",
+      "source": "bacterial_cue_proxy",
+      "notes": "Initial ~20-day characteristic time for the experiment fixture."
+    }
+  },
+  "initialPools": {
+    "atmosphere": { "carbonMg": 5000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 50 },
+    "substrate": { "carbonMg": 100000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 50000 },
+    "surface_water": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 5000 },
+    "available_nutrients": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+    "fittonia_reserve": { "carbonMg": 20, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+    "fittonia_structural": { "carbonMg": 100, "nitrogenMg": 4, "phosphorusMg": 0.4, "waterG": 5 },
+    "litter": { "carbonMg": 200, "nitrogenMg": 8, "phosphorusMg": 0.8, "waterG": 10 },
+    "linnemannia_biomass": { "carbonMg": 10, "nitrogenMg": 0.4, "phosphorusMg": 0.04, "waterG": 0 },
+    "bacillus_biomass": { "carbonMg": 10, "nitrogenMg": 0.4, "phosphorusMg": 0.04, "waterG": 0 },
+    "decomposition_buffer": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 }
+  }
+}
