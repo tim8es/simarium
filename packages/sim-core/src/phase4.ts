@@ -161,6 +161,7 @@ export interface TrichorhinaParameters {
   hydrationRatePerSecond: number;
 
   adultCarbonTargetMg: number;
+  maturationCarbonFractionOfAdult: number;
   adultBodyWaterG: number;
   mancaCarbonMg: number;
 }
@@ -254,7 +255,9 @@ export class TrichorhinaDetritivoreSystem implements SimSystem {
     }
     if (
       individual.stage === "juvenile" &&
-      individual.stageAgeSeconds >= this.p.adultDevelopmentDays * DAY
+      individual.stageAgeSeconds >= this.p.adultDevelopmentDays * DAY &&
+      individual.material.carbonMg >=
+        this.p.adultCarbonTargetMg * this.p.maturationCarbonFractionOfAdult
     ) {
       this.population.transition(individual, "adult");
     }
