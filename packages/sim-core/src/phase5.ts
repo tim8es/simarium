@@ -99,6 +99,14 @@ export class BradysiaPopulation {
     return this.individuals;
   }
 
+  get(id: number): BradysiaIndividual {
+    const individual = this.individuals[id - 1];
+    if (!individual || individual.id !== id) {
+      throw new Error(`Unknown Bradysia individual: ${id}`);
+    }
+    return individual;
+  }
+
   record(id: number): BradysiaLifeRecord {
     const record = this.records.get(id);
     if (!record) throw new Error(`Unknown Bradysia record: ${id}`);
