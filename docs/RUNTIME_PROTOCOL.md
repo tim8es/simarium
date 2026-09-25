@@ -113,6 +113,7 @@ Top-level identity/state:
 - tick;
 - RNG state;
 - authoritative core snapshot;
+- pending deterministic USER_ACTION queue plus sequence/targetTick watermarks;
 - creation timestamp.
 
 `sections` is the integration contract for deterministic domains that are not currently part of the Phase-1 `WorldState` serializer:
@@ -126,6 +127,8 @@ Top-level identity/state:
 - relevant statistics.
 
 All section keys are mandatory in schema v2. A domain that does not exist in a specific adapter uses `null`; an integrated ecosystem adapter must populate all domains that affect future behavior or required history.
+
+`userActionQueue` is an additive optional v2 field for backward compatibility with early v2 saves. New saves include pending actions and the latest sequence/targetTick watermarks so future boundary actions survive save/load and replay ordering cannot reset. Older v2 saves without this field load with an empty action queue.
 
 ### Migration strategy
 
