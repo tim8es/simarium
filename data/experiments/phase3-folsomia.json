@@ -83,11 +83,11 @@
       "notes": "Controls hunger onset; not a measured lipid fraction."
     },
     "reproductionReserveFraction": {
-      "value": 0.18,
+      "value": 0.22,
       "unit": "dimensionless",
       "status": "CALIBRATED",
       "source": "model_internal",
-      "notes": "Minimum carbon reserve fraction required before egg production."
+      "notes": "CALIBRATED model-internal reserve floor. Raised from 0.18 to 0.22 using only Phase-7 calibration seeds 0-2 after 90/120-day checkpoints showed Folsomia rising from ~8k to ~47k individuals as microbial food pools were exhausted. With reserveTargetFraction=0.25 and the adult carbon/egg-carbon anchors, 0.22 makes a normally refed adult fund roughly one egg per reproduction interval rather than ~three. This is an engineering energy-allocation coefficient, not a measured lipid fraction; validation seeds were not used for tuning."
     },
     "basalMetabolismCarbonMgPerSecond": {
       "value": 5e-10,
