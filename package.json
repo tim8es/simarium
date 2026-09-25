@@ -5,17 +5,22 @@
   "description": "Browser-first autonomous terrarium simulation",
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run build:core && npm run web:build",
+    "build:core": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "headless": "npm run build --silent && node dist/tools/headless.js",
-    "ecosystem:batch": "npm run build --silent && node dist/tools/ecosystem-batch.js",
+    "test:ui": "vitest run tests/ui-observation.test.ts",
+    "web:dev": "vite apps/web",
+    "web:build": "tsc -p apps/web/tsconfig.json --noEmit && vite build apps/web",
+    "headless": "npm run build:core --silent && node dist/tools/headless.js",
+    "ecosystem:batch": "npm run build:core --silent && node dist/tools/ecosystem-batch.js",
     "ecosystem:smoke": "npm run ecosystem:batch -- --days 30 --seeds 0:10 --sample 5 --format json",
-    "ecosystem:merge": "npm run build --silent && node dist/tools/ecosystem-validation-report.js"
+    "ecosystem:merge": "npm run build:core --silent && node dist/tools/ecosystem-validation-report.js"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
     "typescript": "^5.9.2",
+    "vite": "^8.3.0",
     "vitest": "^3.2.4"
   }
 }
