@@ -17,7 +17,8 @@
       "dalotiaAdult": 0.0275
     },
     "bradysiaMatingRadiusCells": 3,
-    "dalotiaMatingRadiusCells": 3
+    "dalotiaMatingRadiusCells": 3,
+    "dalotiaPreyEncounterRadiusCells": 3
   },
   "plants": {
     "fittonia_albivenis": {
@@ -78,7 +79,7 @@
     "validationSeeds": 20
   },
   "parameter_status": "CALIBRATED",
-  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. Spatial habitat is 60x30 substrate cells across the 120x60 cm footprint (~2 cm/cell). Movement event rates are scaled by the square of the cell-size ratio so the diffusive physical displacement remains comparable to the earlier 10 cm grid; spatial integration samples net random-walk displacement over each ecological timestep. These are not biological population-density claims. Full-ecosystem invariant tolerance is explicitly looser than kernel tests to account for floating-point accumulation over millions of conservative transfers; it remains sub-part-per-billion relative. Mating encounter radii are 3 cells (~6 cm) to compensate for endpoint-only encounter detection over 30-minute spatial timesteps; they are numerical encounter-kernel calibration values, not sensory-range claims.",
+  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. Spatial habitat is 60x30 substrate cells across the 120x60 cm footprint (~2 cm/cell). Movement event rates are scaled by the square of the cell-size ratio so the diffusive physical displacement remains comparable to the earlier 10 cm grid; spatial integration samples net random-walk displacement over each ecological timestep. These are not biological population-density claims. Full-ecosystem invariant tolerance is explicitly looser than kernel tests to account for floating-point accumulation over millions of conservative transfers; it remains sub-part-per-billion relative. Dalotia mating and prey encounter radii are 3 cells (~6 cm) to compensate for endpoint-only encounter detection over 30-minute spatial timesteps. They are CALIBRATED numerical encounter-kernel values, not sensory-range claims or global-prey access; prey lookup remains restricted to the bounded local neighborhood.",
   "numerics": {
     "invariantAbsoluteTolerance": 1e-8,
     "invariantRelativeTolerance": 5e-10
