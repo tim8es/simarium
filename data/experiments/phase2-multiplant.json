@@ -26,74 +26,382 @@
   },
   "plants": {
     "fittonia_albivenis": {
-      "relativeLight": { "value": 0.20, "unit": "dimensionless", "status": "CALIBRATED", "source": "fittonia_far_red_2025" },
-      "lightHalfSaturation": { "value": 0.20, "unit": "dimensionless", "status": "CALIBRATED", "source": "fittonia_far_red_2025" },
-      "temperatureOptimumC": { "value": 23, "unit": "degC", "status": "ASSUMED", "source": "fittonia_far_red_2025", "notes": "Experimental chamber condition, not claimed species optimum." },
-      "temperatureSigmaC": { "value": 5, "unit": "degC", "status": "CALIBRATED", "source": "fittonia_far_red_2025" },
-      "maxPhotosynthesisCarbonMgPerSecond": { "value": 0.00010, "unit": "mg_C/s", "status": "CALIBRATED", "source": "fittonia_far_red_2025" },
-      "structuralGrowthRatePerSecond": { "value": 0.0000023148, "unit": "1/s", "status": "CALIBRATED", "source": "fittonia_far_red_2025" },
-      "senescenceRatePerSecond": { "value": 9.645e-8, "unit": "1/s", "status": "CALIBRATED", "source": "fittonia_far_red_2025" },
-      "targetWaterGPerStructuralCarbonMg": { "value": 0.060, "unit": "g_H2O/mg_C", "status": "CALIBRATED", "source": "fittonia_far_red_2025" },
-      "rootWaterUptakeRatePerSecond": { "value": 0.000020, "unit": "1/s", "status": "CALIBRATED", "source": "fittonia_far_red_2025" },
-      "transpirationRatePerSecond": { "value": 0.0000030, "unit": "1/s", "status": "CALIBRATED", "source": "fittonia_far_red_2025" },
-      "waterStressHalfSaturation": { "value": 0.45, "unit": "dimensionless", "status": "CALIBRATED", "source": "fittonia_far_red_2025" },
-      "maintenanceRespirationCarbonPerStructuralCarbonPerSecond": { "value": 1.5e-8, "unit": "1/s", "status": "ASSUMED", "source": "generic_plant_respiration_proxy" }
+      "relativeLight": {
+        "value": 0.2,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "fittonia_far_red_2025"
+      },
+      "lightHalfSaturation": {
+        "value": 0.2,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "fittonia_far_red_2025"
+      },
+      "temperatureOptimumC": {
+        "value": 23,
+        "unit": "degC",
+        "status": "ASSUMED",
+        "source": "fittonia_far_red_2025",
+        "notes": "Experimental chamber condition, not claimed species optimum."
+      },
+      "temperatureSigmaC": {
+        "value": 5,
+        "unit": "degC",
+        "status": "CALIBRATED",
+        "source": "fittonia_far_red_2025"
+      },
+      "maxPhotosynthesisCarbonMgPerSecond": {
+        "value": 0.0001,
+        "unit": "mg_C/s",
+        "status": "CALIBRATED",
+        "source": "fittonia_far_red_2025"
+      },
+      "structuralGrowthRatePerSecond": {
+        "value": 0.0000023148,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "fittonia_far_red_2025"
+      },
+      "senescenceRatePerSecond": {
+        "value": 9.645e-8,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "fittonia_far_red_2025"
+      },
+      "targetWaterGPerStructuralCarbonMg": {
+        "value": 0.06,
+        "unit": "g_H2O/mg_C",
+        "status": "CALIBRATED",
+        "source": "fittonia_far_red_2025"
+      },
+      "rootWaterUptakeRatePerSecond": {
+        "value": 0.00002,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "fittonia_far_red_2025"
+      },
+      "transpirationRatePerSecond": {
+        "value": 0.000003,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "fittonia_far_red_2025"
+      },
+      "waterStressHalfSaturation": {
+        "value": 0.45,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "fittonia_far_red_2025"
+      },
+      "maintenanceRespirationCarbonPerStructuralCarbonPerSecond": {
+        "value": 1.5e-8,
+        "unit": "1/s",
+        "status": "ASSUMED",
+        "source": "generic_plant_respiration_proxy"
+      }
     },
     "peperomia_caperata": {
-      "relativeLight": { "value": 0.28, "unit": "dimensionless", "status": "CALIBRATED", "source": "peperomia_light_2023", "notes": "Study used PPFD 100 umol m-2 s-1; normalized model intensity is provisional." },
-      "lightHalfSaturation": { "value": 0.24, "unit": "dimensionless", "status": "CALIBRATED", "source": "peperomia_light_2023" },
-      "temperatureOptimumC": { "value": 20, "unit": "degC", "status": "ASSUMED", "source": "peperomia_light_2023", "notes": "Experimental condition, not claimed physiological optimum." },
-      "temperatureSigmaC": { "value": 6, "unit": "degC", "status": "CALIBRATED", "source": "peperomia_light_2023" },
-      "maxPhotosynthesisCarbonMgPerSecond": { "value": 0.000075, "unit": "mg_C/s", "status": "CALIBRATED", "source": "peperomia_light_2023" },
-      "structuralGrowthRatePerSecond": { "value": 0.00000145, "unit": "1/s", "status": "CALIBRATED", "source": "peperomia_light_2023" },
-      "senescenceRatePerSecond": { "value": 7.7e-8, "unit": "1/s", "status": "CALIBRATED", "source": "peperomia_ncsu" },
-      "targetWaterGPerStructuralCarbonMg": { "value": 0.040, "unit": "g_H2O/mg_C", "status": "CALIBRATED", "source": "peperomia_ncsu", "notes": "Lower mobile-water target reflects succulent leaves; magnitude is an engineering parameter." },
-      "rootWaterUptakeRatePerSecond": { "value": 0.000012, "unit": "1/s", "status": "CALIBRATED", "source": "peperomia_ncsu" },
-      "transpirationRatePerSecond": { "value": 0.0000018, "unit": "1/s", "status": "CALIBRATED", "source": "peperomia_ncsu" },
-      "waterStressHalfSaturation": { "value": 0.35, "unit": "dimensionless", "status": "CALIBRATED", "source": "peperomia_ncsu" },
-      "maintenanceRespirationCarbonPerStructuralCarbonPerSecond": { "value": 1.3e-8, "unit": "1/s", "status": "ASSUMED", "source": "generic_plant_respiration_proxy" }
+      "relativeLight": {
+        "value": 0.28,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "peperomia_light_2023",
+        "notes": "Study used PPFD 100 umol m-2 s-1; normalized model intensity is provisional."
+      },
+      "lightHalfSaturation": {
+        "value": 0.24,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "peperomia_light_2023"
+      },
+      "temperatureOptimumC": {
+        "value": 20,
+        "unit": "degC",
+        "status": "ASSUMED",
+        "source": "peperomia_light_2023",
+        "notes": "Experimental condition, not claimed physiological optimum."
+      },
+      "temperatureSigmaC": {
+        "value": 6,
+        "unit": "degC",
+        "status": "CALIBRATED",
+        "source": "peperomia_light_2023"
+      },
+      "maxPhotosynthesisCarbonMgPerSecond": {
+        "value": 0.000075,
+        "unit": "mg_C/s",
+        "status": "CALIBRATED",
+        "source": "peperomia_light_2023"
+      },
+      "structuralGrowthRatePerSecond": {
+        "value": 0.00000145,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "peperomia_light_2023"
+      },
+      "senescenceRatePerSecond": {
+        "value": 7.7e-8,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "peperomia_ncsu"
+      },
+      "targetWaterGPerStructuralCarbonMg": {
+        "value": 0.04,
+        "unit": "g_H2O/mg_C",
+        "status": "CALIBRATED",
+        "source": "peperomia_ncsu",
+        "notes": "Lower mobile-water target reflects succulent leaves; magnitude is an engineering parameter."
+      },
+      "rootWaterUptakeRatePerSecond": {
+        "value": 0.000012,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "peperomia_ncsu"
+      },
+      "transpirationRatePerSecond": {
+        "value": 0.0000018,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "peperomia_ncsu"
+      },
+      "waterStressHalfSaturation": {
+        "value": 0.35,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "peperomia_ncsu"
+      },
+      "maintenanceRespirationCarbonPerStructuralCarbonPerSecond": {
+        "value": 1.3e-8,
+        "unit": "1/s",
+        "status": "ASSUMED",
+        "source": "generic_plant_respiration_proxy"
+      }
     },
     "pilea_depressa": {
-      "relativeLight": { "value": 0.24, "unit": "dimensionless", "status": "CALIBRATED", "source": "pilea_pennstate" },
-      "lightHalfSaturation": { "value": 0.20, "unit": "dimensionless", "status": "CALIBRATED", "source": "pilea_pennstate" },
-      "temperatureOptimumC": { "value": 22, "unit": "degC", "status": "ASSUMED", "source": "pilea_pennstate", "notes": "Within extension-recommended indoor range for Pilea; species-specific optimum is unresolved." },
-      "temperatureSigmaC": { "value": 6, "unit": "degC", "status": "CALIBRATED", "source": "pilea_pennstate" },
-      "maxPhotosynthesisCarbonMgPerSecond": { "value": 0.000090, "unit": "mg_C/s", "status": "CALIBRATED", "source": "pilea_pennstate" },
-      "structuralGrowthRatePerSecond": { "value": 0.0000026, "unit": "1/s", "status": "CALIBRATED", "source": "pilea_pennstate", "notes": "Fast creeping growth represented provisionally." },
-      "senescenceRatePerSecond": { "value": 1.05e-7, "unit": "1/s", "status": "CALIBRATED", "source": "pilea_pennstate" },
-      "targetWaterGPerStructuralCarbonMg": { "value": 0.055, "unit": "g_H2O/mg_C", "status": "CALIBRATED", "source": "pilea_pennstate" },
-      "rootWaterUptakeRatePerSecond": { "value": 0.000018, "unit": "1/s", "status": "CALIBRATED", "source": "pilea_pennstate" },
-      "transpirationRatePerSecond": { "value": 0.0000027, "unit": "1/s", "status": "CALIBRATED", "source": "pilea_pennstate" },
-      "waterStressHalfSaturation": { "value": 0.42, "unit": "dimensionless", "status": "CALIBRATED", "source": "pilea_pennstate" },
-      "maintenanceRespirationCarbonPerStructuralCarbonPerSecond": { "value": 1.4e-8, "unit": "1/s", "status": "ASSUMED", "source": "generic_plant_respiration_proxy" }
+      "relativeLight": {
+        "value": 0.24,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "pilea_pennstate"
+      },
+      "lightHalfSaturation": {
+        "value": 0.2,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "pilea_pennstate"
+      },
+      "temperatureOptimumC": {
+        "value": 22,
+        "unit": "degC",
+        "status": "ASSUMED",
+        "source": "pilea_pennstate",
+        "notes": "Within extension-recommended indoor range for Pilea; species-specific optimum is unresolved."
+      },
+      "temperatureSigmaC": {
+        "value": 6,
+        "unit": "degC",
+        "status": "CALIBRATED",
+        "source": "pilea_pennstate"
+      },
+      "maxPhotosynthesisCarbonMgPerSecond": {
+        "value": 0.00009,
+        "unit": "mg_C/s",
+        "status": "CALIBRATED",
+        "source": "pilea_pennstate"
+      },
+      "structuralGrowthRatePerSecond": {
+        "value": 0.0000026,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "pilea_pennstate",
+        "notes": "Fast creeping growth represented provisionally."
+      },
+      "senescenceRatePerSecond": {
+        "value": 1.05e-7,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "pilea_pennstate"
+      },
+      "targetWaterGPerStructuralCarbonMg": {
+        "value": 0.055,
+        "unit": "g_H2O/mg_C",
+        "status": "CALIBRATED",
+        "source": "pilea_pennstate"
+      },
+      "rootWaterUptakeRatePerSecond": {
+        "value": 0.000018,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "pilea_pennstate"
+      },
+      "transpirationRatePerSecond": {
+        "value": 0.0000027,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "pilea_pennstate"
+      },
+      "waterStressHalfSaturation": {
+        "value": 0.42,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "pilea_pennstate"
+      },
+      "maintenanceRespirationCarbonPerStructuralCarbonPerSecond": {
+        "value": 1.4e-8,
+        "unit": "1/s",
+        "status": "ASSUMED",
+        "source": "generic_plant_respiration_proxy"
+      }
     }
   },
   "decomposer": {
-    "decompositionRatePerSecond": { "value": 3.858e-7, "unit": "1/s", "status": "CALIBRATED", "source": "linnemannia_ifas" },
-    "carbonUseEfficiency": { "value": 0.4, "unit": "dimensionless", "status": "ASSUMED", "source": "generic_microbe_proxy" },
-    "fungalShare": { "value": 0.6, "unit": "dimensionless", "status": "CALIBRATED", "source": "linnemannia_ifas" },
-    "microbialTurnoverRatePerSecond": { "value": 5.787e-7, "unit": "1/s", "status": "CALIBRATED", "source": "generic_microbe_proxy" }
+    "decompositionRatePerSecond": {
+      "value": 3.858e-7,
+      "unit": "1/s",
+      "status": "CALIBRATED",
+      "source": "linnemannia_ifas"
+    },
+    "carbonUseEfficiency": {
+      "value": 0.4,
+      "unit": "dimensionless",
+      "status": "ASSUMED",
+      "source": "generic_microbe_proxy"
+    },
+    "fungalShare": {
+      "value": 0.6,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "linnemannia_ifas"
+    },
+    "microbialTurnoverRatePerSecond": {
+      "value": 5.787e-7,
+      "unit": "1/s",
+      "status": "CALIBRATED",
+      "source": "generic_microbe_proxy"
+    },
+    "moistureHalfSaturationWaterG": {
+      "value": 1000,
+      "unit": "g_H2O",
+      "status": "CALIBRATED",
+      "source": "generic_soil_moisture_proxy",
+      "notes": "Engineering half-saturation for the Phase-2 fixture; included in sensitivity tests."
+    },
+    "temperatureOptimumC": {
+      "value": 25,
+      "unit": "degC",
+      "status": "CALIBRATED",
+      "source": "linnemannia_ifas",
+      "notes": "Combined decomposer-system setting; not claimed as an optimum for both explicit species."
+    },
+    "temperatureSigmaC": {
+      "value": 8,
+      "unit": "degC",
+      "status": "CALIBRATED",
+      "source": "linnemannia_ifas"
+    }
   },
   "initialPools": {
-    "atmosphere": { "carbonMg": 10000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 100 },
-    "substrate": { "carbonMg": 100000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 50000 },
-    "surface_water": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 5000 },
-    "available_nutrients": { "carbonMg": 0, "nitrogenMg": 4, "phosphorusMg": 0.4, "waterG": 0 },
-    "litter": { "carbonMg": 400, "nitrogenMg": 16, "phosphorusMg": 1.6, "waterG": 20 },
-    "linnemannia_biomass": { "carbonMg": 15, "nitrogenMg": 0.6, "phosphorusMg": 0.06, "waterG": 0 },
-    "bacillus_biomass": { "carbonMg": 15, "nitrogenMg": 0.6, "phosphorusMg": 0.06, "waterG": 0 },
-    "decomposition_buffer": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
-
-    "fittonia_reserve": { "carbonMg": 20, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
-    "fittonia_structural": { "carbonMg": 100, "nitrogenMg": 4, "phosphorusMg": 0.4, "waterG": 0 },
-    "fittonia_water": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 6 },
-
-    "peperomia_reserve": { "carbonMg": 20, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
-    "peperomia_structural": { "carbonMg": 100, "nitrogenMg": 4, "phosphorusMg": 0.4, "waterG": 0 },
-    "peperomia_water": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 4 },
-
-    "pilea_reserve": { "carbonMg": 20, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
-    "pilea_structural": { "carbonMg": 100, "nitrogenMg": 4, "phosphorusMg": 0.4, "waterG": 0 },
-    "pilea_water": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 5.5 }
+    "atmosphere": {
+      "carbonMg": 10000,
+      "nitrogenMg": 0,
+      "phosphorusMg": 0,
+      "waterG": 100
+    },
+    "substrate": {
+      "carbonMg": 100000,
+      "nitrogenMg": 0,
+      "phosphorusMg": 0,
+      "waterG": 50000
+    },
+    "surface_water": {
+      "carbonMg": 0,
+      "nitrogenMg": 0,
+      "phosphorusMg": 0,
+      "waterG": 5000
+    },
+    "available_nutrients": {
+      "carbonMg": 0,
+      "nitrogenMg": 4,
+      "phosphorusMg": 0.4,
+      "waterG": 0
+    },
+    "litter": {
+      "carbonMg": 400,
+      "nitrogenMg": 16,
+      "phosphorusMg": 1.6,
+      "waterG": 20
+    },
+    "linnemannia_biomass": {
+      "carbonMg": 15,
+      "nitrogenMg": 0.6,
+      "phosphorusMg": 0.06,
+      "waterG": 0
+    },
+    "bacillus_biomass": {
+      "carbonMg": 15,
+      "nitrogenMg": 0.6,
+      "phosphorusMg": 0.06,
+      "waterG": 0
+    },
+    "decomposition_buffer": {
+      "carbonMg": 0,
+      "nitrogenMg": 0,
+      "phosphorusMg": 0,
+      "waterG": 0
+    },
+    "fittonia_reserve": {
+      "carbonMg": 20,
+      "nitrogenMg": 0,
+      "phosphorusMg": 0,
+      "waterG": 0
+    },
+    "fittonia_structural": {
+      "carbonMg": 100,
+      "nitrogenMg": 4,
+      "phosphorusMg": 0.4,
+      "waterG": 0
+    },
+    "fittonia_water": {
+      "carbonMg": 0,
+      "nitrogenMg": 0,
+      "phosphorusMg": 0,
+      "waterG": 6
+    },
+    "peperomia_reserve": {
+      "carbonMg": 20,
+      "nitrogenMg": 0,
+      "phosphorusMg": 0,
+      "waterG": 0
+    },
+    "peperomia_structural": {
+      "carbonMg": 100,
+      "nitrogenMg": 4,
+      "phosphorusMg": 0.4,
+      "waterG": 0
+    },
+    "peperomia_water": {
+      "carbonMg": 0,
+      "nitrogenMg": 0,
+      "phosphorusMg": 0,
+      "waterG": 4
+    },
+    "pilea_reserve": {
+      "carbonMg": 20,
+      "nitrogenMg": 0,
+      "phosphorusMg": 0,
+      "waterG": 0
+    },
+    "pilea_structural": {
+      "carbonMg": 100,
+      "nitrogenMg": 4,
+      "phosphorusMg": 0.4,
+      "waterG": 0
+    },
+    "pilea_water": {
+      "carbonMg": 0,
+      "nitrogenMg": 0,
+      "phosphorusMg": 0,
+      "waterG": 5.5
+    }
   }
 }
