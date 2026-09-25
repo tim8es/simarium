@@ -55,7 +55,7 @@ Run 365 virtual days of empty/environment world with zero invariant failures.
 
 ## Phase 2 — Producer + detritus loop
 
-**Status: ACTIVE — first Fittonia + decomposer tracer gate passed in CI run 36144239689; multi-plant completion and biological calibration remain.**
+**Status: COMPLETE — engineering gate passed; final coefficient calibration remains a Phase 7 validation concern.**
 
 Goal:
 ```text
@@ -88,6 +88,8 @@ Only after that add:
 - *Pilea depressa*.
 
 ## Phase 3 — First animal lifecycle
+
+**Status: COMPLETE — engineering gate passed in CI run 36145748523.**
 
 Goal: prove individual life, feeding, reproduction and death.
 
@@ -292,9 +294,8 @@ Coding a phase is allowed only when:
 
 # Immediate next work
 
-1. Define executable JSON/YAML validation schemas and unit validation.
-2. Implement Phase 1 conservation kernel; it does not depend on species parameter completion.
-3. In parallel, parameterize *Fittonia albivenis*, *Linnemannia elongata* and *Bacillus subtilis* for Phase 2.
-4. Validate the producer -> litter -> decomposer -> available nutrient -> producer loop.
-5. Then parameterize and implement *Folsomia candida*.
-6. Do not start detailed Three.js art until the rendering benchmark gate is satisfied.
+1. Parameterize and implement *Trichorhina tomentosa* detritivore lifecycle (Phase 4).
+2. Validate litter fragmentation and decomposition acceleration without a hard-coded global decomposition bonus.
+3. Parameterize and implement *Bradysia impatiens* lifecycle (Phase 5).
+4. Add *Dalotia coriaria* predator/prey encounters (Phase 6).
+5. Combine all species in the Phase 7 headless ecosystem before detailed Three.js art.
