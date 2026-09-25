@@ -8,6 +8,7 @@ import {
   InvariantMonitor,
   MassLedger,
   ScalarGrid3D,
+  SpatialHabitat,
   WorldState,
   seedBradysiaLarvae,
   type BradysiaParameters,
@@ -281,6 +282,29 @@ describe("Phase 5 Bradysia impatiens lifecycle", () => {
           event.type === "death" && event.cause === "developmental_mortality"
       )
     ).toBe(true);
+  });
+
+  it("requires a local adult male when a spatial encounter index is present", () => {
+    const population = createAdultPair(true);
+    const world = createWorld(population);
+    const habitat = new SpatialHabitat(10, 1);
+    habitat.set("bradysia_impatiens#1", { x: 0, z: 0, layer: "air" });
+    habitat.set("bradysia_impatiens#2", { x: 5, z: 0, layer: "air" });
+
+    const system = new BradysiaLifecycleSystem(
+      population,
+      parameters(),
+      habitat,
+      1
+    );
+    const scheduler = new FixedStepScheduler(world, [system]);
+
+    scheduler.runFor(24 * 3600);
+    expect(population.all().filter((x) => x.parentId !== undefined)).toHaveLength(0);
+
+    habitat.set("bradysia_impatiens#2", { x: 1, z: 0, layer: "air" });
+    scheduler.runFor(3600);
+    expect(population.all().filter((x) => x.parentId !== undefined).length).toBeGreaterThan(0);
   });
 
 });
