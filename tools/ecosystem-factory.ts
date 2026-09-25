@@ -120,7 +120,8 @@ function createDalotiaAdultPair(): DalotiaPopulation {
       dehydrationSeconds: 0,
       eggsLaid: 0,
       eggAccumulator: 0,
-      attackAccumulator: 0
+      attackAccumulator: 0,
+      hasMated: false
     });
   }
   return population;
