@@ -320,6 +320,7 @@ function bradysiaParameters(): BradysiaParameters {
     adultFlightMetabolismMultiplier:
       value(p.adultFlightMetabolismMultiplier),
     adultCarbonTargetMg: value(p.adultCarbonTargetMg),
+    pupationCarbonFractionOfAdult: value(p.pupationCarbonFractionOfAdult),
     eggCarbonMg: value(p.eggCarbonMg),
     adultBodyWaterG: value(p.adultBodyWaterG),
     moistureHalfSaturationWaterG:
