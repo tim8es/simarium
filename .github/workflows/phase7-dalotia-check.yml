@@ -1,5 +1,5 @@
 name: Phase 7 Dalotia Calibration Verification
-# local predator establishment verification
+# 180-day local predator establishment verification
 
 on:
   push:
@@ -21,10 +21,10 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
-      max-parallel: 6
+      max-parallel: 5
       matrix:
-        seed: [0, 1, 2]
-        days: [90, 120, 150]
+        seed: [0, 1, 2, 3, 4]
+        days: [180]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
