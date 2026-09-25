@@ -8,6 +8,7 @@ import {
 } from "./material.js";
 import type { SimSystem } from "./systems.js";
 import type { WorldState } from "./world.js";
+import type { LocalEncounterIndex } from "./spatial.js";
 import type {
   BradysiaIndividual,
   BradysiaPopulation
@@ -296,7 +297,8 @@ export class DalotiaPredatorSystem implements SimSystem {
   constructor(
     readonly population: DalotiaPopulation,
     readonly prey: DalotiaPreyContext,
-    private readonly p: DalotiaParameters
+    private readonly p: DalotiaParameters,
+    private readonly spatial?: LocalEncounterIndex
   ) {
     if (
       p.captureProbability < 0 ||
@@ -462,7 +464,7 @@ export class DalotiaPredatorSystem implements SimSystem {
     predator: DalotiaIndividual,
     dtSeconds: number
   ): void {
-    const candidates = this.collectPrey();
+    const candidates = this.collectPrey(predator);
     const available = candidates.length;
     if (available === 0) return;
 
@@ -484,7 +486,7 @@ export class DalotiaPredatorSystem implements SimSystem {
     predator.attackAccumulator -= attempts;
 
     while (attempts > 0) {
-      const liveCandidates = this.collectPrey();
+      const liveCandidates = this.collectPrey(predator);
       if (liveCandidates.length === 0) break;
       const target = liveCandidates[world.rng.nextInt(liveCandidates.length)]!;
       this.consumePrey(world, predator, target);
@@ -492,10 +494,15 @@ export class DalotiaPredatorSystem implements SimSystem {
     }
   }
 
-  private collectPrey(): PreyCandidate[] {
+  private collectPrey(predator: DalotiaIndividual): PreyCandidate[] {
+    const predatorRef = `dalotia_coriaria#${predator.id}`;
+    const isLocal = (preyRef: string): boolean =>
+      this.spatial === undefined || this.spatial.isLocal(predatorRef, preyRef, 1);
+
     const bradysia: PreyCandidate[] = this.prey.bradysia
       .living()
       .filter((x) => x.stage === "egg" || x.stage === "larva")
+      .filter((x) => isLocal(`bradysia_impatiens#${x.id}`))
       .map((individual) => ({
         species: "bradysia_impatiens" as const,
         individual
@@ -504,6 +511,7 @@ export class DalotiaPredatorSystem implements SimSystem {
     const folsomia: PreyCandidate[] = this.prey.folsomia
       .living()
       .filter((x) => x.stage === "juvenile" || x.stage === "adult")
+      .filter((x) => isLocal(`folsomia_candida#${x.id}`))
       .map((individual) => ({
         species: "folsomia_candida" as const,
         individual
