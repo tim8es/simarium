@@ -8,7 +8,9 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "headless": "npm run build --silent && node dist/tools/headless.js"
+    "headless": "npm run build --silent && node dist/tools/headless.js",
+    "ecosystem:batch": "npm run build --silent && node dist/tools/ecosystem-batch.js",
+    "ecosystem:smoke": "npm run ecosystem:batch -- --days 30 --seeds 0:10 --sample 5 --format json"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
