@@ -4,6 +4,7 @@ export * from "./ledger.js";
 export * from "./material.js";
 export * from "./phase2.js";
 export * from "./phase3.js";
+export * from "./phase4.js";
 export * from "./rng.js";
 export * from "./scheduler.js";
 export * from "./serialization.js";
