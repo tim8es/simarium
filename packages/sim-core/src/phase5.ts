@@ -239,6 +239,7 @@ export interface BradysiaParameters {
   fecundityEggsPerFemale: number;
   femaleProbability: number;
   immatureSurvivalProbability: number;
+  reproductionReserveFraction: number;
 
   larvalFeedingCarbonMgPerSecond: number;
   assimilationEfficiency: number;
@@ -301,9 +302,11 @@ export class BradysiaLifecycleSystem implements SimSystem {
     }
     if (
       p.immatureSurvivalProbability < 0 ||
-      p.immatureSurvivalProbability > 1
+      p.immatureSurvivalProbability > 1 ||
+      p.reproductionReserveFraction < 0 ||
+      p.reproductionReserveFraction > 1
     ) {
-      throw new Error("immatureSurvivalProbability must be in [0,1]");
+      throw new Error("Survival/reserve fractions must be in [0,1]");
     }
   }
 
@@ -360,6 +363,10 @@ export class BradysiaLifecycleSystem implements SimSystem {
       individual.stage === "egg" &&
       individual.stageAgeSeconds >= this.p.eggDevelopmentDays * DAY
     ) {
+      if (!this.survivesImmatureTransition(world)) {
+        this.die(world, individual, "developmental_mortality");
+        return;
+      }
       this.population.transitionStage(individual, "larva", world.timeSeconds);
       return;
     }
@@ -370,6 +377,10 @@ export class BradysiaLifecycleSystem implements SimSystem {
       individual.material.carbonMg >=
         this.p.adultCarbonTargetMg * this.p.pupationCarbonFractionOfAdult
     ) {
+      if (!this.survivesImmatureTransition(world)) {
+        this.die(world, individual, "developmental_mortality");
+        return;
+      }
       this.population.transitionStage(individual, "pupa", world.timeSeconds);
       return;
     }
@@ -378,7 +389,7 @@ export class BradysiaLifecycleSystem implements SimSystem {
       individual.stage === "pupa" &&
       individual.stageAgeSeconds >= this.p.pupalDevelopmentDays * DAY
     ) {
-      if (world.rng.nextFloat() >= this.p.immatureSurvivalProbability) {
+      if (!this.survivesImmatureTransition(world)) {
         this.die(world, individual, "developmental_mortality");
         return;
       }
@@ -387,6 +398,16 @@ export class BradysiaLifecycleSystem implements SimSystem {
         world.rng.nextFloat() < this.p.femaleProbability ? "female" : "male";
       this.population.assignSex(individual, sex, world.timeSeconds);
     }
+  }
+
+  private survivesImmatureTransition(world: WorldState): boolean {
+    // The fixture provides aggregate egg-to-adult immature survival. With no
+    // stage-specific measurements yet, distribute that survival equally over
+    // the three stage transitions. The product remains the measured aggregate
+    // probability while mortality occurs before cohorts consume full larval
+    // CPU/resources.
+    const perTransition = Math.cbrt(this.p.immatureSurvivalProbability);
+    return world.rng.nextFloat() < perTransition;
   }
 
   private waterBalance(
@@ -563,6 +584,12 @@ export class BradysiaLifecycleSystem implements SimSystem {
     if (female.sex !== "female" || female.hasOviposited) return;
     if (female.adultAgeSeconds < this.p.preOvipositionHours * HOUR) return;
     if (moisture < this.p.ovipositionMoistureThreshold) return;
+
+    const reserveFraction =
+      female.material.carbonMg > 0
+        ? female.reserveCarbonMg / female.material.carbonMg
+        : 0;
+    if (reserveFraction < this.p.reproductionReserveFraction) return;
 
     if (!this.hasMate(female)) return;
 
