@@ -84,6 +84,7 @@ jobs:
     timeout-minutes: 20
     strategy:
       fail-fast: false
+      max-parallel: 10
       matrix:
         include:
           - label: calibration-180d-0
@@ -92,12 +93,60 @@ jobs:
             seed: 1
           - label: calibration-180d-2
             seed: 2
+          - label: calibration-180d-3
+            seed: 3
+          - label: calibration-180d-4
+            seed: 4
+          - label: calibration-180d-5
+            seed: 5
+          - label: calibration-180d-6
+            seed: 6
+          - label: calibration-180d-7
+            seed: 7
+          - label: calibration-180d-8
+            seed: 8
+          - label: calibration-180d-9
+            seed: 9
           - label: validation-180d-100
             seed: 100
           - label: validation-180d-101
             seed: 101
           - label: validation-180d-102
             seed: 102
+          - label: validation-180d-103
+            seed: 103
+          - label: validation-180d-104
+            seed: 104
+          - label: validation-180d-105
+            seed: 105
+          - label: validation-180d-106
+            seed: 106
+          - label: validation-180d-107
+            seed: 107
+          - label: validation-180d-108
+            seed: 108
+          - label: validation-180d-109
+            seed: 109
+          - label: validation-180d-110
+            seed: 110
+          - label: validation-180d-111
+            seed: 111
+          - label: validation-180d-112
+            seed: 112
+          - label: validation-180d-113
+            seed: 113
+          - label: validation-180d-114
+            seed: 114
+          - label: validation-180d-115
+            seed: 115
+          - label: validation-180d-116
+            seed: 116
+          - label: validation-180d-117
+            seed: 117
+          - label: validation-180d-118
+            seed: 118
+          - label: validation-180d-119
+            seed: 119
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -108,7 +157,13 @@ jobs:
       - name: Run one independent 180d seed
         shell: bash
         run: |
-          /usr/bin/time -v node dist/tools/ecosystem-batch.js             --days 180             --seeds "${{ matrix.seed }}:1"             --sample 10             --format json             > "${{ matrix.label }}.json"             2> "${{ matrix.label }}.time.txt"
+          /usr/bin/time -v node dist/tools/ecosystem-batch.js \
+            --days 180 \
+            --seeds "${{ matrix.seed }}:1" \
+            --sample 10 \
+            --format json \
+            > "${{ matrix.label }}.json" \
+            2> "${{ matrix.label }}.time.txt"
           cat "${{ matrix.label }}.json"
           cat "${{ matrix.label }}.time.txt"
       - uses: actions/upload-artifact@v4
