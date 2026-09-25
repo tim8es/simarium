@@ -58,6 +58,7 @@ export type BradysiaEvent =
 export class BradysiaPopulation {
   private nextId = 1;
   private readonly individuals: BradysiaIndividual[] = [];
+  private readonly livingIndividuals = new Set<BradysiaIndividual>();
   private readonly records = new Map<number, BradysiaLifeRecord>();
   private readonly events: BradysiaEvent[] = [];
 
@@ -70,6 +71,7 @@ export class BradysiaPopulation {
       material: cloneMaterial(input.material)
     };
     this.individuals.push(individual);
+    this.livingIndividuals.add(individual);
 
     const record: BradysiaLifeRecord = {
       id,
@@ -92,7 +94,7 @@ export class BradysiaPopulation {
   }
 
   living(): BradysiaIndividual[] {
-    return this.individuals.filter((individual) => individual.alive);
+    return [...this.livingIndividuals];
   }
 
   all(): readonly BradysiaIndividual[] {
@@ -167,6 +169,7 @@ export class BradysiaPopulation {
   ): void {
     if (!individual.alive) return;
     individual.alive = false;
+    this.livingIndividuals.delete(individual);
     const record = this.record(individual.id);
     record.deathTimeSeconds = timeSeconds;
     record.deathCause = cause;
@@ -180,8 +183,8 @@ export class BradysiaPopulation {
 
   totalLivingMaterial(): Material {
     let total = zeroMaterial();
-    for (const individual of this.individuals) {
-      if (individual.alive) total = addMaterial(total, individual.material);
+    for (const individual of this.livingIndividuals) {
+      total = addMaterial(total, individual.material);
     }
     return total;
   }
