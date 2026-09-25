@@ -218,3 +218,46 @@ Before full asset production, build a synthetic benchmark scene with:
 - debug UI disabled.
 
 The benchmark must prove the baseline browser stack before detailed art production.
+
+
+## 17. Phase 8 benchmark implementation
+
+The Phase 8 benchmark is implemented as two renderer-owned layers:
+
+```text
+Simulation-compatible snapshot/delta
+        |
+        v
+packages/render-core
+  RenderAdapter + render contracts
+        |
+        v
+apps/web
+  Three.js/WebGL2 renderer
+```
+
+`packages/render-core` has no dependency on `sim-core` or Three.js. It owns only a copied renderer projection containing IDs, species/stage labels, transforms, scale proxy, animation state and alive/visible flags. Three.js `Object3D` instances are never attached to authoritative organism objects.
+
+The synthetic benchmark source is renderer test data only; it does not implement or approximate ecology.
+
+Implemented benchmark load:
+- 1.20 × 0.60 × 0.90 m enclosure in meter world units;
+- glass shell, substrate, leaf litter, rocks and wood;
+- shared lightweight materials and geometries;
+- 180 plant render entities across the three MVP plant species;
+- 4,320 instanced leaf visuals derived from those plant entities;
+- 1,200 moving animal render entities across the required species/stages;
+- camera/frustum-driven animal LOD with at most 260 instanced near animal meshes and a single Points layer for remaining visible entities;
+- one shadow-casting directional light plus hemisphere environment light;
+- orbit, free inspect, macro and follow-target camera modes;
+- HUD for FPS, frame time, draw calls, triangles, total/visible entities, LOD counts and Long Tasks.
+
+Build commands:
+- `npm run dev:render`;
+- `npm run typecheck:render`;
+- `npm run build:render`;
+- `npm run preview:render`.
+
+The reproducible target-hardware procedure and recording template live in `docs/RENDER_BENCHMARK.md`.
+
+**Gate note:** CI validates contracts, TypeScript and the production Vite bundle. CI is not evidence for laptop GPU FPS, so Phase 8 remains performance-unverified until a 1920×1080 hardware run is recorded. This prevents a build-only result from being mislabeled as a rendering-performance pass.
