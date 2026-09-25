@@ -53,3 +53,14 @@ export function mergeValidationShardDocuments(
     acceptance: evaluateMvpAcceptance(summary)
   };
 }
+
+
+export function renderValidationReport(
+  documents: string[]
+): string {
+  return JSON.stringify(
+    mergeValidationShardDocuments(documents),
+    null,
+    2
+  ) + "\n";
+}
