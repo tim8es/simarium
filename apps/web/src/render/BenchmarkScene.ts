@@ -51,6 +51,11 @@ export interface BenchmarkSceneMetrics {
   plantLeafInstanceCount: number;
 }
 
+type VisibleAnimal = {
+  entity: Readonly<RenderEntity>;
+  distanceSq: number;
+};
+
 const plantStyle = {
   "fittonia-albivenis": { color: 0x3f7b4f, length: 0.055, width: 0.03, height: 0.17 },
   "peperomia-caperata": { color: 0x315b3e, length: 0.05, width: 0.038, height: 0.15 },
@@ -65,7 +70,7 @@ const animalStyle: Record<AnimalVisualKey, { color: number; length: number; heig
   "dalotia-coriaria:adult": { color: 0x492f24, length: 0.0045, height: 0.001, width: 0.00135 }
 };
 
-function animalKey(entity: RenderEntity): AnimalVisualKey | null {
+function animalKey(entity: Readonly<RenderEntity>): AnimalVisualKey | null {
   const key = `${entity.speciesId}:${entity.lifeStage}` as AnimalVisualKey;
   return ANIMAL_VISUAL_KEYS.includes(key) ? key : null;
 }
@@ -95,6 +100,7 @@ export class BenchmarkScene {
   private readonly scale = new Vector3();
   private readonly frustum = new Frustum();
   private readonly projectionView = new Matrix4();
+  private readonly visibleAnimals: VisibleAnimal[] = [];
   private plantsBuilt = false;
   private metrics: BenchmarkSceneMetrics = {
     visibleEntityCount: 0,
@@ -126,20 +132,30 @@ export class BenchmarkScene {
     this.projectionView.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.projectionView);
 
-    const renderable = this.adapter.getRenderableEntities();
-    const animals: Array<{ entity: RenderEntity; distanceSq: number }> = [];
+    const animals = this.visibleAnimals;
+    let animalCount = 0;
     let visiblePlants = 0;
 
-    for (const entity of renderable) {
+    this.adapter.forEachRenderableEntity((entity) => {
       this.position.set(...entity.position);
       if (PLANT_SPECIES.has(entity.speciesId)) {
         if (this.frustum.containsPoint(this.position)) visiblePlants++;
-        continue;
+        return;
       }
-      if (!this.frustum.containsPoint(this.position)) continue;
-      animals.push({ entity, distanceSq: camera.position.distanceToSquared(this.position) });
-    }
+      if (!this.frustum.containsPoint(this.position)) return;
 
+      const distanceSq = camera.position.distanceToSquared(this.position);
+      const record = animals[animalCount];
+      if (record) {
+        record.entity = entity;
+        record.distanceSq = distanceSq;
+      } else {
+        animals.push({ entity, distanceSq });
+      }
+      animalCount++;
+    });
+
+    animals.length = animalCount;
     animals.sort((a, b) => a.distanceSq - b.distanceSq);
     const nearCount = Math.min(MAX_NEAR_ANIMALS, animals.length);
     this.updateNearAnimals(animals, nearCount);
@@ -367,7 +383,7 @@ export class BenchmarkScene {
   }
 
   private updateNearAnimals(
-    animals: Array<{ entity: RenderEntity; distanceSq: number }>,
+    animals: VisibleAnimal[],
     nearCount: number
   ): void {
     const counts = new Map<AnimalVisualKey, number>(
@@ -401,7 +417,7 @@ export class BenchmarkScene {
   }
 
   private updateFarAnimals(
-    animals: Array<{ entity: RenderEntity; distanceSq: number }>,
+    animals: VisibleAnimal[],
     nearCount: number
   ): void {
     const farCount = Math.min(MAX_ANIMALS, Math.max(0, animals.length - nearCount));
