@@ -83,5 +83,14 @@
   "numerics": {
     "invariantAbsoluteTolerance": 1e-8,
     "invariantRelativeTolerance": 5e-10
+  },
+  "calibration": {
+    "dalotiaLocalCaptureProbability": {
+      "value": 0.2,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "predation_2015",
+      "notes": "Phase-7 local encounter/capture proxy for the spatial terrarium. Calibrated on seeds 0-4 only, with a 3-cell prey encounter kernel and Bradysia mating radius 6; 0.20 retained coexistence in multiple 150-day calibration runs without the prey wipeout seen at higher values. This is not a measured attack-success probability and validation seeds are not used for tuning."
+    }
   }
 }
