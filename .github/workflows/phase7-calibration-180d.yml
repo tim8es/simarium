@@ -18,9 +18,9 @@ jobs:
     timeout-minutes: 45
     strategy:
       fail-fast: false
-      max-parallel: 10
+      max-parallel: 20
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
 
     steps:
       - uses: actions/checkout@v4
@@ -29,13 +29,13 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - run: npm run build
-      - name: Run 10 independent 180-day calibration seeds
+      - name: Run 5 independent 180-day calibration seeds
         shell: bash
         run: |
-          START=$((${{ matrix.shard }} * 10))
+          START=$((${{ matrix.shard }} * 5))
           /usr/bin/time -v node dist/tools/ecosystem-batch.js \
             --days 180 \
-            --seeds "${START}:10" \
+            --seeds "${START}:5" \
             --sample 10 \
             --format json \
             > "calibration-shard-${{ matrix.shard }}.json"
