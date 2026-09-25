@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://simarium.local/schemas/preset.schema.json",
+  "type": "object",
+  "required": ["id", "name", "preset_version", "species_data_version", "seed", "mode", "enclosure", "boundary", "substrate"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
+    "name": { "type": "string", "minLength": 1 },
+    "preset_version": { "type": "string", "minLength": 1 },
+    "species_data_version": { "type": "string", "minLength": 1 },
+    "seed": { "type": "integer" },
+    "mode": { "enum": ["experiment", "candidate", "validated"] },
+    "enclosure": {
+      "type": "object",
+      "required": ["width_m", "depth_m", "height_m", "gas_boundary"],
+      "properties": {
+        "width_m": { "type": "number", "exclusiveMinimum": 0 },
+        "depth_m": { "type": "number", "exclusiveMinimum": 0 },
+        "height_m": { "type": "number", "exclusiveMinimum": 0 },
+        "gas_boundary": { "enum": ["ventilated", "low_permeability", "sealed"] }
+      }
+    },
+    "boundary": { "type": "object" },
+    "substrate": { "type": "object" }
+  },
+  "additionalProperties": true
+}

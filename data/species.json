@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "data_version": "0.1.0",
+  "status": "parameterization_in_progress",
+  "species": [
+    {
+      "id": "fittonia_albivenis",
+      "scientific_name": "Fittonia albivenis",
+      "type": "plant",
+      "ecological_roles": ["producer", "litter_source"],
+      "life_stages": ["ramet_young", "ramet_adult", "senescent"],
+      "sources": ["docs/BIOLOGY_SOURCES.md#fittonia-albivenis"],
+      "runtime_parameter_status": "TBD"
+    },
+    {
+      "id": "peperomia_caperata",
+      "scientific_name": "Peperomia caperata",
+      "type": "plant",
+      "ecological_roles": ["producer", "litter_source"],
+      "life_stages": ["ramet_young", "ramet_adult", "senescent"],
+      "sources": ["docs/BIOLOGY_SOURCES.md#peperomia-caperata"],
+      "runtime_parameter_status": "TBD"
+    },
+    {
+      "id": "pilea_depressa",
+      "scientific_name": "Pilea depressa",
+      "type": "plant",
+      "ecological_roles": ["producer", "litter_source", "groundcover"],
+      "life_stages": ["ramet_young", "ramet_adult", "senescent"],
+      "sources": ["docs/BIOLOGY_SOURCES.md#pilea-depressa"],
+      "runtime_parameter_status": "TBD"
+    },
+    {
+      "id": "folsomia_candida",
+      "scientific_name": "Folsomia candida",
+      "type": "animal",
+      "ecological_roles": ["fungivore", "microbivore", "prey"],
+      "life_stages": ["egg", "juvenile", "adult"],
+      "sources": ["docs/BIOLOGY_SOURCES.md#folsomia-candida"],
+      "runtime_parameter_status": "PARTIAL"
+    },
+    {
+      "id": "trichorhina_tomentosa",
+      "scientific_name": "Trichorhina tomentosa",
+      "type": "animal",
+      "ecological_roles": ["detritivore", "fungivore"],
+      "life_stages": ["manca", "juvenile", "adult"],
+      "sources": ["docs/BIOLOGY_SOURCES.md#trichorhina-tomentosa"],
+      "runtime_parameter_status": "TBD"
+    },
+    {
+      "id": "bradysia_impatiens",
+      "scientific_name": "Bradysia impatiens",
+      "type": "animal",
+      "ecological_roles": ["fungivore_larva", "root_feeder_larva", "prey"],
+      "life_stages": ["egg", "larva", "pupa", "adult"],
+      "sources": ["docs/BIOLOGY_SOURCES.md#bradysia-impatiens"],
+      "runtime_parameter_status": "PARTIAL"
+    },
+    {
+      "id": "dalotia_coriaria",
+      "scientific_name": "Dalotia coriaria",
+      "type": "animal",
+      "ecological_roles": ["predator"],
+      "life_stages": ["egg", "larva", "pupa", "adult"],
+      "sources": ["docs/BIOLOGY_SOURCES.md#dalotia-coriaria"],
+      "runtime_parameter_status": "PARTIAL"
+    },
+    {
+      "id": "linnemannia_elongata",
+      "scientific_name": "Linnemannia elongata",
+      "type": "fungus",
+      "ecological_roles": ["saprotroph", "fungal_food"],
+      "sources": ["docs/BIOLOGY_SOURCES.md#linnemannia-elongata"],
+      "runtime_parameter_status": "TBD"
+    },
+    {
+      "id": "bacillus_subtilis",
+      "scientific_name": "Bacillus subtilis",
+      "type": "bacterium",
+      "ecological_roles": ["decomposer"],
+      "sources": ["docs/BIOLOGY_SOURCES.md#bacillus-subtilis"],
+      "runtime_parameter_status": "TBD"
+    }
+  ]
+}
