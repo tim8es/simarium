@@ -273,6 +273,7 @@ export interface PlantPhysiologyParameters extends PlantProducerParameters {
   transpirationRatePerSecond: number;
   waterStressHalfSaturation: number;
   maintenanceRespirationCarbonPerStructuralCarbonPerSecond: number;
+  photosynthesisReferenceStructuralCarbonMg?: number;
 }
 
 export class PlantPhysiologySystem implements SimSystem {
@@ -348,9 +349,16 @@ export class PlantPhysiologySystem implements SimSystem {
     );
 
     const atmosphere = world.ledger.getPool(this.p.atmospherePool);
+    const referenceStructuralC =
+      this.p.photosynthesisReferenceStructuralCarbonMg ?? structuralBefore.carbonMg;
+    const biomassScale =
+      referenceStructuralC > 0
+        ? structuralBefore.carbonMg / referenceStructuralC
+        : 1;
     const photosynthesisC = Math.min(
       atmosphere.carbonMg,
       this.p.maxPhotosynthesisCarbonMgPerSecond *
+        Math.max(0, biomassScale) *
         lightFactor *
         tempFactor *
         waterFactor *
