@@ -1,0 +1,53 @@
+{
+  "id": "phase6_dalotia_predator",
+  "status": "experiment",
+  "purpose": "Sexual rove-beetle lifecycle plus density-limited predation on real Bradysia impatiens and Folsomia candida individuals.",
+  "references": {
+    "life_history_2013": "https://doi.org/10.2317/JKES120927.1",
+    "predation_2015": "https://doi.org/10.18474/JES15-14.1",
+    "nematode_review_2015": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4553540/",
+    "cry3bb1_predation": "https://doi.org/10.1017/S0007485311000633"
+  },
+  "parameters": {
+    "referenceTemperatureC": { "value": 26, "unit": "degC", "status": "MEASURED", "source": "life_history_2013", "notes": "Laboratory life-history condition." },
+    "temperatureSigmaC": { "value": 7, "unit": "degC", "status": "CALIBRATED", "source": "life_history_2013", "notes": "Development response-shape parameter." },
+    "eggDevelopmentDays": { "value": 2.2, "unit": "day", "status": "MEASURED", "source": "life_history_2013", "notes": "Mean." },
+    "larvalDevelopmentDays": { "value": 7.1, "unit": "day", "status": "MEASURED", "source": "life_history_2013", "notes": "Mean total larval duration." },
+    "pupalDevelopmentDays": { "value": 7.8, "unit": "day", "status": "MEASURED", "source": "life_history_2013", "notes": "Mean." },
+    "femaleAdultLifespanDays": { "value": 47.8, "unit": "day", "status": "MEASURED", "source": "life_history_2013", "notes": "Mean female adult longevity." },
+    "maleAdultLifespanDays": { "value": 60.3, "unit": "day", "status": "MEASURED", "source": "life_history_2013", "notes": "Mean male adult longevity." },
+    "femaleProbability": { "value": 0.5, "unit": "dimensionless", "status": "MEASURED", "source": "life_history_2013", "notes": "Approximately 1:1 sex ratio." },
+    "lifetimeFecundity": { "value": 90, "unit": "dimensionless", "status": "DERIVED", "source": "life_history_2013", "notes": "Rounded from mean 90.2 eggs/female." },
+    "reproductivePeriodDays": { "value": 25, "unit": "day", "status": "MEASURED", "source": "life_history_2013", "notes": "Separate experiment reached mean cumulative ~94 eggs by day 25." },
+    "preOvipositionDays": { "value": 1, "unit": "day", "status": "CALIBRATED", "source": "life_history_2013", "notes": "Bounded implementation value; paper describes comparable preoviposition to related rove beetles." },
+    "maxAdultPreyPerDay": { "value": 20, "unit": "dimensionless", "status": "CALIBRATED", "source": "predation_2015", "notes": "One-adult assays reached ~18.4 fungus-gnat larvae/day at high supplied density; other assays report much higher maxima for early instars/eggs." },
+    "maxLarvalPreyPerDay": { "value": 4, "unit": "dimensionless", "status": "MEASURED", "source": "cry3bb1_predation", "notes": "Third-instar rove beetle larvae consumed ~3.7-3.8 fungus-gnat larvae/24h in cited assay." },
+    "preyHalfSaturationCount": { "value": 12, "unit": "dimensionless", "status": "CALIBRATED", "source": "predation_2015", "notes": "Density-response shape, not a measured arena-independent constant." },
+    "captureProbability": { "value": 0.75, "unit": "dimensionless", "status": "CALIBRATED", "source": "predation_2015", "notes": "Headless encounter/capture proxy pending spatial navigation." },
+    "assimilationEfficiency": { "value": 0.70, "unit": "dimensionless", "status": "ASSUMED", "source": "generic_predatory_beetle_proxy", "notes": "Unassimilated prey becomes detritus." },
+    "basalMetabolismCarbonMgPerSecond": { "value": 2.5e-9, "unit": "mg_C/s", "status": "CALIBRATED", "source": "model_internal", "notes": "Sensitivity parameter." },
+    "adultCarbonTargetMg": { "value": 0.080, "unit": "mg_C", "status": "ASSUMED", "source": "cry3bb1_predation", "notes": "Study reports adult body weight ~0.40 mg; carbon conversion is provisional." },
+    "initialLarvaCarbonMg": { "value": 0.025, "unit": "mg_C", "status": "CALIBRATED", "source": "model_internal", "notes": "Below adult target." },
+    "initialReserveCarbonMg": { "value": 0.006, "unit": "mg_C", "status": "CALIBRATED", "source": "model_internal", "notes": "Subset of initial carbon." },
+    "eggCarbonMg": { "value": 0.00035, "unit": "mg_C", "status": "CALIBRATED", "source": "model_internal", "notes": "Material allocation per egg." },
+    "nitrogenPerCarbon": { "value": 0.17, "unit": "mg_N/mg_C", "status": "ASSUMED", "source": "generic_beetle_stoichiometry_proxy", "notes": "Sensitivity parameter." },
+    "phosphorusPerCarbon": { "value": 0.017, "unit": "mg_P/mg_C", "status": "ASSUMED", "source": "generic_beetle_stoichiometry_proxy", "notes": "Sensitivity parameter." },
+    "adultBodyWaterG": { "value": 0.00032, "unit": "g_H2O", "status": "ASSUMED", "source": "cry3bb1_predation", "notes": "Provisional conversion from reported adult live weight." },
+    "moistureHalfSaturationWaterG": { "value": 1800, "unit": "g_H2O", "status": "CALIBRATED", "source": "life_history_2013", "notes": "Growing-medium suitability proxy." },
+    "reproductionMoistureThreshold": { "value": 0.65, "unit": "dimensionless", "status": "CALIBRATED", "source": "life_history_2013", "notes": "Moist growing-medium requirement proxy." }
+  },
+  "world": {
+    "temperatureC": 26,
+    "fixedDtSeconds": 300,
+    "initialPools": {
+      "atmosphere": { "carbonMg": 10000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 100 },
+      "substrate": { "carbonMg": 100000, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 50000 },
+      "litter": { "carbonMg": 400, "nitrogenMg": 12, "phosphorusMg": 1.2, "waterG": 20 },
+      "dalotia_biomass": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "dalotia_feed_buffer": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "bradysia_biomass": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "folsomia_biomass": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 },
+      "animal_corpses": { "carbonMg": 0, "nitrogenMg": 0, "phosphorusMg": 0, "waterG": 0 }
+    }
+  }
+}
