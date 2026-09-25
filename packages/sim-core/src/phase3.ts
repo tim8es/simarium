@@ -216,6 +216,7 @@ export interface FolsomiaParameters {
   hydrationRatePerSecond: number;
 
   adultBodyWaterG: number;
+  adultCarbonTargetMg: number;
   eggCarbonMg: number;
 }
 
@@ -289,6 +290,14 @@ export class FolsomiaLifecycleSystem implements SimSystem {
 
       this.advanceStage(world, individual);
       if (!individual.alive) continue;
+
+      if (
+        individual.stage === "adult" &&
+        individual.ageSeconds >= this.p.adultLifespanDays * DAY_SECONDS
+      ) {
+        this.die(world, individual, "senescence");
+        continue;
+      }
 
       this.updateWater(world, individual, moisture, dtSeconds);
       this.metabolize(world, individual, temp, dtSeconds);
@@ -405,16 +414,24 @@ export class FolsomiaLifecycleSystem implements SimSystem {
 
     const reserveTarget =
       individual.material.carbonMg * this.p.reserveTargetFraction;
-    const hunger =
+    const reserveHunger =
       reserveTarget > 0
         ? Math.max(0, 1 - individual.reserveCarbonMg / reserveTarget)
         : 0;
-    if (hunger <= 0) return;
+    const growthNeed =
+      individual.stage === "juvenile"
+        ? Math.max(
+            0,
+            1 - individual.material.carbonMg / Math.max(1e-12, this.p.adultCarbonTargetMg)
+          )
+        : 0;
+    const feedingDrive = Math.max(reserveHunger, growthNeed);
+    if (feedingDrive <= 0) return;
 
     let desiredC =
       this.p.feedingCarbonRateMgPerSecond *
       stageFactor *
-      Math.min(1, hunger) *
+      Math.min(1, feedingDrive) *
       dtSeconds;
 
     for (const foodPool of this.p.foodPools) {
@@ -560,12 +577,6 @@ export class FolsomiaLifecycleSystem implements SimSystem {
       return;
     }
 
-    if (
-      individual.stage === "adult" &&
-      individual.ageSeconds >= this.p.adultLifespanDays * DAY_SECONDS
-    ) {
-      this.die(world, individual, "senescence");
-    }
   }
 
   private die(
