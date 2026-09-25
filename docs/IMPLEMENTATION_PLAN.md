@@ -55,6 +55,8 @@ Run 365 virtual days of empty/environment world with zero invariant failures.
 
 ## Phase 2 — Producer + detritus loop
 
+**Status: ACTIVE — first Fittonia + decomposer tracer gate passed in CI run 36144239689; multi-plant completion and biological calibration remain.**
+
 Goal:
 ```text
 light -> plant -> litter -> microbial decomposition -> available nutrients -> plant
