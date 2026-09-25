@@ -82,8 +82,15 @@ Checked for the MVP species list and key ecological assumptions.
   https://itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=724970
 - Cornell Greenhouse Horticulture: *D. coriaria* is a soil-dwelling generalist predator of fungus-gnat larvae and other small prey.
   https://greenhouse.cornell.edu/pests-diseases/guidelines/cornell-pesticide-guidelines-supplemental-information-insects/
-- Echegaray & Cloyd (2013): laboratory life-history data. At 26 C, mean egg, larval and pupal durations were about 2.2, 7.1 and 7.8 days; egg-to-adult about 17 days.
+- Echegaray & Cloyd (2013): direct laboratory life history in growing medium at about 26 C. Mean egg, larval and pupal durations were 2.2, 7.1 and 7.8 days; egg-to-adult 17.0 d. Mean fecundity was 90.2 eggs/female, adult output 69.1/female, female longevity 47.8 d, male longevity 60.3 d, and sex ratio approximately 1:1. Females laid 0-8 eggs on most days, with cumulative output around 94 eggs by day 25 in a separate experiment.
+  https://doi.org/10.2317/JKES120927.1
   https://krex.k-state.edu/items/2dc98502-3568-438d-be26-df58cae2652b
+- Cloyd et al. predation experiments show strong density dependence: a single adult consumed about 3.6, 7.0, 11.6 or 18.4 fungus-gnat larvae/24 h when offered 10, 20, 30 or 40 larvae respectively. This supports an encounter/density-limited predation function rather than a fixed kill rate.
+  https://doi.org/10.18474/JES15-14.1
+- A laboratory dietary/predation study reported third-instar *D. coriaria* larvae consuming roughly 3.7-3.8 fungus-gnat larvae/24 h and adult consumption around 2.4-3.2/24 h under that assay; adults weighed about 0.40 mg. These values are assay-specific.
+  https://doi.org/10.1017/S0007485311000633
+- A later review/assay paper reports much higher maxima when very small prey stages are supplied (up to ~150 first-instar fungus gnats or 154 eggs/adult/day), confirming that maximum consumption is highly prey-stage/density dependent.
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC4553540/
 
 ## Microbes
 
