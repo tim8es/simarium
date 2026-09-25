@@ -25,7 +25,8 @@ export const CANONICAL_UNITS = new Set([
   "dimensionless",
   "mg_C/s",
   "mg_N/mg_C",
-  "mg_P/mg_C"
+  "mg_P/mg_C",
+  "g_H2O/mg_C"
 ]);
 
 export interface SpeciesCatalogEntry {
