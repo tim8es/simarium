@@ -9,12 +9,12 @@
     "widthCells": 60,
     "depthCells": 30,
     "movementRatesPerSecond": {
-      "folsomia": 0.0014,
-      "trichorhina": 0.0007,
-      "bradysiaLarva": 0.00045,
-      "bradysiaAdult": 0.0085,
-      "dalotiaLarva": 0.00275,
-      "dalotiaAdult": 0.0055
+      "folsomia": 0.007,
+      "trichorhina": 0.0035,
+      "bradysiaLarva": 0.00225,
+      "bradysiaAdult": 0.0425,
+      "dalotiaLarva": 0.01375,
+      "dalotiaAdult": 0.0275
     }
   },
   "plants": {
@@ -76,5 +76,5 @@
     "validationSeeds": 20
   },
   "parameter_status": "CALIBRATED",
-  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. Spatial habitat is 60x30 substrate cells across the 120x60 cm footprint (~2 cm/cell); movement event rates are scaled from the earlier coarse grid to preserve approximate physical displacement per unit time. These are not biological population-density claims."
+  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. Spatial habitat is 60x30 substrate cells across the 120x60 cm footprint (~2 cm/cell). Movement event rates are scaled by the square of the cell-size ratio so the diffusive physical displacement remains comparable to the earlier 10 cm grid; spatial integration samples net random-walk displacement over each ecological timestep. These are not biological population-density claims."
 }
