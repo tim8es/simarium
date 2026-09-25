@@ -521,29 +521,63 @@ export class DalotiaPredatorSystem implements SimSystem {
   }
 
   private collectPrey(predator: DalotiaIndividual): PreyCandidate[] {
+    if (this.spatial === undefined) {
+      const bradysia: PreyCandidate[] = this.prey.bradysia
+        .living()
+        .filter((x) => x.stage === "egg" || x.stage === "larva")
+        .map((individual) => ({
+          species: "bradysia_impatiens" as const,
+          individual
+        }));
+
+      const folsomia: PreyCandidate[] = this.prey.folsomia
+        .living()
+        .filter((x) => x.stage === "juvenile" || x.stage === "adult")
+        .map((individual) => ({
+          species: "folsomia_candida" as const,
+          individual
+        }));
+
+      return [...bradysia, ...folsomia];
+    }
+
     const predatorRef = `dalotia_coriaria#${predator.id}`;
-    const isLocal = (preyRef: string): boolean =>
-      this.spatial === undefined || this.spatial.isLocal(predatorRef, preyRef, 1);
+    const candidates: PreyCandidate[] = [];
 
-    const bradysia: PreyCandidate[] = this.prey.bradysia
-      .living()
-      .filter((x) => x.stage === "egg" || x.stage === "larva")
-      .filter((x) => isLocal(`bradysia_impatiens#${x.id}`))
-      .map((individual) => ({
-        species: "bradysia_impatiens" as const,
-        individual
-      }));
+    for (const ref of this.spatial.nearbyRefs(predatorRef, 1)) {
+      if (ref.startsWith("bradysia_impatiens#")) {
+        const id = Number(ref.slice("bradysia_impatiens#".length));
+        if (!Number.isInteger(id) || id <= 0) continue;
+        const individual = this.prey.bradysia.get(id);
+        if (
+          individual.alive &&
+          (individual.stage === "egg" || individual.stage === "larva")
+        ) {
+          candidates.push({
+            species: "bradysia_impatiens",
+            individual
+          });
+        }
+        continue;
+      }
 
-    const folsomia: PreyCandidate[] = this.prey.folsomia
-      .living()
-      .filter((x) => x.stage === "juvenile" || x.stage === "adult")
-      .filter((x) => isLocal(`folsomia_candida#${x.id}`))
-      .map((individual) => ({
-        species: "folsomia_candida" as const,
-        individual
-      }));
+      if (ref.startsWith("folsomia_candida#")) {
+        const id = Number(ref.slice("folsomia_candida#".length));
+        if (!Number.isInteger(id) || id <= 0) continue;
+        const individual = this.prey.folsomia.get(id);
+        if (
+          individual.alive &&
+          (individual.stage === "juvenile" || individual.stage === "adult")
+        ) {
+          candidates.push({
+            species: "folsomia_candida",
+            individual
+          });
+        }
+      }
+    }
 
-    return [...bradysia, ...folsomia];
+    return candidates;
   }
 
   private consumePrey(
