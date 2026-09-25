@@ -530,7 +530,18 @@ export class FolsomiaLifecycleSystem implements SimSystem {
     if (reserveFraction < this.p.reproductionReserveFraction) return;
 
     const eggC = this.p.eggCarbonMg;
-    const totalEggC = eggC * this.p.clutchSize;
+    const minimumReserve =
+      parent.material.carbonMg * this.p.reproductionReserveFraction;
+    const reproductiveReserve = Math.max(
+      0,
+      parent.reserveCarbonMg - minimumReserve
+    );
+    const count = Math.min(
+      this.p.clutchSize,
+      Math.floor(reproductiveReserve / Math.max(1e-12, eggC))
+    );
+    if (count <= 0) return;
+    const totalEggC = eggC * count;
     if (parent.material.carbonMg <= totalEggC * 1.25) return;
 
     const nPerC =
@@ -555,7 +566,7 @@ export class FolsomiaLifecycleSystem implements SimSystem {
         eggC * waterPerC
       )
     };
-    const clutchMaterial = scaleMaterial(eggMaterial, this.p.clutchSize);
+    const clutchMaterial = scaleMaterial(eggMaterial, count);
 
     if (
       parent.material.nitrogenMg < clutchMaterial.nitrogenMg ||
@@ -573,7 +584,7 @@ export class FolsomiaLifecycleSystem implements SimSystem {
     parent.lastReproductionSeconds = world.timeSeconds;
 
     const offspringIds: number[] = [];
-    for (let i = 0; i < this.p.clutchSize; i++) {
+    for (let i = 0; i < count; i++) {
       const id = this.population.create({
         parentId: parent.id,
         stage: "egg",
