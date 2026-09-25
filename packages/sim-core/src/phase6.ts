@@ -330,7 +330,8 @@ export class DalotiaPredatorSystem implements SimSystem {
     readonly prey: DalotiaPreyContext,
     private readonly p: DalotiaParameters,
     private readonly spatial?: LocalEncounterIndex,
-    private readonly matingRadiusCells = 1
+    private readonly matingRadiusCells = 1,
+    private readonly preyEncounterRadiusCells = 1
   ) {
     if (
       p.captureProbability < 0 ||
@@ -590,7 +591,10 @@ export class DalotiaPredatorSystem implements SimSystem {
     const predatorRef = `dalotia_coriaria#${predator.id}`;
     const candidates: PreyCandidate[] = [];
 
-    for (const ref of this.spatial.nearbyRefs(predatorRef, 1)) {
+    for (const ref of this.spatial.nearbyRefs(
+      predatorRef,
+      this.preyEncounterRadiusCells
+    )) {
       if (ref.startsWith("bradysia_impatiens#")) {
         const id = Number(ref.slice("bradysia_impatiens#".length));
         if (!Number.isInteger(id) || id <= 0) continue;
