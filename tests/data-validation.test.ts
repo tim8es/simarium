@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import catalog from "../data/species.json";
+import phase2 from "../data/experiments/phase2-producer-loop.json";
 import {
   assertCanonicalUnit,
   validateSpeciesCatalog
@@ -15,5 +16,16 @@ describe("species data contracts", () => {
   it("rejects unknown units instead of accepting silent conversions", () => {
     expect(() => assertCanonicalUnit("kg-ish")).toThrow(/Unknown canonical unit/);
     expect(() => assertCanonicalUnit("mg_C")).not.toThrow();
+  });
+
+  it("requires every phase-2 numeric model parameter to declare a known unit and provenance status", () => {
+    const allowedStatuses = new Set(["MEASURED", "DERIVED", "ASSUMED", "CALIBRATED", "TBD"]);
+    for (const [name, parameter] of Object.entries(phase2.parameters)) {
+      expect(Number.isFinite(parameter.value), name).toBe(true);
+      expect(() => assertCanonicalUnit(parameter.unit)).not.toThrow();
+      expect(allowedStatuses.has(parameter.status), name).toBe(true);
+      expect(parameter.source.length, name).toBeGreaterThan(0);
+      expect(parameter.notes.length, name).toBeGreaterThan(0);
+    }
   });
 });
