@@ -118,3 +118,81 @@ Checked for the MVP species list and key ecological assumptions.
 2. Exact parameter values must be stored with provenance and calibrated against literature ranges.
 3. If later versions claim a geographic biotope (for example, Amazonian understory), every species must be replaced/verified for sympatry and local habitat compatibility.
 4. User-facing common names are secondary. Scientific names are canonical IDs for biological content.
+
+
+## Biology-data audit additions (2026-09-25)
+
+These sources were added during the normalized-profile audit. They refine evidence/provenance; they do **not** silently replace calibrated runtime parameters.
+
+### Folsomia candida — reproduction detail
+- Frontiers in Ecology and Evolution (2023), direct analysis of food- and age-dependent reproduction in *F. candida*. Observed clutch sizes were highly variable (1-178 eggs across the analyzed clutches), with mean clutch size about 39 overall; high-food first clutches were around the low twenties and inter-clutch timing varied strongly with food and age.
+  https://doi.org/10.3389/fevo.2023.1112045
+- Consequence for Simarium: the Phase-3 `clutchSize=6` remains `CALIBRATED`. The literature difference is recorded as a recalibration target, not an automatic replacement.
+
+### Bradysia impatiens — adult body mass
+- Zou et al. (2021), *Insects* 12(8):669. Table 1 measured adults within 24 h of emergence: females 2.22 ± 0.02 mm and 0.42 ± 0.01 mg; males 1.70 ± 0.02 mm and 0.23 ± 0.01 mg (mean ± SE, n=30).
+  https://doi.org/10.3390/insects12080669
+- Consequence for Simarium: this is a stronger wet-mass anchor than the Phase-5 model-internal carbon target, but wet mass cannot be substituted for carbon mass without an explicit dry-mass/carbon conversion.
+
+### Microbial CUE and turnover — system-level constraints
+- Soares & Rousk (2019), *Soil Biology and Biochemistry* 131:195-205: measured microbial CUE across soil systems ranged approximately 0.03-0.30 and varied with site, substrate quality and fungal:bacterial growth balance.
+  https://doi.org/10.1016/j.soilbio.2019.01.010
+- Geyer et al. (2019), *Soil Biology and Biochemistry* 128:79-88: different CUE methods can yield materially different estimates; substrate-specific approaches in their comparison exceeded 0.6 while substrate-nonspecific approaches were lower.
+  https://doi.org/10.1016/j.soilbio.2018.09.036
+- Zheng et al. / related temperature-growth study (2019), *Soil Biology and Biochemistry* 128:45-55: mean microbial biomass turnover declined from about 325 d at 5 C to about 41 d at 25 C across tested soils.
+  https://doi.org/10.1016/j.soilbio.2018.10.006
+- Consequence for Simarium: `carbonUseEfficiency=0.4` remains an `ASSUMED` decomposer-system proxy and the ~20 d turnover remains `CALIBRATED`. Neither is promoted to a measured *B. subtilis* or *L. elongata* trait.
+
+## Future schema example — Stratiolaelaps scimitus
+
+This real taxon is used only under `data/examples/` to exercise profile extensibility. It is **not** an MVP runtime species.
+
+- GBIF / Catalogue of Life: accepted *Stratiolaelaps scimitus* (Womersley, 1956); original combination *Cosmolaelaps scimitus*.
+  https://www.gbif.org/taxon/T3MP3
+- Walter & Campbell (2003) showed that commercial material historically called *Hypoaspis miles* can involve taxonomic misidentification; *S. scimitus* and *S. miles* should not be blindly collapsed into one synonym record.
+  https://doi.org/10.1016/S1049-9644(02)00171-8
+- Cabrera, Cloyd & Zaborski (2005): at 21-23 C, mean egg and larval durations were about 2.47 and 1.11 d; successful prey treatments supported protonymph/deutonymph development and reproduction.
+  https://doi.org/10.1007/s10493-005-0242-x
+- Scientific Reports (2020): detailed five-stage lifecycle and life table at 25 ± 1 C / 80% RH, including prey-dependent reproduction.
+  https://doi.org/10.1038/s41598-020-62643-2
+
+The example deliberately exercises stages `egg -> larva -> protonymph -> deutonymph -> adult` and a sexual profile with reported parthenogenetic capability, without adding new simulation code.
+
+
+## Parameter confidence summary
+
+### High-confidence / directly constrained
+
+- *Folsomia candida*: parthenogenetic reproduction; ~10 d egg development at 20 C; first oviposition around 21-24 d at 20 C; adult dry-mass anchor around 0.04 mg for the cited culture. These are condition-dependent, not universal constants.
+- *Bradysia impatiens*: egg/larval/pupal development at the classic ~24 C reference condition; adult longevity and fecundity from direct life-history work. Adult wet-mass measurements now provide a better body-size anchor, but carbon conversion remains unresolved.
+- *Dalotia coriaria*: stage durations, sex ratio, fecundity/longevity under the cited laboratory condition, and the direction/shape requirement that predation depends on prey density and prey stage.
+- *Trichorhina tomentosa*: accepted taxon, parthenogenetic/female-only status in specialist references, small body size (up to about 5 mm), damp-litter habitat and fungal grazing.
+- Plants: accepted taxonomy and broad wet-tropical/light/moisture ecology are comparatively strong; experimental growth conditions are documented for *Fittonia* and *Peperomia*.
+- *Linnemannia elongata* and *Bacillus subtilis*: accepted organism identity and broad decomposer/saprotrophic role; selected culture/assay conditions are supported.
+
+### Low-confidence / calibration-sensitive
+
+- *Folsomia*: `clutchSize`, feeding carbon rate, assimilation, reserve thresholds, starvation tolerance, body-water conversion and exact lifespan in the current runtime.
+- *Trichorhina*: maturation time, brood interval, brood size, adult carbon mass, assimilation, metabolism and all numeric moisture kinetics.
+- *Bradysia*: adult carbon target, egg carbon, larval carbon feeding rate, assimilation, flight cost and the critical-mass pupation fraction.
+- *Dalotia*: prey half-saturation, capture probability, assimilation, metabolic cost, egg carbon, starvation tolerance and carbon conversion from live mass.
+- All three plants: absolute photosynthesis rate, structural-growth rate, ramet maturity/clone interval, senescence rate/lifespan, allocation costs and water-flux coefficients.
+- Microbes: terrarium decomposition rate, fungal share, CUE, moisture half-saturation and turnover. These are currently system-level proxies/calibrations, not measured species traits.
+
+## Recalibration proposals — no automatic runtime changes
+
+1. **Folsomia maturation/reproduction** — keep `adultDevelopmentDays=22` and `clutchSize=6` as existing calibration values for now. Refit the age-structured reproduction model against matched-temperature first-oviposition timing, clutch distributions and OECD-style 28 d offspring output. The objective should match population output, not one clutch statistic in isolation.
+2. **Trichorhina maturation/brood timing** — do not promote the current 75 d maturity / 60 d brood interval to measured biology. First priority is a primary species-specific breeding dataset; until then retain broad sensitivity bounds and low confidence.
+3. **Bradysia body mass / larval feeding** — use the 2021 adult wet-mass measurements as a body-size anchor, but do not convert them directly to `mg_C`. A future change requires measured/justified dry-mass and carbon fractions. Larval feeding remains a calibration target tied to development/survival under documented diets.
+4. **Dalotia feeding-density relationship** — preserve a saturating density-dependent predation function. Refit `maxAdultPreyPerDay` and `preyHalfSaturationCount` jointly against the 10/20/30/40-prey assay series and keep prey-stage dependence explicit.
+5. **Plant growth/senescence** — current controlled-light and extension sources do not identify the absolute rates used by runtime. Gather longitudinal biomass/leaf-area/leaf-turnover measurements before changing growth or senescence coefficients; calibrate each species separately.
+6. **Microbial turnover/CUE** — treat these as decomposer-system parameters. Compare the current CUE 0.4 and ~20 d turnover against method-matched soil/community measurements during ecosystem calibration; do not relabel them as *B. subtilis* or *L. elongata* measurements.
+
+## Taxonomic verification additions
+
+- GBIF / Catalogue of Life currently treats *Bradysia impatiens* as an accepted species in Sciaridae and lists historical combinations/synonyms including *Sciara impatiens* and *Bradysia difformis*.
+  https://www.gbif.org/taxon/N5P6
+- GBIF / Catalogue of Life currently treats *Trichorhina tomentosa* as an accepted species and lists historical combinations/synonyms separately.
+  https://www.gbif.org/taxon/58JDR
+- LPSN is the preferred nomenclatural database to use for future prokaryote identity review; the present *Bacillus subtilis* profile still needs a taxon-record-level LPSN extraction rather than relying only on ecological papers.
+  https://lpsn.dsmz.de/

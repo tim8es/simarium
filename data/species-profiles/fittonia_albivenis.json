@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "data_version": "0.6.0",
+  "id": "fittonia_albivenis",
+  "runtime_membership": "MVP",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Fittonia albivenis",
+    "synonyms": [],
+    "common_names": [
+      "nerve plant"
+    ],
+    "taxonomy": {
+      "kingdom": "Plantae",
+      "phylum": "Tracheophyta",
+      "class": "Magnoliopsida",
+      "order": "Lamiales",
+      "family": "Acanthaceae",
+      "genus": "Fittonia",
+      "species": "albivenis"
+    },
+    "taxon_source": "kew"
+  },
+  "traits": [
+    "clonal",
+    "ramet_clonal_lifecycle",
+    "producer",
+    "litter_source",
+    "moisture_sensitive",
+    "temperature_response"
+  ],
+  "biology": {
+    "stages": [
+      "ramet_young",
+      "ramet_adult",
+      "senescent"
+    ],
+    "development_timing": {
+      "maturity_days_species_evidence": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "ncsu",
+        "notes": "No species-specific maturation time suitable for the runtime has been sourced."
+      }
+    },
+    "lifespan": {
+      "ramet_lifespan_days_species_evidence": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "ncsu",
+        "notes": "No direct species-specific ramet or leaf lifespan estimate is frozen."
+      }
+    },
+    "reproduction": {
+      "mode": "clonal_mvp",
+      "mate_required": false,
+      "parameters": {
+        "clone_interval_days_species_evidence": {
+          "value": null,
+          "unit": "day",
+          "status": "TBD",
+          "source": "ncsu",
+          "notes": "Vegetative propagation is horticulturally established, but no direct interval is treated as measured."
+        }
+      }
+    },
+    "body_mass": {
+      "summary": "No species-specific whole-ramet dry-mass anchor is frozen.",
+      "parameters": {
+        "adult_ramet_dry_mass_mg": {
+          "value": null,
+          "unit": "mg_dry",
+          "status": "TBD",
+          "source": "ncsu",
+          "notes": "Required for future allometric rendering and carbon mapping; currently unresolved."
+        }
+      }
+    },
+    "water_dependence": {
+      "summary": "Moist tropical understory plant; water stress response is qualitatively supported, while pool-to-physiology coefficients are engineering calibration.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "Shade-adapted response is biologically supported. The 23 C value below is a documented chamber condition, not a physiological optimum.",
+      "parameters": {
+        "documented_chamber_temperature_c": {
+          "value": 23,
+          "unit": "degC",
+          "status": "MEASURED",
+          "source": "natcomm2024",
+          "notes": "Temperature used before leaf harvest in the cited chamber protocol; must not be relabeled as species optimum.",
+          "conditions": "Growth chamber; 16 h light / 8 h dark; low-light pre-harvest protocol.",
+          "confidence": "high"
+        }
+      }
+    }
+  },
+  "ecology": {
+    "diet": [
+      "photoautotrophic producer"
+    ],
+    "prey": [],
+    "predators": [
+      "herbivores not explicitly modeled in MVP"
+    ],
+    "habitat": [
+      "wet tropical understory",
+      "terrarium ground layer"
+    ],
+    "locomotion": [
+      "clonal spread"
+    ],
+    "activity_layer": [
+      "substrate surface and low canopy"
+    ],
+    "substrate_preference": [
+      "moist well-drained organic substrate"
+    ]
+  },
+  "simulation": {
+    "metabolism": {
+      "maintenance_respiration_rate": {
+        "value": 1.5e-8,
+        "unit": "1/s",
+        "status": "ASSUMED",
+        "source": "generic_plant_proxy",
+        "notes": "Generic plant respiration proxy from the current Phase-2 fixture; not Fittonia-measured.",
+        "confidence": "low"
+      }
+    },
+    "reserve_thresholds": {},
+    "feeding_rates": {},
+    "assimilation": {},
+    "critical_mass_thresholds": {
+      "minimum_structural_carbon_for_clone": {
+        "value": 12,
+        "unit": "mg_C",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Engineering critical-mass gate from the integrated fixture; not a measured biological threshold.",
+        "confidence": "low"
+      }
+    },
+    "reproduction": {
+      "clone_interval_days": {
+        "value": 45,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Integrated-system calibration value; compare against future clonal growth observations before changing.",
+        "confidence": "low"
+      },
+      "clone_fraction": {
+        "value": 0.18,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Fractional allocation used by the current model; not a measured daughter-ramet cost.",
+        "confidence": "low"
+      }
+    },
+    "reproduction_costs": {},
+    "mortality_conditions": {
+      "senescence_rate": {
+        "value": 9.645e-8,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "phase2_fixture",
+        "notes": "Approximately 120-day characteristic time used for engineering calibration; no direct species-specific leaf lifespan supports this exact rate.",
+        "confidence": "low"
+      },
+      "ramet_lifespan_days": {
+        "value": 360,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Integrated fixture lifecycle cap; deliberately kept separate from biological evidence.",
+        "confidence": "low"
+      }
+    },
+    "notes": [
+      "Do not reinterpret calibrated senescence, clone interval, or ramet lifespan as measured Fittonia traits."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "whole_plant_height_mm": {
+        "value": null,
+        "unit": "mm",
+        "status": "TBD",
+        "source": "ncsu",
+        "notes": "Use horticultural imagery for proportions; no single canonical render height is frozen."
+      }
+    },
+    "coloration": "Green leaves with contrasting pale to pink/red venation depending on cultivar.",
+    "stage_differences": [
+      "Young ramets are smaller and compact; senescent foliage should lose saturation and turgor."
+    ],
+    "locomotion_style": "Static plant growth with gradual clonal spread; no locomotion.",
+    "reference_images_asset_notes": [
+      "Prefer taxonomically verified horticultural photographs; cultivar coloration must not be treated as species-wide."
+    ]
+  },
+  "sources": [
+    {
+      "id": "kew",
+      "category": "taxonomic_database",
+      "citation": "Royal Botanic Gardens, Kew, Plants of the World Online: Fittonia albivenis.",
+      "url": "https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:105033-2",
+      "confidence": "high"
+    },
+    {
+      "id": "ncsu",
+      "category": "university_extension",
+      "citation": "NC State Extension Plant Toolbox: Fittonia albivenis.",
+      "url": "https://plants.ces.ncsu.edu/plants/fittonia-albivenis/",
+      "confidence": "medium",
+      "notes": "Useful for growth form and terrarium ecology; not a quantitative physiology source."
+    },
+    {
+      "id": "hao2025",
+      "category": "peer_reviewed",
+      "citation": "Hao et al. (2025), Plant, Cell & Environment, Fittonia light-response study.",
+      "url": "https://doi.org/10.1111/pce.70113",
+      "confidence": "high"
+    },
+    {
+      "id": "natcomm2024",
+      "category": "peer_reviewed",
+      "citation": "Nature Communications (2024), red-shifted photosystem I of Fittonia albivenis.",
+      "url": "https://doi.org/10.1038/s41467-024-50655-9",
+      "confidence": "high"
+    },
+    {
+      "id": "generic_plant_proxy",
+      "category": "proxy",
+      "citation": "Generic plant respiration/stoichiometry proxy used by Simarium fixtures.",
+      "confidence": "low"
+    },
+    {
+      "id": "phase2_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase2-multiplant.json.",
+      "confidence": "low"
+    },
+    {
+      "id": "phase7_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase7-integrated.json.",
+      "confidence": "low"
+    }
+  ]
+}

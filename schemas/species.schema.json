@@ -1,29 +1,131 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://simarium.local/schemas/species.schema.json",
+  "title": "Simarium species catalog",
   "type": "object",
-  "required": ["schema_version", "data_version", "status", "species"],
+  "required": [
+    "schema_version",
+    "data_version",
+    "status",
+    "species"
+  ],
   "properties": {
-    "schema_version": { "type": "integer", "minimum": 1 },
-    "data_version": { "type": "string", "minLength": 1 },
-    "status": { "type": "string", "minLength": 1 },
+    "schema_version": {
+      "const": 2
+    },
+    "data_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1
+    },
     "species": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "scientific_name", "type", "ecological_roles", "sources", "runtime_parameter_status"],
+        "required": [
+          "id",
+          "scientific_name",
+          "type",
+          "ecological_roles",
+          "life_stages",
+          "traits",
+          "profile_path",
+          "sources",
+          "runtime_parameter_status"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-          "scientific_name": { "type": "string", "minLength": 3 },
-          "type": { "enum": ["plant", "animal", "fungus", "bacterium"] },
-          "ecological_roles": { "type": "array", "items": { "type": "string" } },
-          "life_stages": { "type": "array", "items": { "type": "string" } },
-          "sources": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-          "runtime_parameter_status": { "enum": ["TBD", "PARTIAL", "READY"] }
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "scientific_name": {
+            "type": "string",
+            "minLength": 3
+          },
+          "type": {
+            "enum": [
+              "plant",
+              "animal",
+              "fungus",
+              "bacterium"
+            ]
+          },
+          "ecological_roles": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "life_stages": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "traits": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "sexual",
+                "parthenogenetic",
+                "clonal",
+                "egg_juvenile_adult",
+                "egg_larva_pupa_adult",
+                "manca_juvenile_adult",
+                "ramet_clonal_lifecycle",
+                "biomass_field",
+                "detritivore",
+                "fungivore",
+                "microbivore",
+                "predator",
+                "root_feeder",
+                "producer",
+                "saprotroph",
+                "litter_source",
+                "substrate_walker",
+                "flyer",
+                "under_litter",
+                "groundcover",
+                "moisture_sensitive",
+                "temperature_response"
+              ]
+            }
+          },
+          "profile_path": {
+            "type": "string",
+            "pattern": "^data/species-profiles/[a-z0-9_]+\\.json$"
+          },
+          "sources": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "runtime_parameter_status": {
+            "enum": [
+              "TBD",
+              "PARTIAL",
+              "READY"
+            ]
+          }
         },
-        "additionalProperties": true
+        "additionalProperties": false
       }
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }
