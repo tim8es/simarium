@@ -159,7 +159,7 @@ Predation changes prey dynamics through real encounters; predator cannot survive
 
 ## Phase 7 — Full headless ecosystem
 
-**Status: ACTIVE.**
+**Status: ACTIVE — regression green, 30/60-day diagnostics green, 180-day engineering gate not yet passed.**
 
 Combine all approved species.
 
@@ -179,6 +179,18 @@ Run:
 
 ### Exit gate
 Pass VALIDATION.md MVP acceptance gates without rescue rules.
+
+Current Phase-7 evidence (2026-09-25):
+- regression workflow `36169362386`: PASS;
+- final diagnostic workflow `36169646200`: regression + 30/60-day calibration/validation jobs PASS;
+- calibration seeds `0-2` and validation seeds `100-102` are disjoint;
+- zero invariant failures in completed 30/60-day runs;
+- litter-N tracer reaches living plant structural tissue in every completed 30/60-day run;
+- all animal taxa produce post-start generations in completed 60-day calibration and validation runs;
+- Dalotia records real Bradysia/Folsomia predation;
+- 180-day multi-seed execution remains too slow after day 60 and has not produced acceptable gate evidence.
+
+Do not mark Phase 7 complete until a practical 180-day run set finishes and the unchanged VALIDATION.md probability gates can be evaluated.
 
 ## Phase 8 — Rendering benchmark
 
@@ -302,8 +314,9 @@ Coding a phase is allowed only when:
 
 # Immediate next work
 
-1. Parameterize and implement *Trichorhina tomentosa* detritivore lifecycle (Phase 4).
-2. Validate litter fragmentation and decomposition acceleration without a hard-coded global decomposition bonus.
-3. Parameterize and implement *Bradysia impatiens* lifecycle (Phase 5).
-4. Add *Dalotia coriaria* predator/prey encounters (Phase 6).
-5. Combine all species in the Phase 7 headless ecosystem before detailed Three.js art.
+1. Continue Phase-7 calibration on calibration seeds only: add 90/120/150-day checkpoints to locate the population/runtime growth inflection before another 180-day batch.
+2. Investigate long-horizon Folsomia resource limitation and reproduction sensitivity without population caps or rescue rules.
+3. Investigate Bradysia seed-sensitive extinction while preserving critical-mass, reserve-funded reproduction and real food limitation.
+4. Measure Dalotia encounter/reproduction bottlenecks and predator/prey phase relationships; do not tune on validation seeds.
+5. Re-run a separate 180-day validation set only after calibration is frozen, then evaluate the unchanged VALIDATION.md gates and record CI/batch artifacts.
+6. Only after Phase 7 passes, proceed to the remaining renderer/bridge/product integration work.
