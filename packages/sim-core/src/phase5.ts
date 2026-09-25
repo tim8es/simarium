@@ -195,7 +195,8 @@ export interface BradysiaParameters {
   biomassPool: string;
   feedBufferPool: string;
   fungusPool: string;
-  rootTissuePool: string;
+  rootTissuePool?: string;
+  rootTissuePools?: string[];
   litterPool: string;
   atmospherePool: string;
   substratePool: string;
@@ -443,12 +444,18 @@ export class BradysiaLifecycleSystem implements SimSystem {
     );
 
     if (desiredC > 0) {
-      desiredC -= this.consumeFood(
-        world,
-        individual,
-        this.p.rootTissuePool,
-        desiredC
-      );
+      const rootPools =
+        this.p.rootTissuePools ??
+        (this.p.rootTissuePool !== undefined ? [this.p.rootTissuePool] : []);
+      for (const rootPool of rootPools) {
+        if (desiredC <= 0) break;
+        desiredC -= this.consumeFood(
+          world,
+          individual,
+          rootPool,
+          desiredC
+        );
+      }
     }
 
     if (desiredC > 0) {
