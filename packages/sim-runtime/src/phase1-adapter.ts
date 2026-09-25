@@ -51,7 +51,7 @@ function materialOnly(input: {
 export class Phase1SimulationRuntimeAdapter implements SimulationRuntimeAdapter {
   private world: WorldState | undefined;
   private scheduler: FixedStepScheduler | undefined;
-  private readonly actions = new DeterministicUserActionQueue();
+  private actions = new DeterministicUserActionQueue();
   private simulationVersion = DEFAULT_SIMULATION_VERSION;
   private speciesDataVersion = DEFAULT_SPECIES_DATA_VERSION;
   private presetVersion: string | undefined;
@@ -61,6 +61,7 @@ export class Phase1SimulationRuntimeAdapter implements SimulationRuntimeAdapter 
     const fixedDtSeconds = numberValue(config, "fixedDtSeconds");
     const roomTemperatureC = numberValue(config, "roomTemperatureC");
 
+    this.actions = new DeterministicUserActionQueue();
     this.world = createPhase1World({
       seed: message.seed,
       ...(fixedDtSeconds !== undefined ? { fixedDtSeconds } : {}),
@@ -82,6 +83,15 @@ export class Phase1SimulationRuntimeAdapter implements SimulationRuntimeAdapter 
       throw new Error("Runtime snapshot RNG state does not match authoritative coreState");
     }
 
+    const actions = new DeterministicUserActionQueue();
+    if (snapshot.userActionQueue !== undefined) {
+      actions.restoreState(snapshot.userActionQueue);
+      if (actions.snapshot().some((action) => action.targetTick < world.tick)) {
+        throw new Error("Runtime snapshot contains a pending USER_ACTION behind the world tick");
+      }
+    }
+
+    this.actions = actions;
     this.world = world;
     this.scheduler = this.createScheduler(world);
     this.simulationVersion = snapshot.simulationVersion;
@@ -166,6 +176,7 @@ export class Phase1SimulationRuntimeAdapter implements SimulationRuntimeAdapter 
       tick: world.tick,
       rngState: world.rng.getState(),
       coreState,
+      userActionQueue: toJsonValue(this.actions.stateSnapshot()),
       sections: {
         materialPools: toJsonValue(world.ledger.snapshot().pools),
         organisms: null,
