@@ -298,6 +298,33 @@ export interface DalotiaPreyContext {
 }
 
 const DAY = 86400;
+const PREDATION_AGGREGATE_TOLERANCE = 1e-8;
+
+function reconcilePreyMaterial(
+  requested: Material,
+  available: Material
+): Material {
+  const reconciled = cloneMaterial(requested);
+  for (const key of ["carbonMg", "nitrogenMg", "phosphorusMg", "waterG"] as const) {
+    if (reconciled[key] <= available[key]) continue;
+
+    const deficit = reconciled[key] - available[key];
+    const tolerance =
+      PREDATION_AGGREGATE_TOLERANCE +
+      Math.abs(available[key]) * PREDATION_AGGREGATE_TOLERANCE;
+    if (deficit > tolerance) {
+      throw new Error(
+        `Prey material exceeds aggregate pool for ${key}: individual=${reconciled[key]} ledger=${available[key]}`
+      );
+    }
+
+    // The ledger is authoritative for conserved mass. Clamp only residuals
+    // already accepted by the prey aggregate audit; larger mismatches remain
+    // hard errors rather than becoming hidden predator food.
+    reconciled[key] = available[key];
+  }
+  return reconciled;
+}
 
 function temperatureResponse(
   temperatureC: number,
@@ -635,13 +662,16 @@ export class DalotiaPredatorSystem implements SimSystem {
     predator: DalotiaIndividual,
     target: PreyCandidate
   ): void {
-    const preyMaterial = cloneMaterial(target.individual.material);
-    if (preyMaterial.carbonMg <= 0) return;
-
     const sourcePool =
       target.species === "bradysia_impatiens"
         ? this.p.bradysiaBiomassPool
         : this.p.folsomiaBiomassPool;
+    const preyMaterial = reconcilePreyMaterial(
+      cloneMaterial(target.individual.material),
+      world.ledger.getPool(sourcePool)
+    );
+    if (preyMaterial.carbonMg <= 0) return;
+
     world.ledger.transfer(sourcePool, this.p.feedBufferPool, preyMaterial);
 
     const assimilated = scaleMaterial(
