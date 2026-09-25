@@ -226,4 +226,34 @@ describe("Phase 3 Folsomia candida lifecycle", () => {
     ).toBe(true);
     expect(world.ledger.getPool("animal_corpses").carbonMg).toBeGreaterThan(0);
   }, 30_000);
+  it("does not mature an underweight juvenile on thermal time alone", () => {
+    const population = createPopulation();
+    for (const individual of population.living()) {
+      individual.stage = "juvenile";
+      individual.stageAgeSeconds = (p("adultDevelopmentDays") + 1) * 86400;
+      individual.material.carbonMg = p("adultCarbonMg") * 0.10;
+      individual.reserveCarbonMg = individual.material.carbonMg * 0.05;
+    }
+    const world = createWorld(population, (pools) => {
+      pools.linnemannia_biomass = {
+        carbonMg: 0,
+        nitrogenMg: 0,
+        phosphorusMg: 0,
+        waterG: 0
+      };
+      pools.bacillus_biomass = {
+        carbonMg: 0,
+        nitrogenMg: 0,
+        phosphorusMg: 0,
+        waterG: 0
+      };
+    });
+
+    new FixedStepScheduler(world, [
+      new FolsomiaLifecycleSystem(population, parameters())
+    ]).step(1);
+
+    expect(population.living().every((x) => x.stage === "juvenile")).toBe(true);
+  });
+
 });
