@@ -721,17 +721,26 @@ A user should be able to select an animal born months after simulation start and
 
 Exact initial counts must be calibrated by headless simulation rather than guessed.
 
-Starting search ranges:
+Initial population counts and biomass are calibration inputs and are **not yet frozen**.
 
-- *Folsomia candida*: 80–200
-- *Trichorhina tomentosa*: 20–60
-- *Bradysia impatiens*: 10–30 adults/late larvae combined
-- *Dalotia coriaria*: 4–10 adults/late larvae combined
-- plants: multiple ramets/individuals of all 3 species
-- fungal and bacterial biomass: non-zero established colonies
-- substantial initial leaf litter and dead wood carbon
+They must be established from:
+- species-specific literature where available;
+- enclosure scale and carrying-capacity constraints;
+- bounded headless calibration;
+- independent-seed validation.
 
-The optimizer/search may tune initial biomass and environmental parameters, but may not add rescue rules.
+The preset will include:
+- all three plant species;
+- *Folsomia candida*;
+- *Trichorhina tomentosa*;
+- *Bradysia impatiens*;
+- *Dalotia coriaria*;
+- non-zero established *Linnemannia elongata* and *Bacillus subtilis* biomass;
+- finite initial leaf litter/coarse detritus.
+
+No numerical count may be promoted to the validated preset merely because it makes the ecosystem survive.
+
+The optimizer/search may tune initial biomass and environmental parameters within documented bounds, but may not add rescue rules.
 
 ## 27. Architecture
 
