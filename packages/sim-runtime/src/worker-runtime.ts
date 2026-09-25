@@ -31,6 +31,7 @@ export class SimulationWorkerRuntime {
   private tickAccumulator = 0;
   private lastRender: RenderWorldSnapshotDto | undefined;
   private lastFullSnapshotTick = -1;
+  private commandChain: Promise<void> = Promise.resolve();
   private readonly ticksPerSecondAt1x: number;
   private readonly pulseIntervalMs: number;
   private readonly fullSnapshotEveryTicks: number;
@@ -47,7 +48,13 @@ export class SimulationWorkerRuntime {
     this.maxTicksPerPulse = options.maxTicksPerPulse ?? 500;
   }
 
-  async handle(raw: unknown): Promise<void> {
+  handle(raw: unknown): Promise<void> {
+    const next = this.commandChain.then(() => this.handleSerial(raw));
+    this.commandChain = next.catch(() => undefined);
+    return next;
+  }
+
+  private async handleSerial(raw: unknown): Promise<void> {
     let message: UiToWorkerMessage;
     try {
       message = parseUiToWorkerMessage(raw);
@@ -59,14 +66,14 @@ export class SimulationWorkerRuntime {
     try {
       switch (message.type) {
         case "INIT":
-          await this.adapter.init(message);
           this.resetRenderStream();
+          await this.adapter.init(message);
           this.emit({ type: "READY", requestId: message.requestId });
           this.emitFrame(true);
           break;
         case "LOAD_WORLD":
-          await this.adapter.loadSnapshot(message.snapshot);
           this.resetRenderStream();
+          await this.adapter.loadSnapshot(message.snapshot);
           this.emit({ type: "READY", requestId: message.requestId });
           this.emitFrame(true);
           break;
