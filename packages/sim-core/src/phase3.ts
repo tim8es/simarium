@@ -15,6 +15,7 @@ export type FolsomiaDeathCause =
   | "dehydration"
   | "senescence"
   | "carbon_exhaustion"
+  | "developmental_mortality"
   | "predation";
 
 export interface FolsomiaIndividual {
@@ -210,6 +211,7 @@ export interface FolsomiaParameters {
   temperatureOptimumC: number;
   temperatureSigmaC: number;
   eggDevelopmentDays: number;
+  eggHatchProbability: number;
   adultDevelopmentDays: number;
   reproductionIntervalDays: number;
   clutchSize: number;
@@ -275,6 +277,9 @@ export class FolsomiaLifecycleSystem implements SimSystem {
     }
     if (p.assimilationEfficiency < 0 || p.assimilationEfficiency > 1) {
       throw new Error("assimilationEfficiency must be in [0,1]");
+    }
+    if (p.eggHatchProbability < 0 || p.eggHatchProbability > 1) {
+      throw new Error("eggHatchProbability must be in [0,1]");
     }
     if (
       p.reproductionMoistureThreshold < 0 ||
@@ -396,6 +401,10 @@ export class FolsomiaLifecycleSystem implements SimSystem {
       individual.stage === "egg" &&
       individual.stageAgeSeconds >= this.p.eggDevelopmentDays * DAY_SECONDS
     ) {
+      if (world.rng.nextFloat() >= this.p.eggHatchProbability) {
+        this.die(world, individual, "developmental_mortality");
+        return;
+      }
       this.population.transitionStage(individual, "juvenile", world.timeSeconds);
       return;
     }
