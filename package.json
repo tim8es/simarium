@@ -10,7 +10,8 @@
     "test:watch": "vitest",
     "headless": "npm run build --silent && node dist/tools/headless.js",
     "ecosystem:batch": "npm run build --silent && node dist/tools/ecosystem-batch.js",
-    "ecosystem:smoke": "npm run ecosystem:batch -- --days 30 --seeds 0:10 --sample 5 --format json"
+    "ecosystem:smoke": "npm run ecosystem:batch -- --days 30 --seeds 0:10 --sample 5 --format json",
+    "ecosystem:merge": "npm run build --silent && node dist/tools/ecosystem-validation-report.js"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
