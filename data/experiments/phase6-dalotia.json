@@ -122,11 +122,11 @@
       "notes": "Unassimilated prey becomes detritus."
     },
     "basalMetabolismCarbonMgPerSecond": {
-      "value": 2.5e-9,
+      "value": 7.5e-10,
       "unit": "mg_C/s",
       "status": "CALIBRATED",
       "source": "model_internal",
-      "notes": "Sensitivity parameter."
+      "notes": "CALIBRATED engineering metabolism coefficient. Reduced from 2.5e-9 after Phase-7 calibration seeds 0-2 showed post-start larvae repeatedly reached carbon exhaustion before local prey encounters despite abundant prey globally. This is not a measured respiration rate and must be checked against the separate validation seed set."
     },
     "adultCarbonTargetMg": {
       "value": 0.08,
