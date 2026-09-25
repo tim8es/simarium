@@ -109,6 +109,8 @@ A multi-generation population exists in a sealed headless chamber and all offspr
 
 ## Phase 4 — Detritivore
 
+**Status: COMPLETE — engineering gate passed in CI run 36146342332.**
+
 Implement *Trichorhina tomentosa*:
 - litter habitat;
 - detrital feeding;
@@ -121,6 +123,8 @@ Implement *Trichorhina tomentosa*:
 Compare litter decomposition with and without isopods; difference must come from modeled feeding/fragmentation, not special-case rate multipliers.
 
 ## Phase 5 — Fungus gnat
+
+**Status: COMPLETE — engineering gate passed in CI run 36146748002.**
 
 Implement *Bradysia impatiens*:
 - egg;
@@ -138,6 +142,8 @@ Complete multiple generations under suitable conditions and fail naturally when 
 
 ## Phase 6 — Predator
 
+**Status: COMPLETE — engineering gate passed in CI run 36147187701. Spatial locality remains a Phase-7 integration requirement.**
+
 Implement *Dalotia coriaria*:
 - sensing;
 - substrate navigation;
@@ -152,6 +158,8 @@ Implement *Dalotia coriaria*:
 Predation changes prey dynamics through real encounters; predator cannot survive indefinitely without prey/resources.
 
 ## Phase 7 — Full headless ecosystem
+
+**Status: ACTIVE.**
 
 Combine all approved species.
 
