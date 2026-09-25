@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createIntegratedEcosystem } from "../tools/ecosystem-factory.ts";
 import bradysiaFixture from "../data/experiments/phase5-bradysia.json";
 import dalotiaFixture from "../data/experiments/phase6-dalotia.json";
 import folsomiaFixture from "../data/experiments/phase3-folsomia.json";
@@ -139,4 +140,12 @@ describe("Phase 7 local encounter index", () => {
     scheduler.runFor(12 * 3600);
     expect(bradysia.living()).toHaveLength(0);
   });
+  it("uses centimeter-scale integrated habitat cells rather than decimeter-scale encounter cells", () => {
+    const eco = createIntegratedEcosystem(7701);
+
+    expect(eco.habitat.width).toBe(60);
+    expect(eco.habitat.depth).toBe(30);
+  });
+
+
 });
