@@ -1,0 +1,78 @@
+name: Phase 7 180-Day Calibration
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/phase7-ecology
+    paths:
+      - ".github/workflows/phase7-calibration-180d.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  calibration-shard:
+    name: calibration 180d shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - name: Run 10 independent 180-day calibration seeds
+        shell: bash
+        run: |
+          START=$((${{ matrix.shard }} * 10))
+          /usr/bin/time -v node dist/tools/ecosystem-batch.js \
+            --days 180 \
+            --seeds "${START}:10" \
+            --sample 10 \
+            --format json \
+            > "calibration-shard-${{ matrix.shard }}.json"
+          cat "calibration-shard-${{ matrix.shard }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: calibration-shard-${{ matrix.shard }}
+          path: calibration-shard-${{ matrix.shard }}.json
+          retention-days: 14
+
+  merge-calibration:
+    name: Merge calibration and evaluate unchanged MVP gates
+    needs: calibration-shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: calibration-shard-*
+          path: calibration-shards
+          merge-multiple: true
+      - name: Merge and enforce unchanged targets
+        shell: bash
+        run: |
+          node dist/tools/ecosystem-validation-report.js \
+            calibration-shards/calibration-shard-*.json \
+            > calibration-report.json
+          cat calibration-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase7-calibration-report
+          path: calibration-report.json
+          retention-days: 30
