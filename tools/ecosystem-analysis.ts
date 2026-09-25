@@ -136,6 +136,24 @@ export interface RunOutcome {
     bradysia: number;
     dalotia: number;
   };
+  litterNitrogenTracerReturned: boolean;
+  deathCauses: {
+    folsomia: Record<string, number>;
+    trichorhina: Record<string, number>;
+    bradysia: Record<string, number>;
+    dalotia: Record<string, number>;
+  };
+  predation: {
+    total: number;
+    bradysia: number;
+    folsomia: number;
+  };
+  finalStages: {
+    folsomia: Record<string, number>;
+    trichorhina: Record<string, number>;
+    bradysia: Record<string, number>;
+    dalotia: Record<string, number>;
+  };
 }
 
 export interface BatchSummary {
@@ -144,6 +162,7 @@ export interface BatchSummary {
   runCount: number;
   runOutcomes: RunOutcome[];
   invariantFailureRuns: number;
+  litterNitrogenTracerReturnedRuns: number;
   persistenceProbability: {
     fittonia: number;
     peperomia: number;
@@ -452,6 +471,34 @@ function mean(
   return runs.reduce((sum, run) => sum + selector(run), 0) / runs.length;
 }
 
+function countStrings(values: readonly string[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const value of values) {
+    counts[value] = (counts[value] ?? 0) + 1;
+  }
+  return counts;
+}
+
+function livingStageCounts(
+  individuals: readonly { alive: boolean; stage: string }[]
+): Record<string, number> {
+  return countStrings(
+    individuals.filter((individual) => individual.alive).map((individual) => individual.stage)
+  );
+}
+
+function deathEventCauses(
+  events: readonly { type: string }[]
+): Record<string, number> {
+  const causes: string[] = [];
+  for (const event of events) {
+    if (event.type !== "death") continue;
+    const cause = (event as { cause?: unknown }).cause;
+    if (typeof cause === "string") causes.push(cause);
+  }
+  return countStrings(causes);
+}
+
 function runOutcome(run: IntegratedRunResult): RunOutcome {
   const persistence = {
     fittonia: run.summary.plants.fittonia.finalLiving > 0,
@@ -469,6 +516,24 @@ function runOutcome(run: IntegratedRunResult): RunOutcome {
       run.summary.animals.folsomia.finalLiving > 0 ||
       run.summary.animals.trichorhina.finalLiving > 0
   };
+
+  const predationEvents = run.ecosystem.animals.dalotia
+    .eventLog()
+    .filter((event) => event.type === "predation");
+  const bradysiaPredation = predationEvents.filter(
+    (event) => event.preySpecies === "bradysia_impatiens"
+  ).length;
+  const folsomiaPredation = predationEvents.filter(
+    (event) => event.preySpecies === "folsomia_candida"
+  ).length;
+
+  const trichorhinaDeathCauses = countStrings(
+    run.ecosystem.animals.trichorhina
+      .all()
+      .filter((individual) => !individual.alive)
+      .map((individual) => run.ecosystem.animals.trichorhina.record(individual.id).deathCause)
+      .filter((cause): cause is string => typeof cause === "string")
+  );
 
   return {
     seed: run.seed,
@@ -488,6 +553,25 @@ function runOutcome(run: IntegratedRunResult): RunOutcome {
       trichorhina: run.summary.animals.trichorhina.finalLiving,
       bradysia: run.summary.animals.bradysia.finalLiving,
       dalotia: run.summary.animals.dalotia.finalLiving
+    },
+    litterNitrogenTracerReturned:
+      run.summary.litterNitrogenTracer.reachedPlantTissue,
+    deathCauses: {
+      folsomia: deathEventCauses(run.ecosystem.animals.folsomia.eventLog()),
+      trichorhina: trichorhinaDeathCauses,
+      bradysia: deathEventCauses(run.ecosystem.animals.bradysia.eventLog()),
+      dalotia: deathEventCauses(run.ecosystem.animals.dalotia.eventLog())
+    },
+    predation: {
+      total: predationEvents.length,
+      bradysia: bradysiaPredation,
+      folsomia: folsomiaPredation
+    },
+    finalStages: {
+      folsomia: livingStageCounts(run.ecosystem.animals.folsomia.all()),
+      trichorhina: livingStageCounts(run.ecosystem.animals.trichorhina.all()),
+      bradysia: livingStageCounts(run.ecosystem.animals.bradysia.all()),
+      dalotia: livingStageCounts(run.ecosystem.animals.dalotia.all())
     }
   };
 }
@@ -521,6 +605,9 @@ function summarizeOutcomes(
     runOutcomes: [...outcomes],
     invariantFailureRuns: outcomes.filter(
       (outcome) => outcome.invariantFailures > 0
+    ).length,
+    litterNitrogenTracerReturnedRuns: outcomes.filter(
+      (outcome) => outcome.litterNitrogenTracerReturned
     ).length,
     persistenceProbability: {
       fittonia: outcomeProbability(outcomes, (x) => x.persistence.fittonia),
@@ -633,6 +720,7 @@ export interface MvpAcceptance {
     bradysiaPersistence: AcceptanceCriterion;
     dalotiaPersistence: AcceptanceCriterion;
     survivingAnimalGenerations: AcceptanceCriterion;
+    litterNitrogenTracerReturn: AcceptanceCriterion;
   };
 }
 
@@ -683,6 +771,11 @@ export function evaluateMvpAcceptance(
       actual: generationRate,
       target: 1,
       pass: generationRate === 1
+    },
+    litterNitrogenTracerReturn: {
+      actual: summary.litterNitrogenTracerReturnedRuns,
+      target: 1,
+      pass: summary.litterNitrogenTracerReturnedRuns >= 1
     }
   };
 
