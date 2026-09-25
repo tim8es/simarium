@@ -223,6 +223,7 @@ export interface FolsomiaParameters {
 
   adultBodyWaterG: number;
   adultCarbonTargetMg: number;
+  maturationCarbonFractionOfAdult: number;
   eggCarbonMg: number;
 }
 
@@ -331,7 +332,9 @@ export class FolsomiaLifecycleSystem implements SimSystem {
 
     if (
       individual.stage === "juvenile" &&
-      individual.stageAgeSeconds >= this.p.adultDevelopmentDays * DAY_SECONDS
+      individual.stageAgeSeconds >= this.p.adultDevelopmentDays * DAY_SECONDS &&
+      individual.material.carbonMg >=
+        this.p.adultCarbonTargetMg * this.p.maturationCarbonFractionOfAdult
     ) {
       this.population.transitionStage(individual, "adult", world.timeSeconds);
     }
