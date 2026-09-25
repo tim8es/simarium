@@ -68,6 +68,25 @@ describe("RenderAdapter", () => {
     expect(adapter.getRenderableEntities().map((item) => item.id)).toEqual(["visible"]);
   });
 
+  it("supports an allocation-free readonly renderer iteration path", () => {
+    const adapter = new RenderAdapter();
+    adapter.applySnapshot({
+      sequence: 1,
+      simulationTime: 0,
+      dimensions: { width: 1.2, depth: 0.6, height: 0.9 },
+      entities: [entity()]
+    });
+
+    const first: object[] = [];
+    const second: object[] = [];
+    adapter.forEachRenderableEntity((item) => first.push(item));
+    adapter.forEachRenderableEntity((item) => second.push(item));
+
+    expect(first).toHaveLength(1);
+    expect(first[0]).toBe(second[0]);
+    expect(first[0]).not.toBe(adapter.getEntity("animal-1"));
+  });
+
   it("rejects stale deltas and invalid transforms", () => {
     const adapter = new RenderAdapter();
     adapter.applySnapshot({
