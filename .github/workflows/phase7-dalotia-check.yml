@@ -1,5 +1,5 @@
 name: Phase 7 Dalotia Calibration Verification
-# rerun after oviposition declaration fix
+# local predator establishment verification
 
 on:
   push:
@@ -7,6 +7,10 @@ on:
       - agent/phase7-ecology
     paths:
       - ".github/workflows/phase7-dalotia-check.yml"
+      - "packages/sim-core/src/phase6.ts"
+      - "data/experiments/phase6-dalotia.json"
+      - "data/experiments/phase7-integrated.json"
+      - "tools/ecosystem-factory.ts"
 
 permissions:
   contents: read
@@ -20,7 +24,7 @@ jobs:
       max-parallel: 6
       matrix:
         seed: [0, 1, 2]
-        days: [90, 120]
+        days: [90, 120, 150]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
