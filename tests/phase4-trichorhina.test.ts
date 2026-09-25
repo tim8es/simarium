@@ -90,6 +90,7 @@ function parameters(
     hydrationRatePerSecond: p("hydrationRatePerSecond"),
 
     adultCarbonTargetMg: p("adultCarbonMg"),
+    maturationCarbonFractionOfAdult: p("maturationCarbonFractionOfAdult"),
     adultBodyWaterG: p("adultBodyWaterG"),
     mancaCarbonMg: p("mancaCarbonMg"),
     ...overrides
