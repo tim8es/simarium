@@ -167,16 +167,19 @@ Each sourced value enters the species database with:
 
 ## 14. Research order
 
-1. *Folsomia candida*
-2. *Dalotia coriaria*
-3. *Bradysia impatiens*
-4. *Fittonia albivenis*
-5. microbial decomposition parameters
-6. *Trichorhina tomentosa*
-7. *Peperomia caperata*
-8. *Pilea depressa*
+The evidence work follows implementation dependency:
 
-This order follows implementation dependency, not biological importance.
+1. *Fittonia albivenis*
+2. *Linnemannia elongata* decomposition parameters
+3. *Bacillus subtilis* decomposition parameters
+4. *Folsomia candida*
+5. *Trichorhina tomentosa*
+6. *Bradysia impatiens*
+7. *Dalotia coriaria*
+8. *Peperomia caperata*
+9. *Pilea depressa*
+
+*Peperomia caperata* and *Pilea depressa* can follow the first producer/decomposer loop because the Phase 2 exit gate is intentionally proven with one plant species first.
 
 ## 15. Stop rule
 
