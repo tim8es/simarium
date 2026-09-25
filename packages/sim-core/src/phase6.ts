@@ -360,6 +360,7 @@ export class DalotiaPredatorSystem implements SimSystem {
       Math.max(1e-12, substrateWater + this.p.moistureHalfSaturationWaterG);
 
     const current = this.population.living();
+    let preyChanged = false;
     for (const individual of current) {
       individual.ageSeconds += dtSeconds;
       individual.stageAgeSeconds += dtSeconds * development;
@@ -384,7 +385,7 @@ export class DalotiaPredatorSystem implements SimSystem {
       if (!individual.alive) continue;
 
       if (individual.stage === "larva" || individual.stage === "adult") {
-        this.hunt(world, individual, dtSeconds);
+        preyChanged = this.hunt(world, individual, dtSeconds) || preyChanged;
       }
       if (individual.stage === "adult") {
         this.reproduce(world, individual, moisture, dtSeconds);
@@ -396,17 +397,19 @@ export class DalotiaPredatorSystem implements SimSystem {
     this.population.assertMatchesAggregate(
       world.ledger.getPool(this.p.biomassPool)
     );
-    this.prey.bradysia.assertMatchesAggregate(
-      world.ledger.getPool(this.p.bradysiaBiomassPool)
-    );
-    // Match the owning Folsomia lifecycle's machine-scale audit tolerance.
-    // The stricter default here can trip solely from floating-point summation
-    // order after millions of otherwise conservative transfers. Global
-    // C/N/P/H2O conservation is still enforced independently by InvariantMonitor.
-    this.prey.folsomia.assertMatchesAggregate(
-      world.ledger.getPool(this.p.folsomiaBiomassPool),
-      1e-8
-    );
+    // Bradysia/Folsomia own lifecycle systems audit their aggregates every
+    // tick. Re-audit here only on ticks where Dalotia actually mutated prey.
+    // This preserves predator-transfer verification without O(prey) duplicate
+    // scans on the overwhelmingly common no-kill ticks.
+    if (preyChanged) {
+      this.prey.bradysia.assertMatchesAggregate(
+        world.ledger.getPool(this.p.bradysiaBiomassPool)
+      );
+      this.prey.folsomia.assertMatchesAggregate(
+        world.ledger.getPool(this.p.folsomiaBiomassPool),
+        1e-8
+      );
+    }
   }
 
   private advanceStage(world: WorldState, individual: DalotiaIndividual): void {
@@ -509,7 +512,7 @@ export class DalotiaPredatorSystem implements SimSystem {
     world: WorldState,
     predator: DalotiaIndividual,
     dtSeconds: number
-  ): void {
+  ): boolean {
     const reserveTarget =
       predator.material.carbonMg * this.p.reserveTargetFraction;
     const hunger =
@@ -526,11 +529,11 @@ export class DalotiaPredatorSystem implements SimSystem {
           )
         : 0;
     const feedingDrive = Math.max(hunger, growthNeed);
-    if (feedingDrive <= 0) return;
+    if (feedingDrive <= 0) return false;
 
     const candidates = this.collectPrey(predator);
     const available = candidates.length;
-    if (available === 0) return;
+    if (available === 0) return false;
 
     const maxPerDay =
       predator.stage === "adult"
@@ -550,13 +553,16 @@ export class DalotiaPredatorSystem implements SimSystem {
     let attempts = Math.floor(predator.attackAccumulator);
     predator.attackAccumulator -= attempts;
 
+    let consumedAny = false;
     while (attempts > 0) {
       const liveCandidates = this.collectPrey(predator);
       if (liveCandidates.length === 0) break;
       const target = liveCandidates[world.rng.nextInt(liveCandidates.length)]!;
       this.consumePrey(world, predator, target);
+      consumedAny = true;
       attempts--;
     }
+    return consumedAny;
   }
 
   private collectPrey(predator: DalotiaIndividual): PreyCandidate[] {
