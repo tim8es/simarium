@@ -198,11 +198,17 @@ export class BradysiaPopulation {
   }
 
   totalLivingMaterial(): Material {
-    let total = zeroMaterial();
+    let carbonMg = 0;
+    let nitrogenMg = 0;
+    let phosphorusMg = 0;
+    let waterG = 0;
     for (const individual of this.livingIndividuals) {
-      total = addMaterial(total, individual.material);
+      carbonMg += individual.material.carbonMg;
+      nitrogenMg += individual.material.nitrogenMg;
+      phosphorusMg += individual.material.phosphorusMg;
+      waterG += individual.material.waterG;
     }
-    return total;
+    return { carbonMg, nitrogenMg, phosphorusMg, waterG };
   }
 
   assertMatchesAggregate(aggregate: Material, tolerance = 1e-8): void {
@@ -322,7 +328,7 @@ export class BradysiaLifecycleSystem implements SimSystem {
       substrateWater /
       Math.max(1e-12, substrateWater + this.p.moistureHalfSaturationWaterG);
 
-    const current = [...this.population.living()];
+    const current = this.population.living();
     for (const individual of current) {
       individual.ageSeconds += dtSeconds;
       individual.stageAgeSeconds += dtSeconds * development;
