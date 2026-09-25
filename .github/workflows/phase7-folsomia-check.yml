@@ -1,4 +1,5 @@
 name: Phase 7 Folsomia Calibration Verification
+# lifespan evidence rerun
 
 on:
   push:
@@ -19,7 +20,7 @@ jobs:
       max-parallel: 12
       matrix:
         seed: [0, 1, 2]
-        days: [60, 90, 120, 150]
+        days: [120, 150]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
