@@ -70,6 +70,7 @@ export type DalotiaEvent =
 export class DalotiaPopulation {
   private nextId = 1;
   private readonly individuals: DalotiaIndividual[] = [];
+  private readonly livingIndividuals = new Set<DalotiaIndividual>();
   private readonly records = new Map<number, DalotiaRecord>();
   private readonly events: DalotiaEvent[] = [];
 
@@ -82,6 +83,7 @@ export class DalotiaPopulation {
       material: cloneMaterial(input.material)
     };
     this.individuals.push(individual);
+    this.livingIndividuals.add(individual);
 
     const record: DalotiaRecord = {
       id,
@@ -105,7 +107,7 @@ export class DalotiaPopulation {
   }
 
   living(): DalotiaIndividual[] {
-    return this.individuals.filter((x) => x.alive);
+    return [...this.livingIndividuals];
   }
 
   all(): readonly DalotiaIndividual[] {
@@ -188,6 +190,7 @@ export class DalotiaPopulation {
   ): void {
     if (!individual.alive) return;
     individual.alive = false;
+    this.livingIndividuals.delete(individual);
     const record = this.record(individual.id);
     record.deathTimeSeconds = timeSeconds;
     record.deathCause = cause;
@@ -201,8 +204,8 @@ export class DalotiaPopulation {
 
   totalLivingMaterial(): Material {
     let total = zeroMaterial();
-    for (const individual of this.individuals) {
-      if (individual.alive) total = addMaterial(total, individual.material);
+    for (const individual of this.livingIndividuals) {
+      total = addMaterial(total, individual.material);
     }
     return total;
   }
