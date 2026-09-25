@@ -62,11 +62,11 @@
       "notes": "Longevity is strongly temperature-dependent; this is deliberately provisional at ~20-21 C."
     },
     "feedingCarbonRateMgPerSecond": {
-      "value": 5e-9,
+      "value": 2e-8,
       "unit": "mg_C/s",
       "status": "CALIBRATED",
-      "source": "oecd_232",
-      "notes": "No direct species-specific fungal carbon ingestion rate has yet been frozen."
+      "source": "life_cycle_2024",
+      "notes": "CALIBRATED against the documented ~21-24 day reproductive-maturity window together with the adult carbon anchor and 65% assimilation proxy. This is a model ingestion coefficient, not a direct measured feeding-rate claim."
     },
     "assimilationEfficiency": {
       "value": 0.65,
