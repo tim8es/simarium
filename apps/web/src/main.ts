@@ -11,8 +11,9 @@ import {
 } from "./components.js";
 import { createUserAction } from "./view-model.js";
 
-const app = document.querySelector<HTMLElement>("#app");
-if (!app) throw new Error("Missing #app");
+const root = document.querySelector<HTMLElement>("#app");
+if (!root) throw new Error("Missing #app");
+const app: HTMLElement = root;
 
 let state: ObservationUiState = {
   paused: false,
