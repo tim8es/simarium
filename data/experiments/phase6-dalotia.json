@@ -211,6 +211,20 @@
       "status": "CALIBRATED",
       "source": "life_history_2013",
       "notes": "Growing-medium water-balance proxy."
+    },
+    "pupationCarbonFractionOfAdult": {
+      "value": 0.7,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "life_history_2013",
+      "notes": "Engineering critical-mass gate: larvae must acquire prey-derived biomass before pupation; exact threshold is not reported and must be sensitivity-tested."
+    },
+    "reproductionReserveFraction": {
+      "value": 0.2,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "life_history_2013",
+      "notes": "Adult females require sufficient energetic reserve to continue oviposition. Prevents unrealistically funding a full clutch from structural body mass in the absence of prey."
     }
   },
   "world": {
