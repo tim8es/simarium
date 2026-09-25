@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   collectEcosystemSnapshot,
+  evaluateMvpAcceptance,
+  mergeBatchSummaries,
   runEcosystemBatch,
   runIntegratedEcosystem
 } from "../tools/ecosystem-analysis.ts";
@@ -71,4 +73,74 @@ describe("Phase 7 ecosystem analysis", () => {
     expect(a.postStartGenerationProbability.folsomia).toBeGreaterThanOrEqual(0);
     expect(a.postStartGenerationProbability.folsomia).toBeLessThanOrEqual(1);
   }, 60_000);
+
+  it("keeps per-seed joint outcomes so acceptance criteria are exact", () => {
+    const batch = runEcosystemBatch({
+      seeds: [7500, 7501, 7502],
+      days: 5,
+      sampleEveryDays: 1
+    });
+
+    expect(batch.runOutcomes).toHaveLength(3);
+    expect(batch.runOutcomes.map((run) => run.seed)).toEqual([7500, 7501, 7502]);
+
+    for (const outcome of batch.runOutcomes) {
+      expect(typeof outcome.persistence.allProducers).toBe("boolean");
+      expect(typeof outcome.persistence.atLeastOneDetritivore).toBe("boolean");
+      expect(outcome.invariantFailures).toBeGreaterThanOrEqual(0);
+    }
+
+    const allProducerRate =
+      batch.runOutcomes.filter((run) => run.persistence.allProducers).length /
+      batch.runCount;
+    expect(batch.jointPersistenceProbability.allProducers).toBe(allProducerRate);
+  }, 30_000);
+
+  it("evaluates the documented MVP thresholds without changing them", () => {
+    const batch = runEcosystemBatch({
+      seeds: [7510, 7511],
+      days: 3,
+      sampleEveryDays: 1
+    });
+    const acceptance = evaluateMvpAcceptance(batch);
+
+    expect(acceptance.criteria.zeroInvariantFailures.target).toBe(0);
+    expect(acceptance.criteria.allProducersPersistence.target).toBe(0.8);
+    expect(acceptance.criteria.detritivorePersistence.target).toBe(0.8);
+    expect(acceptance.criteria.bradysiaPersistence.target).toBe(0.7);
+    expect(acceptance.criteria.dalotiaPersistence.target).toBe(0.7);
+    expect(typeof acceptance.pass).toBe("boolean");
+  }, 30_000);
+
+  it("merges sharded summaries using run-count weighted metrics", () => {
+    const a = runEcosystemBatch({
+      seeds: [7520, 7521],
+      days: 2,
+      sampleEveryDays: 1
+    });
+    const b = runEcosystemBatch({
+      seeds: [7522],
+      days: 2,
+      sampleEveryDays: 1
+    });
+
+    const merged = mergeBatchSummaries([a, b]);
+
+    expect(merged.runCount).toBe(3);
+    expect(merged.seeds).toEqual([7520, 7521, 7522]);
+    expect(merged.runOutcomes).toHaveLength(3);
+
+    const expected =
+      (a.persistenceProbability.dalotia * a.runCount +
+        b.persistenceProbability.dalotia * b.runCount) /
+      3;
+    expect(merged.persistenceProbability.dalotia).toBeCloseTo(expected, 12);
+
+    expect(() =>
+      mergeBatchSummaries([
+        a,
+        { ...b, days: 3 }
+      ])
+    ).toThrow(/days/i);
+  }, 30_000);
 });
