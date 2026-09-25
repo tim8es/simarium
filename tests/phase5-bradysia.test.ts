@@ -234,4 +234,27 @@ describe("Phase 5 Bradysia impatiens lifecycle", () => {
     expect(world.ledger.getPool("animal_corpses").carbonMg).toBeGreaterThan(0);
     expect(world.ledger.getPool("bradysia_biomass").carbonMg).toBeCloseTo(0, 12);
   });
+
+  it("does not pupate a severely underweight larva just because thermal time elapsed", () => {
+    const population = createLarvalPopulation();
+    for (const individual of population.living()) {
+      individual.stage = "larva";
+      individual.stageAgeSeconds = (p("larvalDevelopmentDays") + 1) * 86400;
+      individual.material.carbonMg = p("adultCarbonTargetMg") * 0.10;
+      individual.reserveCarbonMg = 0;
+    }
+    const world = createWorld(population, (pools) => {
+      pools.linnemannia_biomass.carbonMg = 0;
+      pools.plant_root_tissue.carbonMg = 0;
+    });
+
+    new FixedStepScheduler(world, [
+      new BradysiaLifecycleSystem(population, parameters())
+    ]).step(1);
+
+    expect(
+      population.living().every((individual) => individual.stage === "larva")
+    ).toBe(true);
+  });
+
 });
