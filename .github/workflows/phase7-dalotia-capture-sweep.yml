@@ -16,10 +16,10 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
-      max-parallel: 9
+      max-parallel: 12
       matrix:
-        capture: [0.30, 0.40, 0.50]
-        seed: [0, 1, 2]
+        capture: [0.15, 0.20, 0.25, 0.30]
+        seed: [0, 1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,7 +39,7 @@ jobs:
 
           const integratedPath = "data/experiments/phase7-integrated.json";
           const integrated = JSON.parse(fs.readFileSync(integratedPath, "utf8"));
-          integrated.spatial.dalotiaPreyEncounterRadiusCells = 2;
+          integrated.spatial.dalotiaPreyEncounterRadiusCells = 3;
           fs.writeFileSync(integratedPath, JSON.stringify(integrated, null, 2) + "\n");
           NODE
       - run: npm run build
@@ -47,10 +47,13 @@ jobs:
         shell: bash
         run: |
           label="dalotia-capture-${{ matrix.capture }}-seed-${{ matrix.seed }}"
+          set +e
           /usr/bin/time -v node dist/tools/ecosystem-batch.js \
             --days 150 \
             --seeds "${{ matrix.seed }}:1" \
             --sample 10 \
             --format json > "$label.json" 2> "$label.time.txt"
+          code=$?
           cat "$label.json"
           cat "$label.time.txt"
+          exit "$code"
