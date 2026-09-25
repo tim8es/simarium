@@ -122,6 +122,7 @@ function parameters(
     fecundityEggsPerFemale: p("fecundityEggsPerFemale"),
     femaleProbability: p("femaleProbability"),
     immatureSurvivalProbability: p("immatureSurvivalProbability"),
+    reproductionReserveFraction: p("reproductionReserveFraction"),
 
     larvalFeedingCarbonMgPerSecond: p("larvalFeedingCarbonMgPerSecond"),
     assimilationEfficiency: p("assimilationEfficiency"),
