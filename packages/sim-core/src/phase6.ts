@@ -24,7 +24,8 @@ export type DalotiaDeathCause =
   | "starvation"
   | "dehydration"
   | "senescence"
-  | "carbon_exhaustion";
+  | "carbon_exhaustion"
+  | "developmental_mortality";
 
 export interface DalotiaIndividual {
   id: number;
@@ -255,6 +256,7 @@ export interface DalotiaParameters {
   femaleAdultLifespanDays: number;
   maleAdultLifespanDays: number;
   femaleProbability: number;
+  immatureSurvivalProbability: number;
 
   lifetimeFecundity: number;
   reproductivePeriodDays: number;
@@ -327,6 +329,8 @@ export class DalotiaPredatorSystem implements SimSystem {
       p.assimilationEfficiency > 1 ||
       p.femaleProbability < 0 ||
       p.femaleProbability > 1 ||
+      p.immatureSurvivalProbability < 0 ||
+      p.immatureSurvivalProbability > 1 ||
       p.reserveTargetFraction <= 0 ||
       p.reserveTargetFraction > 1
     ) {
@@ -412,6 +416,10 @@ export class DalotiaPredatorSystem implements SimSystem {
       individual.stage === "pupa" &&
       individual.stageAgeSeconds >= this.p.pupalDevelopmentDays * DAY
     ) {
+      if (world.rng.nextFloat() >= this.p.immatureSurvivalProbability) {
+        this.die(world, individual, "developmental_mortality");
+        return;
+      }
       this.population.transitionStage(individual, "adult", world.timeSeconds);
       const sex: DalotiaSex =
         world.rng.nextFloat() < this.p.femaleProbability ? "female" : "male";
