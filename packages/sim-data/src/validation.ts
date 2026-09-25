@@ -11,6 +11,7 @@ export type ParameterStatus = (typeof PARAMETER_STATUSES)[number];
 export const CANONICAL_UNITS = new Set([
   "s",
   "day",
+  "hour",
   "m",
   "mm",
   "degC",
