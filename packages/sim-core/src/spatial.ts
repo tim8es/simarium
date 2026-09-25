@@ -15,10 +15,12 @@ export interface HabitatPosition {
 
 export interface LocalEncounterIndex {
   isLocal(predatorRef: string, preyRef: string, radiusCells?: number): boolean;
+  nearbyRefs(observerRef: string, radiusCells?: number): string[];
 }
 
 export class SpatialHabitat implements LocalEncounterIndex {
   private readonly positions = new Map<string, HabitatPosition>();
+  private readonly cellRefs = new Map<string, Set<string>>();
 
   constructor(
     readonly width: number,
@@ -35,11 +37,19 @@ export class SpatialHabitat implements LocalEncounterIndex {
   }
 
   set(ref: string, position: HabitatPosition): void {
-    this.positions.set(ref, {
+    const next = {
       x: this.reflect(position.x, this.width),
       z: this.reflect(position.z, this.depth),
       layer: position.layer
-    });
+    };
+    this.removeFromCell(ref);
+    this.positions.set(ref, next);
+    this.addToCell(ref, next);
+  }
+
+  remove(ref: string): void {
+    this.removeFromCell(ref);
+    this.positions.delete(ref);
   }
 
   ensure(
@@ -50,8 +60,10 @@ export class SpatialHabitat implements LocalEncounterIndex {
   ): HabitatPosition {
     const existing = this.positions.get(ref);
     if (existing) {
-      if (existing.layer !== layer) existing.layer = layer;
-      return existing;
+      if (existing.layer !== layer) {
+        this.set(ref, { ...existing, layer });
+      }
+      return this.positions.get(ref)!;
     }
 
     const parent = parentRef ? this.positions.get(parentRef) : undefined;
@@ -63,17 +75,23 @@ export class SpatialHabitat implements LocalEncounterIndex {
           layer
         };
     this.positions.set(ref, position);
+    this.addToCell(ref, position);
     return position;
   }
 
   moveRandomNeighbor(ref: string, world: WorldState): void {
     const position = this.positions.get(ref);
     if (!position) return;
+    let x = position.x;
+    let z = position.z;
     const direction = world.rng.nextInt(5);
-    if (direction === 0) position.x = this.reflect(position.x - 1, this.width);
-    if (direction === 1) position.x = this.reflect(position.x + 1, this.width);
-    if (direction === 2) position.z = this.reflect(position.z - 1, this.depth);
-    if (direction === 3) position.z = this.reflect(position.z + 1, this.depth);
+    if (direction === 0) x = this.reflect(x - 1, this.width);
+    if (direction === 1) x = this.reflect(x + 1, this.width);
+    if (direction === 2) z = this.reflect(z - 1, this.depth);
+    if (direction === 3) z = this.reflect(z + 1, this.depth);
+    if (x !== position.x || z !== position.z) {
+      this.set(ref, { x, z, layer: position.layer });
+    }
   }
 
   moveDiffusive(ref: string, world: WorldState, expectedEvents: number): void {
@@ -101,8 +119,36 @@ export class SpatialHabitat implements LocalEncounterIndex {
     const dx = Math.round(radius * Math.cos(angle) * sigma);
     const dz = Math.round(radius * Math.sin(angle) * sigma);
 
-    position.x = this.reflect(position.x + dx, this.width);
-    position.z = this.reflect(position.z + dz, this.depth);
+    const x = this.reflect(position.x + dx, this.width);
+    const z = this.reflect(position.z + dz, this.depth);
+    if (x !== position.x || z !== position.z) {
+      this.set(ref, { x, z, layer: position.layer });
+    }
+  }
+
+  nearbyRefs(observerRef: string, radiusCells = 1): string[] {
+    const origin = this.positions.get(observerRef);
+    if (!origin) return [];
+    const radius = Math.max(0, Math.floor(radiusCells));
+    const refs = new Set<string>();
+
+    for (
+      let x = Math.max(0, origin.x - radius);
+      x <= Math.min(this.width - 1, origin.x + radius);
+      x++
+    ) {
+      for (
+        let z = Math.max(0, origin.z - radius);
+        z <= Math.min(this.depth - 1, origin.z + radius);
+        z++
+      ) {
+        const bucket = this.cellRefs.get(this.cellKey(x, z, origin.layer));
+        if (!bucket) continue;
+        for (const ref of bucket) refs.add(ref);
+      }
+    }
+
+    return [...refs];
   }
 
   isLocal(
@@ -124,6 +170,30 @@ export class SpatialHabitat implements LocalEncounterIndex {
       ref,
       { ...position }
     ]);
+  }
+
+  private cellKey(x: number, z: number, layer: HabitatLayer): string {
+    return `${layer}:${x}:${z}`;
+  }
+
+  private addToCell(ref: string, position: HabitatPosition): void {
+    const key = this.cellKey(position.x, position.z, position.layer);
+    let bucket = this.cellRefs.get(key);
+    if (!bucket) {
+      bucket = new Set<string>();
+      this.cellRefs.set(key, bucket);
+    }
+    bucket.add(ref);
+  }
+
+  private removeFromCell(ref: string): void {
+    const position = this.positions.get(ref);
+    if (!position) return;
+    const key = this.cellKey(position.x, position.z, position.layer);
+    const bucket = this.cellRefs.get(key);
+    if (!bucket) return;
+    bucket.delete(ref);
+    if (bucket.size === 0) this.cellRefs.delete(key);
   }
 
   private reflect(value: number, size: number): number {
@@ -153,6 +223,7 @@ export interface SpatialMovementRates {
 
 export class SpatialEcologySystem implements SimSystem {
   readonly name = "spatial-ecology";
+  private activeRefs = new Set<string>();
 
   constructor(
     readonly habitat: SpatialHabitat,
@@ -161,8 +232,11 @@ export class SpatialEcologySystem implements SimSystem {
   ) {}
 
   step(world: WorldState, dtSeconds: number): void {
+    const currentRefs = new Set<string>();
+
     for (const individual of this.populations.folsomia.living()) {
       const ref = `folsomia_candida#${individual.id}`;
+      currentRefs.add(ref);
       const parentRef =
         individual.parentId !== undefined
           ? `folsomia_candida#${individual.parentId}`
@@ -175,6 +249,7 @@ export class SpatialEcologySystem implements SimSystem {
 
     for (const individual of this.populations.trichorhina.living()) {
       const ref = `trichorhina_tomentosa#${individual.id}`;
+      currentRefs.add(ref);
       const parentRef =
         individual.parentId !== undefined
           ? `trichorhina_tomentosa#${individual.parentId}`
@@ -187,6 +262,7 @@ export class SpatialEcologySystem implements SimSystem {
 
     for (const individual of this.populations.bradysia.living()) {
       const ref = `bradysia_impatiens#${individual.id}`;
+      currentRefs.add(ref);
       const parentRef =
         individual.parentId !== undefined
           ? `bradysia_impatiens#${individual.parentId}`
@@ -212,6 +288,7 @@ export class SpatialEcologySystem implements SimSystem {
 
     for (const individual of this.populations.dalotia.living()) {
       const ref = `dalotia_coriaria#${individual.id}`;
+      currentRefs.add(ref);
       const parentRef =
         individual.parentId !== undefined
           ? `dalotia_coriaria#${individual.parentId}`
@@ -233,6 +310,11 @@ export class SpatialEcologySystem implements SimSystem {
         );
       }
     }
+
+    for (const staleRef of this.activeRefs) {
+      if (!currentRefs.has(staleRef)) this.habitat.remove(staleRef);
+    }
+    this.activeRefs = currentRefs;
   }
 
   private maybeMove(
