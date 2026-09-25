@@ -1,0 +1,32 @@
+name: Runtime CI
+
+on:
+  pull_request:
+    paths:
+      - "packages/sim-runtime/**"
+      - "tests/platform-runtime*.test.ts"
+      - "tools/runtime-snapshot-benchmark.ts"
+      - "package.json"
+      - ".github/workflows/runtime-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - name: Run runtime tests
+        run: npx vitest run tests/platform-runtime.test.ts tests/platform-runtime-speed.test.ts
+      - run: npm run runtime:benchmark
