@@ -593,6 +593,15 @@ export class DalotiaPredatorSystem implements SimSystem {
       female.material.carbonMg > 0
         ? female.reserveCarbonMg / female.material.carbonMg
         : 0;
+    if (
+      reserveFraction <
+      (this.p.reproductionMinReserveFraction ?? 0.1)
+    ) return;
+
+    const reserveFraction =
+      female.material.carbonMg > 0
+        ? female.reserveCarbonMg / female.material.carbonMg
+        : 0;
     if (reserveFraction < this.p.reproductionReserveFraction) return;
 
     const malePresent = this.population
