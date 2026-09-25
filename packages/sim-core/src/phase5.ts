@@ -16,6 +16,7 @@ export type BradysiaDeathCause =
   | "dehydration"
   | "senescence"
   | "carbon_exhaustion"
+  | "developmental_mortality"
   | "predation";
 
 export interface BradysiaIndividual {
@@ -236,6 +237,7 @@ export interface BradysiaParameters {
   preOvipositionHours: number;
   fecundityEggsPerFemale: number;
   femaleProbability: number;
+  immatureSurvivalProbability: number;
 
   larvalFeedingCarbonMgPerSecond: number;
   assimilationEfficiency: number;
@@ -293,6 +295,12 @@ export class BradysiaLifecycleSystem implements SimSystem {
     }
     if (p.assimilationEfficiency < 0 || p.assimilationEfficiency > 1) {
       throw new Error("assimilationEfficiency must be in [0,1]");
+    }
+    if (
+      p.immatureSurvivalProbability < 0 ||
+      p.immatureSurvivalProbability > 1
+    ) {
+      throw new Error("immatureSurvivalProbability must be in [0,1]");
     }
   }
 
@@ -367,6 +375,10 @@ export class BradysiaLifecycleSystem implements SimSystem {
       individual.stage === "pupa" &&
       individual.stageAgeSeconds >= this.p.pupalDevelopmentDays * DAY
     ) {
+      if (world.rng.nextFloat() >= this.p.immatureSurvivalProbability) {
+        this.die(world, individual, "developmental_mortality");
+        return;
+      }
       this.population.transitionStage(individual, "adult", world.timeSeconds);
       const sex: BradysiaSex =
         world.rng.nextFloat() < this.p.femaleProbability ? "female" : "male";
