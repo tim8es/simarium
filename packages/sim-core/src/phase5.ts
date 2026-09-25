@@ -363,7 +363,14 @@ export class BradysiaLifecycleSystem implements SimSystem {
       individual.stage === "egg" &&
       individual.stageAgeSeconds >= this.p.eggDevelopmentDays * DAY
     ) {
-      if (!this.survivesImmatureTransition(world)) {
+      // The available evidence is an aggregate immature survival fraction,
+      // not stage-specific mortality. Apply it once when a post-start egg
+      // enters the feeding cohort so non-viable offspring do not consume
+      // larval resources/CPU for weeks.
+      if (
+        individual.birthTimeSeconds >= 0 &&
+        !this.survivesImmatureCohort(world)
+      ) {
         this.die(world, individual, "developmental_mortality");
         return;
       }
@@ -377,10 +384,6 @@ export class BradysiaLifecycleSystem implements SimSystem {
       individual.material.carbonMg >=
         this.p.adultCarbonTargetMg * this.p.pupationCarbonFractionOfAdult
     ) {
-      if (!this.survivesImmatureTransition(world)) {
-        this.die(world, individual, "developmental_mortality");
-        return;
-      }
       this.population.transitionStage(individual, "pupa", world.timeSeconds);
       return;
     }
@@ -389,7 +392,13 @@ export class BradysiaLifecycleSystem implements SimSystem {
       individual.stage === "pupa" &&
       individual.stageAgeSeconds >= this.p.pupalDevelopmentDays * DAY
     ) {
-      if (!this.survivesImmatureTransition(world)) {
+      // Seeded pre-start larvae have not passed through the post-start egg
+      // viability gate, so preserve the original aggregate survival draw at
+      // their adult emergence.
+      if (
+        individual.birthTimeSeconds < 0 &&
+        !this.survivesImmatureCohort(world)
+      ) {
         this.die(world, individual, "developmental_mortality");
         return;
       }
@@ -400,14 +409,8 @@ export class BradysiaLifecycleSystem implements SimSystem {
     }
   }
 
-  private survivesImmatureTransition(world: WorldState): boolean {
-    // The fixture provides aggregate egg-to-adult immature survival. With no
-    // stage-specific measurements yet, distribute that survival equally over
-    // the three stage transitions. The product remains the measured aggregate
-    // probability while mortality occurs before cohorts consume full larval
-    // CPU/resources.
-    const perTransition = Math.cbrt(this.p.immatureSurvivalProbability);
-    return world.rng.nextFloat() < perTransition;
+  private survivesImmatureCohort(world: WorldState): boolean {
+    return world.rng.nextFloat() < this.p.immatureSurvivalProbability;
   }
 
   private waterBalance(
@@ -594,9 +597,18 @@ export class BradysiaLifecycleSystem implements SimSystem {
     if (!this.hasMate(female)) return;
 
     const eggC = this.p.eggCarbonMg;
-    const count = this.p.fecundityEggsPerFemale;
+    const minimumReserve =
+      female.material.carbonMg * this.p.reproductionReserveFraction;
+    const reproductiveReserve = Math.max(
+      0,
+      female.reserveCarbonMg - minimumReserve
+    );
+    const count = Math.min(
+      this.p.fecundityEggsPerFemale,
+      Math.floor(reproductiveReserve / Math.max(1e-12, eggC))
+    );
+    if (count <= 0) return;
     const totalEggC = eggC * count;
-    if (female.material.carbonMg <= totalEggC * 1.2) return;
 
     const nPerC =
       female.material.nitrogenMg /
