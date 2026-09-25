@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "data_version": "0.2.0",
+  "data_version": "0.3.0",
   "status": "parameterization_in_progress",
   "species": [
     {
@@ -93,7 +93,7 @@
       "sources": [
         "docs/BIOLOGY_SOURCES.md#trichorhina-tomentosa"
       ],
-      "runtime_parameter_status": "TBD"
+      "runtime_parameter_status": "PARTIAL"
     },
     {
       "id": "bradysia_impatiens",
