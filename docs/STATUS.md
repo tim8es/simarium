@@ -6,7 +6,8 @@ Updated: 2026-09-25
 
 - Phase 0 specification/contracts: complete for implementation entry.
 - Phase 1 deterministic conservation kernel: **PASS**.
-- Phase 2 producer + detritus loop: **ACTIVE; first Fittonia/decomposer vertical-slice gate PASS**.
+- Phase 2 producer + detritus loop: **PASS** — three real plant species, water-limited physiology, decomposer environment response and sensitivity tests.
+- Phase 3 *Folsomia candida* lifecycle: **PASS (engineering gate)** — individual lifecycle, multi-generation genealogy, moisture-sensitive reproduction, feeding, starvation/death and corpse transfer.
 
 ## Phase 1 evidence
 
@@ -72,3 +73,45 @@ Remaining Phase 2:
 - add *Peperomia caperata*;
 - add *Pilea depressa*;
 - run producer/decomposer sensitivity and regression batches.
+
+
+## Phase 2 completion evidence
+
+Accepted head:
+`62c2961d4c9428185b4f4f28162d445b2b163aa2`
+
+GitHub Actions run:
+`36144959860`
+
+Passed:
+- *Fittonia albivenis*, *Peperomia caperata* and *Pilea depressa* use the shared plant-physiology system;
+- root-water uptake and transpiration conserve H2O;
+- drought reduces Fittonia carbon gain;
+- microbial litter processing slows under low substrate-water availability;
+- light/decomposition sensitivity grid preserves global material invariants;
+- the older litter-nitrogen tracer proof remains green.
+
+Phase 2 parameters are deliberately a mixture of MEASURED, DERIVED, ASSUMED and CALIBRATED values. Passing the gate means the mechanism is coherent and testable, not that every coefficient is biologically final.
+
+## Phase 3 completion evidence
+
+Accepted head:
+`5e796982a971a0e3dd25dafb1216968308331199`
+
+GitHub Actions run:
+`36145748523`
+
+Passed:
+- 10–12-day juvenile starting cohort;
+- temperature-dependent egg/juvenile development;
+- parthenogenetic reproduction with material cost paid by the parent;
+- post-start descendants and grandchildren with parent IDs;
+- individual feeding from explicit fungal/bacterial biomass pools;
+- metabolism returns carbon to the atmosphere;
+- hydration/desiccation exchanges real water with world pools;
+- reproduction is suppressed by dry substrate proxy conditions;
+- senescence/starvation/carbon exhaustion create corpse biomass;
+- individual material sum matches the aggregate ledger;
+- C/N/P/H2O invariants remain valid.
+
+Phase 3 is an engineering lifecycle proof. Population-rate calibration against OECD/literature distributions remains part of later full-ecosystem calibration.
