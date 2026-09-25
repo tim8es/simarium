@@ -54,6 +54,7 @@ export type FolsomiaEvent =
 export class FolsomiaPopulation {
   private nextId = 1;
   private readonly individuals: FolsomiaIndividual[] = [];
+  private readonly livingIndividuals = new Set<FolsomiaIndividual>();
   private readonly records = new Map<number, FolsomiaLifeRecord>();
   private readonly events: FolsomiaEvent[] = [];
 
@@ -67,6 +68,7 @@ export class FolsomiaPopulation {
       material: cloneMaterial(input.material)
     };
     this.individuals.push(individual);
+    this.livingIndividuals.add(individual);
 
     const record: FolsomiaLifeRecord = {
       id,
@@ -91,7 +93,7 @@ export class FolsomiaPopulation {
   }
 
   living(): FolsomiaIndividual[] {
-    return this.individuals.filter((individual) => individual.alive);
+    return [...this.livingIndividuals];
   }
 
   all(): readonly FolsomiaIndividual[] {
@@ -157,6 +159,7 @@ export class FolsomiaPopulation {
   ): void {
     if (!individual.alive) return;
     individual.alive = false;
+    this.livingIndividuals.delete(individual);
     const record = this.record(individual.id);
     record.deathTimeSeconds = timeSeconds;
     record.deathCause = cause;
@@ -170,8 +173,8 @@ export class FolsomiaPopulation {
 
   totalLivingMaterial(): Material {
     let total = zeroMaterial();
-    for (const individual of this.individuals) {
-      if (individual.alive) total = addMaterial(total, individual.material);
+    for (const individual of this.livingIndividuals) {
+      total = addMaterial(total, individual.material);
     }
     return total;
   }
