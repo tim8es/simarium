@@ -2,6 +2,7 @@ name: Phase 7 Agent Diagnostics
 # rerun after ecology fixes
 # final verification
 # validated regression head
+# final calibrated verification
 
 on:
   push:
