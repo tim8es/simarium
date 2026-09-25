@@ -329,9 +329,10 @@ export class BradysiaLifecycleSystem implements SimSystem {
       Math.max(1e-12, substrateWater + this.p.moistureHalfSaturationWaterG);
 
     const current = this.population.living();
-    let totalMetabolicCarbon = 0;
-    const carbonExhausted: BradysiaIndividual[] = [];
 
+    // Advance lifecycle first while the individual and aggregate material
+    // states are still synchronized. Deaths here can therefore transfer
+    // complete remains without depending on pending batched fluxes.
     for (const individual of current) {
       individual.ageSeconds += dtSeconds;
       individual.stageAgeSeconds += dtSeconds * development;
@@ -345,10 +346,51 @@ export class BradysiaLifecycleSystem implements SimSystem {
         individual.adultAgeSeconds >= this.p.adultLifespanDays * DAY
       ) {
         this.die(world, individual, "senescence");
-        continue;
       }
+    }
 
-      this.waterBalance(world, individual, moisture, dtSeconds);
+    // Water exchange used to transfer through the aggregate ledger once per
+    // individual. Large cohorts accumulated floating-point drift large enough
+    // for a later conservative corpse transfer to exceed the aggregate pool by
+    // a few ulps. Update individual water explicitly, but batch the matching
+    // aggregate transfers once per timestep.
+    let availableSubstrateWater = world.ledger.getPool(
+      this.p.substratePool
+    ).waterG;
+    let totalWaterUptake = 0;
+    let totalWaterLoss = 0;
+    for (const individual of current) {
+      if (!individual.alive) continue;
+      const flux = this.waterBalance(
+        individual,
+        availableSubstrateWater,
+        moisture,
+        dtSeconds
+      );
+      availableSubstrateWater -= flux.uptakeG;
+      totalWaterUptake += flux.uptakeG;
+      totalWaterLoss += flux.lossG;
+    }
+
+    if (totalWaterUptake > 0) {
+      world.ledger.transfer(
+        this.p.substratePool,
+        this.p.biomassPool,
+        { ...zeroMaterial(), waterG: totalWaterUptake }
+      );
+    }
+    if (totalWaterLoss > 0) {
+      world.ledger.transfer(
+        this.p.biomassPool,
+        this.p.atmospherePool,
+        { ...zeroMaterial(), waterG: totalWaterLoss }
+      );
+    }
+
+    let totalMetabolicCarbon = 0;
+    const carbonExhausted: BradysiaIndividual[] = [];
+    for (const individual of current) {
+      if (!individual.alive) continue;
       totalMetabolicCarbon += this.metabolize(
         individual,
         development,
@@ -356,17 +398,7 @@ export class BradysiaLifecycleSystem implements SimSystem {
       );
       if (individual.material.carbonMg <= 1e-12) {
         carbonExhausted.push(individual);
-        continue;
       }
-
-      if (individual.stage === "larva") {
-        this.feedLarva(world, individual, dtSeconds);
-      }
-      if (individual.stage === "adult") {
-        this.tryOviposition(world, individual, moisture);
-      }
-
-      this.evaluateStress(world, individual, moisture, dtSeconds);
     }
 
     // Per-individual feeding/death transfers can accumulate a few ulps of
@@ -389,8 +421,20 @@ export class BradysiaLifecycleSystem implements SimSystem {
         );
       }
     }
+
     for (const individual of carbonExhausted) {
       this.die(world, individual, "carbon_exhaustion");
+    }
+
+    for (const individual of current) {
+      if (!individual.alive) continue;
+      if (individual.stage === "larva") {
+        this.feedLarva(world, individual, dtSeconds);
+      }
+      if (individual.stage === "adult") {
+        this.tryOviposition(world, individual, moisture);
+      }
+      this.evaluateStress(world, individual, moisture, dtSeconds);
     }
 
     this.population.assertMatchesAggregate(
@@ -454,24 +498,22 @@ export class BradysiaLifecycleSystem implements SimSystem {
   }
 
   private waterBalance(
-    world: WorldState,
     individual: BradysiaIndividual,
+    availableSubstrateWater: number,
     moisture: number,
     dtSeconds: number
-  ): void {
+  ): { uptakeG: number; lossG: number } {
     const target = stageWaterTarget(individual.stage, this.p.adultBodyWaterG);
     const deficit = Math.max(0, target - individual.material.waterG);
     const uptakeRate =
       individual.stage === "adult" ? 0.000004 : 0.000015;
     const uptakeFraction = 1 - Math.exp(-uptakeRate * moisture * dtSeconds);
     const uptake = Math.min(
-      world.ledger.getPool(this.p.substratePool).waterG,
+      availableSubstrateWater,
       deficit * uptakeFraction
     );
 
     if (uptake > 0) {
-      const amount = { ...zeroMaterial(), waterG: uptake };
-      world.ledger.transfer(this.p.substratePool, this.p.biomassPool, amount);
       individual.material.waterG += uptake;
     }
 
@@ -480,10 +522,10 @@ export class BradysiaLifecycleSystem implements SimSystem {
     const lossFraction = 1 - Math.exp(-lossRate * dryStress * dtSeconds);
     const loss = individual.material.waterG * lossFraction;
     if (loss > 0) {
-      const amount = { ...zeroMaterial(), waterG: loss };
-      world.ledger.transfer(this.p.biomassPool, this.p.atmospherePool, amount);
       individual.material.waterG -= loss;
     }
+
+    return { uptakeG: uptake, lossG: loss };
   }
 
   private metabolize(
