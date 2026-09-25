@@ -136,6 +136,11 @@ export interface MicrobialDecomposerParameters {
   carbonUseEfficiency: number;
   fungalShare: number;
   microbialTurnoverRatePerSecond: number;
+
+  moisturePool?: string;
+  moistureHalfSaturationWaterG?: number;
+  temperatureOptimumC?: number;
+  temperatureSigmaC?: number;
 }
 
 export class MicrobialDecomposerSystem implements SimSystem {
@@ -152,8 +157,38 @@ export class MicrobialDecomposerSystem implements SimSystem {
 
   step(world: WorldState, dtSeconds: number): void {
     const litter = world.ledger.getPool(this.p.litterPool);
+
+    let moistureFactor = 1;
+    if (
+      this.p.moisturePool !== undefined &&
+      this.p.moistureHalfSaturationWaterG !== undefined
+    ) {
+      const water = world.ledger.getPool(this.p.moisturePool).waterG;
+      moistureFactor =
+        water /
+        Math.max(1e-12, water + this.p.moistureHalfSaturationWaterG);
+    }
+
+    let microbialTemperatureFactor = 1;
+    if (
+      this.p.temperatureOptimumC !== undefined &&
+      this.p.temperatureSigmaC !== undefined
+    ) {
+      microbialTemperatureFactor = temperatureResponse(
+        world.environment.temperatureC.mean(),
+        this.p.temperatureOptimumC,
+        this.p.temperatureSigmaC
+      );
+    }
+
     const decayFraction =
-      1 - Math.exp(-this.p.decompositionRatePerSecond * dtSeconds);
+      1 -
+      Math.exp(
+        -this.p.decompositionRatePerSecond *
+          moistureFactor *
+          microbialTemperatureFactor *
+          dtSeconds
+      );
     const decayed = scaleMaterial(litter, decayFraction);
 
     if (
