@@ -5,6 +5,8 @@ Principle: simulation correctness before visual polish.
 
 ## Phase 0 — Specification and evidence
 
+**Status: COMPLETE for Phase 1 entry. Species parameterization continues per-phase.**
+
 Goal: make the model implementable without hidden biological invention.
 
 ### Deliverables
@@ -19,12 +21,14 @@ Goal: make the model implementable without hidden biological invention.
 - [x] machine-readable species database skeleton
 - [x] parameter evidence backlog/table contract
 - [x] preset specification
-- [ ] runtime schemas/unit validation
+- [x] runtime schemas/unit validation
 
 ### Exit gate
 No runtime-critical parameter may remain an undocumented magic number.
 
 ## Phase 1 — Headless conservation kernel
+
+**Status: COMPLETE — CI run 36143633327 passed tests, build and 365-day headless acceptance on commit `7b724fce31f586b4166c943acf74dc89f2c08b6e`.**
 
 Goal: create a deterministic world with material pools but no organisms.
 
