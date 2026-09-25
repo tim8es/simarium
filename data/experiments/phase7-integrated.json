@@ -85,12 +85,12 @@
     "invariantRelativeTolerance": 5e-10
   },
   "calibration": {
-    "dalotiaLocalCaptureProbability": {
-      "value": 0.2,
+    "dalotiaSpatialEncounterEfficiency": {
+      "value": 0.26666666666666666,
       "unit": "dimensionless",
-      "status": "CALIBRATED",
-      "source": "predation_2015",
-      "notes": "Phase-7 local encounter/capture proxy for the spatial terrarium. Calibrated on seeds 0-4 only, with a 3-cell prey encounter kernel and Bradysia mating radius 6; 0.20 retained coexistence in multiple 150-day calibration runs without the prey wipeout seen at higher values. This is not a measured attack-success probability and validation seeds are not used for tuning."
+      "status": "DERIVED",
+      "source": "model_internal",
+      "notes": "Derived from the retained Phase-7 effective local attack factor 0.20 divided by the Phase-6 standalone captureProbability 0.75. DalotiaPredatorSystem multiplies the standalone capture term by this spatial encounter-efficiency term only when a LocalEncounterIndex is present, so 0.75 × 0.266666... preserves the calibrated effective factor 0.20 used in seeds 0-4. This is a model-scale spatial correction, not a measured biological probability."
     }
   }
 }
