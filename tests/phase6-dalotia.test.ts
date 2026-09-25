@@ -151,6 +151,7 @@ function parameters(
     femaleAdultLifespanDays: p("femaleAdultLifespanDays"),
     maleAdultLifespanDays: p("maleAdultLifespanDays"),
     femaleProbability: p("femaleProbability"),
+    immatureSurvivalProbability: p("immatureSurvivalProbability"),
 
     lifetimeFecundity: p("lifetimeFecundity"),
     reproductivePeriodDays: p("reproductivePeriodDays"),
