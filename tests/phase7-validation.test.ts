@@ -29,6 +29,8 @@ describe("Phase 7 validation shard aggregation", () => {
     expect(report.acceptance.criteria.detritivorePersistence.target).toBe(0.8);
     expect(report.acceptance.criteria.bradysiaPersistence.target).toBe(0.7);
     expect(report.acceptance.criteria.dalotiaPersistence.target).toBe(0.7);
+    expect(report.acceptance.criteria.litterNitrogenTracerReturn.target).toBe(1);
+    expect(report.summary.litterNitrogenTracerReturnedRuns).toBeGreaterThanOrEqual(1);
   }, 30_000);
 
   it("rejects malformed or incompatible shard documents", () => {
