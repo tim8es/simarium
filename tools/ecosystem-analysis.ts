@@ -531,8 +531,11 @@ function runOutcome(run: IntegratedRunResult): RunOutcome {
     run.ecosystem.animals.trichorhina
       .all()
       .filter((individual) => !individual.alive)
-      .map((individual) => run.ecosystem.animals.trichorhina.record(individual.id).deathCause)
-      .filter((cause): cause is string => typeof cause === "string")
+      .flatMap((individual) => {
+        const cause =
+          run.ecosystem.animals.trichorhina.record(individual.id).deathCause;
+        return cause === undefined ? [] : [cause];
+      })
   );
 
   return {
