@@ -184,7 +184,14 @@
       "unit": "dimensionless",
       "status": "MEASURED",
       "source": "physiological_time_2026",
-      "notes": "Laboratory immature survival reported around 46.4% across the study temperature range. Applied at adult emergence as an aggregate immature-survival draw because stage-specific survival fractions are not available."
+      "notes": "Laboratory immature survival reported around 46.4% across the study temperature range. Applied at adult emergence as an aggregate immature-survival draw because stage-specific survival fractions are not available. Runtime applies the aggregate probability as equal per-transition survival factors whose product equals the measured egg-to-adult survival, so mortality is not delayed entirely until adult emergence."
+    },
+    "reproductionReserveFraction": {
+      "value": 0.2,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "model_internal",
+      "notes": "Minimum adult reserve fraction required before oviposition. Added after calibration seeds 0-2 showed reproduction could proceed from structural body carbon despite depleted energetic reserve; engineering gate, not a measured lipid fraction."
     }
   },
   "initialPopulation": {
