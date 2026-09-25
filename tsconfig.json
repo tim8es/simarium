@@ -15,5 +15,5 @@
     "declaration": true,
     "sourceMap": true
   },
-  "include": ["packages/**/*.ts", "tools/**/*.ts"]
+  "include": ["packages/**/*.ts", "tools/**/*.ts", "workers/**/*.ts"]
 }

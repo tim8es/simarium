@@ -11,10 +11,12 @@
     "headless": "npm run build --silent && node dist/tools/headless.js",
     "ecosystem:batch": "npm run build --silent && node dist/tools/ecosystem-batch.js",
     "ecosystem:smoke": "npm run ecosystem:batch -- --days 30 --seeds 0:10 --sample 5 --format json",
-    "ecosystem:merge": "npm run build --silent && node dist/tools/ecosystem-validation-report.js"
+    "ecosystem:merge": "npm run build --silent && node dist/tools/ecosystem-validation-report.js",
+    "runtime:benchmark": "npm run build --silent && node dist/tools/runtime-snapshot-benchmark.js"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "fake-indexeddb": "^6.2.5",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
