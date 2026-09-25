@@ -33,6 +33,13 @@
       "source": "life_cycle_2024",
       "notes": "Eggs hatch in approximately 10 days at 20 C."
     },
+    "eggHatchProbability": {
+      "value": 0.72,
+      "unit": "dimensionless",
+      "status": "MEASURED",
+      "source": "life_cycle_2024",
+      "notes": "Control egg hatchability averaged 72% in the cited full-life-cycle study. Applied as deterministic-seed stochastic egg survival at hatching; failed eggs remain material-conservative by entering the animal-corpse detrital pool."
+    },
     "adultDevelopmentDays": {
       "value": 22,
       "unit": "day",
