@@ -291,4 +291,46 @@ describe("Phase 6 Dalotia coriaria predator", () => {
     expect(dalotia.living()).toHaveLength(0);
     expect(world.ledger.getPool("animal_corpses").carbonMg).toBeGreaterThan(0);
   });
+
+  it("does not pupate an underweight larva without sufficient prey-derived growth", () => {
+    const dalotia = seedDalotiaLarvae({
+      count: 4,
+      ageDays: 0,
+      carbonMg: p("adultCarbonTargetMg") * 0.10,
+      reserveCarbonMg: 0,
+      nitrogenPerCarbon: p("nitrogenPerCarbon"),
+      phosphorusPerCarbon: p("phosphorusPerCarbon"),
+      adultBodyWaterG: p("adultBodyWaterG")
+    });
+    for (const individual of dalotia.living()) {
+      individual.stageAgeSeconds = (p("larvalDevelopmentDays") + 1) * 86400;
+    }
+    const prey = preyPopulations(0, 0);
+    const world = createWorld(dalotia, prey);
+
+    new FixedStepScheduler(world, [
+      new DalotiaPredatorSystem(dalotia, prey, parameters())
+    ]).step(1);
+
+    expect(
+      dalotia.living().every((individual) => individual.stage === "larva")
+    ).toBe(true);
+  });
+
+  it("does not produce eggs from a depleted female until feeding restores reserves", () => {
+    const dalotia = adultPredators(true);
+    const female = dalotia.living().find((x) => x.sex === "female")!;
+    female.reserveCarbonMg = 0;
+    female.adultAgeSeconds = (p("preOvipositionDays") + 1) * 86400;
+
+    const prey = preyPopulations(0, 0);
+    const world = createWorld(dalotia, prey);
+
+    new FixedStepScheduler(world, [
+      new DalotiaPredatorSystem(dalotia, prey, parameters())
+    ]).runFor(2 * 86400);
+
+    expect(dalotia.all().filter((x) => x.parentId !== undefined)).toHaveLength(0);
+  });
+
 });
