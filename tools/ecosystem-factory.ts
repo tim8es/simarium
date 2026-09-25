@@ -313,6 +313,7 @@ function bradysiaParameters(): BradysiaParameters {
     preOvipositionHours: value(p.preOvipositionHours),
     fecundityEggsPerFemale: value(p.fecundityEggsPerFemale),
     femaleProbability: value(p.femaleProbability),
+    immatureSurvivalProbability: value(p.immatureSurvivalProbability),
     larvalFeedingCarbonMgPerSecond:
       value(p.larvalFeedingCarbonMgPerSecond),
     assimilationEfficiency: value(p.assimilationEfficiency),
@@ -352,6 +353,7 @@ function dalotiaParameters(): DalotiaParameters {
     femaleAdultLifespanDays: value(p.femaleAdultLifespanDays),
     maleAdultLifespanDays: value(p.maleAdultLifespanDays),
     femaleProbability: value(p.femaleProbability),
+    immatureSurvivalProbability: value(p.immatureSurvivalProbability),
     lifetimeFecundity: value(p.lifetimeFecundity),
     reproductivePeriodDays: value(p.reproductivePeriodDays),
     preOvipositionDays: value(p.preOvipositionDays),
