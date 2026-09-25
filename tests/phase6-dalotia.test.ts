@@ -335,4 +335,31 @@ describe("Phase 6 Dalotia coriaria predator", () => {
     expect(dalotia.all().filter((x) => x.parentId !== undefined)).toHaveLength(0);
   });
 
+  it("stops hunting when adult energetic reserves are already above the feeding target", () => {
+    const dalotia = adultPredators(false);
+    const prey = preyPopulations(20, 20);
+    const predator = dalotia.living()[0]!;
+    predator.reserveCarbonMg = predator.material.carbonMg * 0.50;
+
+    const world = createWorld(dalotia, prey);
+    const initialPrey =
+      prey.bradysia.living().length + prey.folsomia.living().length;
+
+    new FixedStepScheduler(world, [
+      new DalotiaPredatorSystem(
+        dalotia,
+        prey,
+        parameters({ reserveTargetFraction: 0.40 })
+      )
+    ]).runFor(86400);
+
+    expect(
+      dalotia.eventLog().filter((event) => event.type === "predation")
+    ).toHaveLength(0);
+    expect(
+      prey.bradysia.living().length + prey.folsomia.living().length
+    ).toBe(initialPrey);
+  });
+
+
 });
