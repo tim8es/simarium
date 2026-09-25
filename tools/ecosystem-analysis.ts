@@ -687,7 +687,14 @@ export function runEcosystemBatch(options: BatchOptions): BatchSummary {
     throw new Error("Batch seeds must be unique");
   }
 
-  const runs = options.seeds.map((seed) => {
+  // Convert each completed world to its compact outcome immediately.
+  // IntegratedRunResult intentionally exposes the full ecosystem for one-run
+  // diagnostics, but retaining one full world per seed makes long multi-seed
+  // calibration batches accumulate all historical individuals in memory.
+  // Sequential compaction preserves seed order/results while allowing each
+  // completed world to become unreachable before the next seed starts.
+  const outcomes: RunOutcome[] = [];
+  for (const seed of options.seeds) {
     const runOptions: IntegratedRunOptions = {
       seed,
       days: options.days
@@ -695,14 +702,10 @@ export function runEcosystemBatch(options: BatchOptions): BatchSummary {
     if (options.sampleEveryDays !== undefined) {
       runOptions.sampleEveryDays = options.sampleEveryDays;
     }
-    return runIntegratedEcosystem(runOptions);
-  });
+    outcomes.push(runOutcome(runIntegratedEcosystem(runOptions)));
+  }
 
-  return summarizeOutcomes(
-    options.days,
-    options.seeds,
-    runs.map(runOutcome)
-  );
+  return summarizeOutcomes(options.days, options.seeds, outcomes);
 }
 
 export function mergeBatchSummaries(
