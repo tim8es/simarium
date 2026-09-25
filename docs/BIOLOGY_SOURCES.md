@@ -18,10 +18,16 @@ Checked for the MVP species list and key ecological assumptions.
 ### Peperomia caperata
 - Royal Botanic Gardens, Kew — Plants of the World Online: accepted species; native to southeastern Brazil; wet tropical biome.
   https://powo.science.kew.org/taxon/678190-1
+- NC State Extension: medium/filtered light is suitable; soil should be moist but well drained and the species does not tolerate persistently wet or very dry soil. Supports the water-stress model direction, not an exact transpiration coefficient.
+  https://plants.ces.ncsu.edu/plants/peperomia-caperata/
+- Shin, Lee & Nam (2023): controlled LED experiment on *P. caperata* cultivars. Plants were grown for five weeks at 20 ± 1 C, about 63.7 ± 15.2% RH, 14 h photoperiod, and PPFD 100 µmol m^-2 s^-1. This provides a documented growth condition, not a universal optimum.
+  https://doi.org/10.22698/jales.20230025
 
 ### Pilea depressa
 - Royal Botanic Gardens, Kew — Plants of the World Online: accepted species; native Cuba to Hispaniola; wet tropical biome.
   https://powo.science.kew.org/taxon/855364-1
+- Penn State Extension, Pilea houseplant guidance: Pilea are low-growing tropical/subtropical plants suited to bright indirect light and warm conditions; typical daytime indoor temperatures of about 65–75 F are described. This is genus-level horticultural evidence and is therefore treated as low-confidence proxy data for *P. depressa* coefficients.
+  https://extension.psu.edu/pilea-as-a-houseplant
 
 ## Invertebrates
 
