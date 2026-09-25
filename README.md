@@ -36,6 +36,7 @@ The MVP is a constructed tropical bioactive terrarium, not a claim to reproduce 
 
 ## Documentation
 
+- [Current implementation status](docs/STATUS.md)
 - [MVP specification](docs/MVP_SPEC.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
 - [Simulation model](docs/SIMULATION_MODEL.md)
