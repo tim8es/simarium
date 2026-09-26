@@ -55,3 +55,16 @@ jobs:
             --format json > "$label.json" 2> "$label.time.txt"
           cat "$label.json"
           cat "$label.time.txt"
+          node --input-type=module - "$label.json" <<'NODE'
+          import fs from "node:fs";
+          const report = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+          if (report.invariantFailureRuns !== 0) {
+            throw new Error(`Dalotia checkpoint invariant failures: ${report.invariantFailureRuns}`);
+          }
+          if ((report.persistenceProbability?.dalotia ?? 0) < 1) {
+            throw new Error("Dalotia did not persist in this calibration checkpoint");
+          }
+          if ((report.postStartGenerationProbability?.dalotia ?? 0) < 1) {
+            throw new Error("Dalotia produced no post-start generation in this checkpoint");
+          }
+          NODE
