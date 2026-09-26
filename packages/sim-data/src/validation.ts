@@ -326,6 +326,68 @@ export function validateSpeciesProfile(value: unknown): SpeciesProfile {
     assertObject(profile[section], `profile.${section}`);
   }
 
+  const biology = profile.biology as Record<string, unknown>;
+  assertStringArray(biology.stages, "profile.biology.stages");
+  assertObject(biology.development_timing, "profile.biology.development_timing");
+  assertObject(biology.lifespan, "profile.biology.lifespan");
+  assertObject(biology.reproduction, "profile.biology.reproduction");
+  const biologyReproduction = biology.reproduction as Record<string, unknown>;
+  assertString(biologyReproduction.mode, "profile.biology.reproduction.mode");
+  if (typeof biologyReproduction.mate_required !== "boolean") {
+    throw new Error("profile.biology.reproduction.mate_required must be a boolean");
+  }
+  assertObject(
+    biologyReproduction.parameters,
+    "profile.biology.reproduction.parameters"
+  );
+  if (biologyReproduction.notes !== undefined) {
+    assertString(biologyReproduction.notes, "profile.biology.reproduction.notes");
+  }
+  for (const section of ["body_mass", "water_dependence", "thermal_response"]) {
+    assertObject(biology[section], `profile.biology.${section}`);
+    const block = biology[section] as Record<string, unknown>;
+    assertString(block.summary, `profile.biology.${section}.summary`);
+    assertObject(block.parameters, `profile.biology.${section}.parameters`);
+  }
+
+  const ecology = profile.ecology as Record<string, unknown>;
+  for (const field of [
+    "diet",
+    "prey",
+    "predators",
+    "habitat",
+    "locomotion",
+    "activity_layer",
+    "substrate_preference"
+  ]) {
+    assertStringArray(ecology[field], `profile.ecology.${field}`);
+  }
+
+  const simulation = profile.simulation as Record<string, unknown>;
+  for (const field of [
+    "metabolism",
+    "reserve_thresholds",
+    "feeding_rates",
+    "assimilation",
+    "critical_mass_thresholds",
+    "reproduction",
+    "reproduction_costs",
+    "mortality_conditions"
+  ]) {
+    assertObject(simulation[field], `profile.simulation.${field}`);
+  }
+  assertStringArray(simulation.notes, "profile.simulation.notes");
+
+  const render = profile.render as Record<string, unknown>;
+  assertObject(render.approximate_dimensions, "profile.render.approximate_dimensions");
+  assertString(render.coloration, "profile.render.coloration");
+  assertStringArray(render.stage_differences, "profile.render.stage_differences");
+  assertString(render.locomotion_style, "profile.render.locomotion_style");
+  assertStringArray(
+    render.reference_images_asset_notes,
+    "profile.render.reference_images_asset_notes"
+  );
+
   if (!Array.isArray(profile.sources) || profile.sources.length === 0) {
     throw new Error("profile.sources must be a non-empty array");
   }
