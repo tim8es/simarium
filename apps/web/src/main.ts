@@ -31,6 +31,8 @@ function selectedEntity() {
 function render(): void {
   const selected = selectedEntity();
   const action = selected?.kind === "animal" ? selected.currentAction : "GROW";
+  const inspection =
+    selected !== undefined ? snapshot.inspectionByEntity[selected.id] : undefined;
   app.innerHTML = `
     <div class="observation-shell">
       <header class="top-bar">
@@ -58,8 +60,8 @@ function render(): void {
 
         <aside class="right-rail">
           ${renderEntityCard(selected)}
-          ${renderWhyPanel(snapshot.why, action)}
-          ${renderGenealogy(snapshot.genealogy)}
+          ${renderWhyPanel(inspection?.why ?? [], action)}
+          ${renderGenealogy(inspection?.genealogy ?? [])}
         </aside>
       </div>
     </div>
