@@ -430,13 +430,21 @@ export function runIntegratedEcosystem(
   let invariantError: string | undefined;
 
   for (let day = 1; day <= options.days; day++) {
-    eco.scheduler.step(stepsPerDay);
     try {
+      eco.scheduler.step(stepsPerDay);
       eco.invariants.check(eco.world);
     } catch (error) {
       invariantFailures++;
       invariantFailureDay = day;
       invariantError = error instanceof Error ? error.message : String(error);
+
+      // Keep diagnostics anchored to the actual failure state, including
+      // failures raised by per-system aggregate checks inside scheduler.step.
+      maxPlantStructuralTracerMg = Math.max(
+        maxPlantStructuralTracerMg,
+        plantStructuralTracerMg()
+      );
+      samples.push(collectEcosystemSnapshot(eco, day));
       break;
     }
 
