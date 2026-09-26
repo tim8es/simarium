@@ -1,0 +1,626 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://simarium.local/schemas/species-profile.schema.json",
+  "title": "Simarium normalized species profile",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "data_version",
+    "id",
+    "runtime_membership",
+    "profile_status",
+    "identity",
+    "traits",
+    "biology",
+    "ecology",
+    "simulation",
+    "render",
+    "sources"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "data_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "runtime_membership": {
+      "enum": [
+        "MVP",
+        "EXAMPLE_ONLY"
+      ]
+    },
+    "profile_status": {
+      "enum": [
+        "PARTIAL",
+        "READY"
+      ]
+    },
+    "identity": {
+      "type": "object",
+      "required": [
+        "accepted_scientific_name",
+        "synonyms",
+        "common_names",
+        "taxonomy",
+        "taxon_source"
+      ],
+      "properties": {
+        "accepted_scientific_name": {
+          "type": "string",
+          "minLength": 3
+        },
+        "synonyms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "common_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "taxonomy": {
+          "type": "object",
+          "required": [
+            "kingdom",
+            "phylum",
+            "class",
+            "order",
+            "family",
+            "genus",
+            "species"
+          ],
+          "properties": {
+            "kingdom": {
+              "type": "string",
+              "minLength": 1
+            },
+            "phylum": {
+              "type": "string",
+              "minLength": 1
+            },
+            "class": {
+              "type": "string",
+              "minLength": 1
+            },
+            "order": {
+              "type": "string",
+              "minLength": 1
+            },
+            "family": {
+              "type": "string",
+              "minLength": 1
+            },
+            "genus": {
+              "type": "string",
+              "minLength": 1
+            },
+            "species": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": true
+        },
+        "taxon_source": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "traits": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "sexual",
+          "parthenogenetic",
+          "clonal",
+          "egg_juvenile_adult",
+          "egg_larva_pupa_adult",
+          "manca_juvenile_adult",
+          "ramet_clonal_lifecycle",
+          "biomass_field",
+          "detritivore",
+          "fungivore",
+          "microbivore",
+          "predator",
+          "root_feeder",
+          "producer",
+          "saprotroph",
+          "litter_source",
+          "substrate_walker",
+          "flyer",
+          "under_litter",
+          "groundcover",
+          "moisture_sensitive",
+          "temperature_response"
+        ]
+      }
+    },
+    "biology": {
+      "type": "object",
+      "required": [
+        "stages",
+        "development_timing",
+        "lifespan",
+        "reproduction",
+        "body_mass",
+        "water_dependence",
+        "thermal_response"
+      ],
+      "properties": {
+        "stages": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "development_timing": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "lifespan": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "reproduction": {
+          "type": "object",
+          "required": [
+            "mode",
+            "mate_required",
+            "parameters"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "minLength": 1
+            },
+            "mate_required": {
+              "type": "boolean"
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/quantitativeParameter"
+              }
+            },
+            "notes": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "body_mass": {
+          "type": "object",
+          "required": [
+            "summary",
+            "parameters"
+          ],
+          "properties": {
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/quantitativeParameter"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "water_dependence": {
+          "type": "object",
+          "required": [
+            "summary",
+            "parameters"
+          ],
+          "properties": {
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/quantitativeParameter"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "thermal_response": {
+          "type": "object",
+          "required": [
+            "summary",
+            "parameters"
+          ],
+          "properties": {
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/quantitativeParameter"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "ecology": {
+      "type": "object",
+      "required": [
+        "diet",
+        "prey",
+        "predators",
+        "habitat",
+        "locomotion",
+        "activity_layer",
+        "substrate_preference"
+      ],
+      "properties": {
+        "diet": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prey": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "predators": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "habitat": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "locomotion": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "activity_layer": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "substrate_preference": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "simulation": {
+      "type": "object",
+      "required": [
+        "metabolism",
+        "reserve_thresholds",
+        "feeding_rates",
+        "assimilation",
+        "critical_mass_thresholds",
+        "reproduction",
+        "reproduction_costs",
+        "mortality_conditions",
+        "notes"
+      ],
+      "properties": {
+        "metabolism": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "reserve_thresholds": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "feeding_rates": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "assimilation": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "critical_mass_thresholds": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "reproduction": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "reproduction_costs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "mortality_conditions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "render": {
+      "type": "object",
+      "required": [
+        "approximate_dimensions",
+        "coloration",
+        "stage_differences",
+        "locomotion_style",
+        "reference_images_asset_notes"
+      ],
+      "properties": {
+        "approximate_dimensions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/quantitativeParameter"
+          }
+        },
+        "coloration": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stage_differences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "locomotion_style": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reference_images_asset_notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    }
+  },
+  "$defs": {
+    "quantitativeParameter": {
+      "type": "object",
+      "required": [
+        "value",
+        "unit",
+        "status",
+        "source",
+        "notes"
+      ],
+      "properties": {
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unit": {
+          "enum": [
+            "s",
+            "day",
+            "hour",
+            "m",
+            "cm",
+            "mm",
+            "um",
+            "degC",
+            "g_H2O",
+            "mg_wet",
+            "mg_dry",
+            "mg_C",
+            "mg_N",
+            "mg_P",
+            "1/s",
+            "relative_PAR",
+            "dimensionless",
+            "count",
+            "count/day",
+            "mg_C/s",
+            "mg_N/mg_C",
+            "mg_P/mg_C",
+            "g_H2O/mg_C"
+          ]
+        },
+        "status": {
+          "enum": [
+            "MEASURED",
+            "DERIVED",
+            "ASSUMED",
+            "CALIBRATED",
+            "TBD"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_locator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conditions": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "valid_range": {
+          "type": "object",
+          "required": [
+            "min",
+            "max"
+          ],
+          "properties": {
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "uncertainty": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "TBD"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "citation",
+        "confidence"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "category": {
+          "enum": [
+            "peer_reviewed",
+            "official_standard",
+            "taxonomic_database",
+            "university_extension",
+            "specialist_reference",
+            "commercial_proxy",
+            "proxy",
+            "model_internal"
+          ]
+        },
+        "citation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

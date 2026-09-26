@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "data_version": "0.6.0",
+  "id": "bacillus_subtilis",
+  "runtime_membership": "MVP",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Bacillus subtilis",
+    "synonyms": [],
+    "common_names": [
+      "hay bacillus"
+    ],
+    "taxonomy": {
+      "kingdom": "Bacteria",
+      "phylum": "Bacillota",
+      "class": "Bacilli",
+      "order": "Bacillales",
+      "family": "Bacillaceae",
+      "genus": "Bacillus",
+      "species": "subtilis"
+    },
+    "taxon_source": "soil_ecology"
+  },
+  "traits": [
+    "biomass_field",
+    "saprotroph",
+    "temperature_response",
+    "moisture_sensitive"
+  ],
+  "biology": {
+    "stages": [
+      "biomass_field"
+    ],
+    "development_timing": {},
+    "lifespan": {
+      "biomass_persistence_days": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "soil_ecology",
+        "notes": "The MVP represents bacterial biomass as a field; individual-cell lifespan is not a runtime parameter."
+      }
+    },
+    "reproduction": {
+      "mode": "binary_fission_and_spore_formation",
+      "mate_required": false,
+      "parameters": {}
+    },
+    "body_mass": {
+      "summary": "Represented as bacterial biomass carbon/nutrients, not discrete cells.",
+      "parameters": {}
+    },
+    "water_dependence": {
+      "summary": "Common soil bacterium; system-level moisture response is intentionally coarse.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "A cellulolytic environmental isolate showed maximum assayed activity at 32 C; this is strain- and assay-specific and not a universal B. subtilis optimum.",
+      "parameters": {
+        "cellulolytic_assay_peak_temperature_c": {
+          "value": 32,
+          "unit": "degC",
+          "status": "MEASURED",
+          "source": "wita2019",
+          "notes": "Temperature of maximum cellulolytic activity for one environmental isolate in the cited assay; not a species optimum.",
+          "confidence": "medium"
+        }
+      }
+    }
+  },
+  "ecology": {
+    "diet": [
+      "labile organic carbon",
+      "cellulosic substrate in capable strains"
+    ],
+    "prey": [],
+    "predators": [
+      "microbivores"
+    ],
+    "habitat": [
+      "soil organic matter particles",
+      "rhizosphere"
+    ],
+    "locomotion": [
+      "biomass-field expansion"
+    ],
+    "activity_layer": [
+      "substrate biomass field"
+    ],
+    "substrate_preference": [
+      "moist organic substrate"
+    ]
+  },
+  "simulation": {
+    "metabolism": {},
+    "reserve_thresholds": {},
+    "feeding_rates": {
+      "decomposition_rate_system": {
+        "value": 3.858e-7,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "phase2_fixture",
+        "notes": "Shared decomposer-system rate; not a measured B. subtilis rate.",
+        "confidence": "low"
+      }
+    },
+    "assimilation": {
+      "carbon_use_efficiency_system": {
+        "value": 0.4,
+        "unit": "dimensionless",
+        "status": "ASSUMED",
+        "source": "soil_cue_proxy",
+        "notes": "Community-level proxy, not species-specific.",
+        "confidence": "low"
+      }
+    },
+    "critical_mass_thresholds": {},
+    "reproduction": {},
+    "reproduction_costs": {},
+    "mortality_conditions": {
+      "microbial_turnover_rate_system": {
+        "value": 5.787e-7,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "phase2_fixture",
+        "notes": "Approximate 20-day system turnover; not a measured B. subtilis biomass turnover.",
+        "confidence": "low"
+      }
+    },
+    "notes": [
+      "B. subtilis is an explicit bacterial decomposer proxy, not a claim that one species represents the full bacterial community.",
+      "CUE/turnover validation should target emergent decomposer-system behavior."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "cell_length_um": {
+        "value": null,
+        "unit": "um",
+        "status": "TBD",
+        "source": "soil_ecology",
+        "notes": "Individual cell geometry is not currently needed by the biomass-field representation."
+      }
+    },
+    "coloration": "Not rendered as visible individual cells at terrarium scale.",
+    "stage_differences": [
+      "Biomass field only; endospores are not a separate MVP render stage."
+    ],
+    "locomotion_style": "Non-locomotory field at terrarium scale.",
+    "reference_images_asset_notes": [
+      "Represent indirectly through substrate/biofilm state; microscopic cell art is optional educational detail, not simulation state."
+    ]
+  },
+  "sources": [
+    {
+      "id": "soil_ecology",
+      "category": "peer_reviewed",
+      "citation": "Classical soil/ecology literature on Bacillus subtilis association with soil organic matter.",
+      "url": "https://www.microbiologyresearch.org/content/journal/micro/10.1099/00221287-81-1-183",
+      "confidence": "medium"
+    },
+    {
+      "id": "wita2019",
+      "category": "peer_reviewed",
+      "citation": "Wita et al. (2019), cellulolytic activity of an environmental Bacillus subtilis isolate.",
+      "url": "https://doi.org/10.21307/pjm-2019-012",
+      "confidence": "high"
+    },
+    {
+      "id": "soil_cue_proxy",
+      "category": "peer_reviewed",
+      "citation": "Pold et al. (2020), microbial carbon-use-efficiency proxy; not B. subtilis-specific.",
+      "url": "https://doi.org/10.1128/mBio.02293-19",
+      "confidence": "medium"
+    },
+    {
+      "id": "phase2_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase2-producer-loop.json and phase2-multiplant.json.",
+      "confidence": "low"
+    }
+  ]
+}

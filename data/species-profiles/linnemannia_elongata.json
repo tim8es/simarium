@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "data_version": "0.6.0",
+  "id": "linnemannia_elongata",
+  "runtime_membership": "MVP",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Linnemannia elongata",
+    "synonyms": [
+      "Mortierella elongata"
+    ],
+    "common_names": [],
+    "taxonomy": {
+      "kingdom": "Fungi",
+      "phylum": "Mucoromycota",
+      "class": "Mortierellomycetes",
+      "order": "Mortierellales",
+      "family": "Mortierellaceae",
+      "genus": "Linnemannia",
+      "species": "elongata"
+    },
+    "taxon_source": "index_fungorum"
+  },
+  "traits": [
+    "biomass_field",
+    "saprotroph",
+    "temperature_response",
+    "moisture_sensitive"
+  ],
+  "biology": {
+    "stages": [
+      "biomass_field"
+    ],
+    "development_timing": {
+      "stationary_growth_time_hours_lab": {
+        "value": 48,
+        "unit": "hour",
+        "status": "MEASURED",
+        "source": "bajpai1992",
+        "notes": "Approximate time to stationary mycelial growth in the cited culture medium at 25 C; not a terrarium turnover rate.",
+        "conditions": "NRRL 5513 culture at 25 C in the study medium.",
+        "confidence": "high"
+      }
+    },
+    "lifespan": {
+      "biomass_persistence_days": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "ifas",
+        "notes": "Individual-organism lifespan is not meaningful for the MVP biomass-field representation."
+      }
+    },
+    "reproduction": {
+      "mode": "hyphal_growth_and_sporulation",
+      "mate_required": false,
+      "parameters": {}
+    },
+    "body_mass": {
+      "summary": "Represented as a carbon/nutrient biomass field, not individual fungal bodies.",
+      "parameters": {}
+    },
+    "water_dependence": {
+      "summary": "Soil/root-associated saprotroph; the MVP moisture curve is a system calibration.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "Culture evidence supports growth around 20-25 C, but the current decomposer-system optimum is not a species-specific measured optimum.",
+      "parameters": {
+        "documented_culture_temperature_c": {
+          "value": 25,
+          "unit": "degC",
+          "status": "MEASURED",
+          "source": "bajpai1992",
+          "notes": "Culture temperature used for the reported growth kinetics.",
+          "confidence": "high"
+        }
+      }
+    }
+  },
+  "ecology": {
+    "diet": [
+      "litter carbon",
+      "simple organic substrates"
+    ],
+    "prey": [],
+    "predators": [
+      "Folsomia candida",
+      "Trichorhina tomentosa",
+      "other fungivores"
+    ],
+    "habitat": [
+      "soil",
+      "rhizosphere",
+      "decaying organic matter"
+    ],
+    "locomotion": [
+      "hyphal extension"
+    ],
+    "activity_layer": [
+      "substrate biomass field"
+    ],
+    "substrate_preference": [
+      "moist organic substrate"
+    ]
+  },
+  "simulation": {
+    "metabolism": {},
+    "reserve_thresholds": {},
+    "feeding_rates": {
+      "decomposition_rate_system": {
+        "value": 3.858e-7,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "phase2_fixture",
+        "notes": "Approximate 30-day characteristic rate for labile litter in the model; not a measured L. elongata decomposition constant.",
+        "confidence": "low"
+      }
+    },
+    "assimilation": {
+      "carbon_use_efficiency_system": {
+        "value": 0.4,
+        "unit": "dimensionless",
+        "status": "ASSUMED",
+        "source": "soil_cue_proxy",
+        "notes": "Coarse microbial-system proxy, explicitly not species-specific. Soil CUE is method-, substrate-, temperature- and community-dependent.",
+        "confidence": "low"
+      }
+    },
+    "critical_mass_thresholds": {},
+    "reproduction": {},
+    "reproduction_costs": {},
+    "mortality_conditions": {
+      "microbial_turnover_rate_system": {
+        "value": 5.787e-7,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "phase2_fixture",
+        "notes": "Approximate 20-day characteristic turnover used by the fixture; not a species-specific measured turnover rate.",
+        "confidence": "low"
+      }
+    },
+    "notes": [
+      "The MVP decomposer loop combines fungal and bacterial behavior. CUE/turnover must be validated as system-level properties, not attributed as Linnemannia measurements."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "hyphal_diameter_um": {
+        "value": null,
+        "unit": "um",
+        "status": "TBD",
+        "source": "ifas",
+        "notes": "Individual hyphal geometry is not required by the current biomass-field renderer and is not frozen."
+      }
+    },
+    "coloration": "Off-white fungal biomass/mycelial contribution; exact culture pigmentation is not encoded.",
+    "stage_differences": [
+      "Biomass field changes density rather than discrete life-stage meshes."
+    ],
+    "locomotion_style": "Non-locomotory biomass field with local growth/spread.",
+    "reference_images_asset_notes": [
+      "Render as subtle substrate/fungal texture; do not imply visible macroscopic fruiting bodies unless separately modeled."
+    ]
+  },
+  "sources": [
+    {
+      "id": "index_fungorum",
+      "category": "taxonomic_database",
+      "citation": "Index Fungorum: Linnemannia elongata (syn. Mortierella elongata).",
+      "url": "https://www.indexfungorum.org/names/NamesRecord.asp?RecordID=833768",
+      "confidence": "high"
+    },
+    {
+      "id": "ifas",
+      "category": "university_extension",
+      "citation": "University of Florida IFAS: Mortierella/Linnemannia elongata ecology and culture.",
+      "url": "https://ask.ifas.ufl.edu/publication/SS679",
+      "confidence": "medium"
+    },
+    {
+      "id": "bajpai1992",
+      "category": "peer_reviewed",
+      "citation": "Bajpai et al. (1992), Mortierella elongata NRRL 5513 culture kinetics.",
+      "url": "https://doi.org/10.1007/BF01569606",
+      "confidence": "high"
+    },
+    {
+      "id": "soil_cue_proxy",
+      "category": "peer_reviewed",
+      "citation": "Pold et al. (2020) / soil microbial CUE proxy used by the existing fixture; community-level evidence only.",
+      "url": "https://doi.org/10.1128/mBio.02293-19",
+      "confidence": "medium"
+    },
+    {
+      "id": "phase2_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase2-producer-loop.json and phase2-multiplant.json.",
+      "confidence": "low"
+    }
+  ]
+}

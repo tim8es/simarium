@@ -1,0 +1,374 @@
+{
+  "schema_version": 1,
+  "data_version": "0.6.0",
+  "id": "dalotia_coriaria",
+  "runtime_membership": "MVP",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Dalotia coriaria",
+    "synonyms": [
+      "Atheta coriaria"
+    ],
+    "common_names": [
+      "rove beetle"
+    ],
+    "taxonomy": {
+      "kingdom": "Animalia",
+      "phylum": "Arthropoda",
+      "class": "Insecta",
+      "order": "Coleoptera",
+      "family": "Staphylinidae",
+      "genus": "Dalotia",
+      "species": "coriaria"
+    },
+    "taxon_source": "itis"
+  },
+  "traits": [
+    "sexual",
+    "egg_larva_pupa_adult",
+    "predator",
+    "substrate_walker",
+    "flyer",
+    "moisture_sensitive",
+    "temperature_response"
+  ],
+  "biology": {
+    "stages": [
+      "egg",
+      "larva",
+      "pupa",
+      "adult"
+    ],
+    "development_timing": {
+      "egg_development_days_26c": {
+        "value": 2.2,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "life_history_2013",
+        "notes": "Mean egg duration.",
+        "conditions": "Laboratory growing medium around 26 C.",
+        "confidence": "high"
+      },
+      "larval_development_days_26c": {
+        "value": 7.1,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "life_history_2013",
+        "notes": "Mean total larval duration.",
+        "confidence": "high"
+      },
+      "pupal_development_days_26c": {
+        "value": 7.8,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "life_history_2013",
+        "notes": "Mean pupal duration.",
+        "confidence": "high"
+      }
+    },
+    "lifespan": {
+      "female_adult_lifespan_days": {
+        "value": 47.8,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "life_history_2013",
+        "notes": "Mean female longevity.",
+        "confidence": "high"
+      },
+      "male_adult_lifespan_days": {
+        "value": 60.3,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "life_history_2013",
+        "notes": "Mean male longevity.",
+        "confidence": "high"
+      }
+    },
+    "reproduction": {
+      "mode": "sexual",
+      "mate_required": true,
+      "parameters": {
+        "lifetime_fecundity_eggs": {
+          "value": 90.2,
+          "unit": "count",
+          "status": "MEASURED",
+          "source": "life_history_2013",
+          "notes": "Mean eggs per female under cited laboratory conditions.",
+          "confidence": "high"
+        },
+        "female_probability": {
+          "value": 0.5,
+          "unit": "dimensionless",
+          "status": "MEASURED",
+          "source": "life_history_2013",
+          "notes": "Approximately 1:1 sex ratio.",
+          "confidence": "high"
+        }
+      }
+    },
+    "body_mass": {
+      "summary": "One predation/diet study reports adult body weight around 0.40 mg; carbon conversion remains provisional.",
+      "parameters": {
+        "adult_wet_mass_mg": {
+          "value": 0.4,
+          "unit": "mg_wet",
+          "status": "MEASURED",
+          "source": "diet_predation",
+          "notes": "Approximate adult body weight in the cited assay.",
+          "confidence": "medium"
+        }
+      }
+    },
+    "water_dependence": {
+      "summary": "Associated with moist growing medium; exact desiccation/hydration coefficients remain calibrated.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "Lifecycle values are measured around 26 C; response width is calibrated rather than measured.",
+      "parameters": {
+        "reference_temperature_c": {
+          "value": 26,
+          "unit": "degC",
+          "status": "MEASURED",
+          "source": "life_history_2013",
+          "notes": "Laboratory life-history condition, not a universal optimum.",
+          "confidence": "high"
+        }
+      }
+    }
+  },
+  "ecology": {
+    "diet": [
+      "small soil arthropods"
+    ],
+    "prey": [
+      "Bradysia impatiens larvae",
+      "Folsomia candida and other small springtails"
+    ],
+    "predators": [],
+    "habitat": [
+      "growing media",
+      "soil surface and upper substrate"
+    ],
+    "locomotion": [
+      "substrate walking",
+      "short adult flight"
+    ],
+    "activity_layer": [
+      "surface/upper substrate"
+    ],
+    "substrate_preference": [
+      "moist organic growing medium"
+    ]
+  },
+  "simulation": {
+    "metabolism": {
+      "basal_metabolism_carbon": {
+        "value": 2.5e-9,
+        "unit": "mg_C/s",
+        "status": "CALIBRATED",
+        "source": "phase6_fixture",
+        "notes": "Engineering metabolic coefficient.",
+        "confidence": "low"
+      }
+    },
+    "reserve_thresholds": {
+      "reserve_target_fraction": {
+        "value": 0.45,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase6_fixture",
+        "notes": "Satiety/feeding-drive calibration.",
+        "confidence": "low"
+      },
+      "reproduction_reserve_fraction": {
+        "value": 0.2,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase6_fixture",
+        "notes": "Runtime oviposition reserve gate.",
+        "confidence": "low"
+      }
+    },
+    "feeding_rates": {
+      "adult_consumption_at_10_offered_larvae_per_day": {
+        "value": 3.6,
+        "unit": "count/day",
+        "status": "MEASURED",
+        "source": "predation_2015",
+        "notes": "Observed daily consumption when 10 fungus-gnat larvae were offered in the cited arena assay.",
+        "conditions": "One adult; 24 h arena assay.",
+        "confidence": "high"
+      },
+      "adult_consumption_at_40_offered_larvae_per_day": {
+        "value": 18.4,
+        "unit": "count/day",
+        "status": "MEASURED",
+        "source": "predation_2015",
+        "notes": "Observed daily consumption when 40 fungus-gnat larvae were offered; demonstrates density dependence.",
+        "conditions": "One adult; 24 h arena assay.",
+        "confidence": "high"
+      },
+      "runtime_max_adult_prey_per_day": {
+        "value": 20,
+        "unit": "count/day",
+        "status": "CALIBRATED",
+        "source": "phase6_fixture",
+        "notes": "Rounded engineering cap anchored near the 18.4/day high-density assay; other prey stages/assays can produce much higher maxima.",
+        "confidence": "medium"
+      },
+      "runtime_prey_half_saturation_count": {
+        "value": 12,
+        "unit": "count",
+        "status": "CALIBRATED",
+        "source": "phase6_fixture",
+        "notes": "Density-response shape parameter; not an arena-independent biological constant.",
+        "confidence": "low"
+      },
+      "runtime_capture_probability": {
+        "value": 0.75,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase6_fixture",
+        "notes": "Headless encounter/capture proxy pending explicit navigation.",
+        "confidence": "low"
+      }
+    },
+    "assimilation": {
+      "assimilation_efficiency": {
+        "value": 0.7,
+        "unit": "dimensionless",
+        "status": "ASSUMED",
+        "source": "generic_predatory_beetle_proxy",
+        "notes": "Generic predator proxy.",
+        "confidence": "low"
+      }
+    },
+    "critical_mass_thresholds": {
+      "pupation_carbon_fraction_of_adult": {
+        "value": 0.7,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase6_fixture",
+        "notes": "Engineering critical-mass gate.",
+        "confidence": "low"
+      },
+      "adult_carbon_target_mg": {
+        "value": 0.08,
+        "unit": "mg_C",
+        "status": "ASSUMED",
+        "source": "phase6_fixture",
+        "notes": "Provisional carbon conversion from reported wet mass.",
+        "confidence": "low"
+      }
+    },
+    "reproduction": {
+      "preoviposition_days": {
+        "value": 1,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase6_fixture",
+        "notes": "Bounded implementation value.",
+        "confidence": "low"
+      }
+    },
+    "reproduction_costs": {
+      "egg_carbon_mg": {
+        "value": 0.00035,
+        "unit": "mg_C",
+        "status": "CALIBRATED",
+        "source": "phase6_fixture",
+        "notes": "Runtime material allocation per egg.",
+        "confidence": "low"
+      }
+    },
+    "mortality_conditions": {
+      "starvation_death_days": {
+        "value": 10,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase6_fixture",
+        "notes": "Engineering no-prey tolerance.",
+        "confidence": "low"
+      },
+      "immature_survival_probability": {
+        "value": 0.766075388027,
+        "unit": "dimensionless",
+        "status": "DERIVED",
+        "source": "life_history_2013",
+        "notes": "Derived as mean adult output per female (69.1) / mean fecundity (90.2).",
+        "confidence": "high"
+      }
+    },
+    "notes": [
+      "The density-dependent feeding relationship is supported; the current half-saturation and capture parameters remain calibration terms and should not be relabeled as measurements."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "adult_length_mm": {
+        "value": null,
+        "unit": "mm",
+        "status": "TBD",
+        "source": "cornell",
+        "notes": "A production render dimension should be sourced from a direct morphological measurement before freezing."
+      }
+    },
+    "coloration": "Small dark-brown to black rove beetle.",
+    "stage_differences": [
+      "Larvae are elongate and softer-bodied; pupa is immobile; adults are sclerotized with shortened elytra."
+    ],
+    "locomotion_style": "Active substrate running; adults can make short flights.",
+    "reference_images_asset_notes": [
+      "Use taxonomically verified Dalotia/Atheta coriaria images and retain stage-specific silhouettes."
+    ]
+  },
+  "sources": [
+    {
+      "id": "itis",
+      "category": "taxonomic_database",
+      "citation": "ITIS: Dalotia coriaria; Atheta coriaria synonym.",
+      "url": "https://itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=724970",
+      "confidence": "high"
+    },
+    {
+      "id": "cornell",
+      "category": "university_extension",
+      "citation": "Cornell Greenhouse Horticulture: Dalotia coriaria as soil-dwelling generalist predator.",
+      "confidence": "medium"
+    },
+    {
+      "id": "life_history_2013",
+      "category": "peer_reviewed",
+      "citation": "Echegaray & Cloyd (2013), life history of Dalotia coriaria in growing medium.",
+      "url": "https://doi.org/10.2317/JKES120927.1",
+      "confidence": "high"
+    },
+    {
+      "id": "predation_2015",
+      "category": "peer_reviewed",
+      "citation": "Cloyd et al., density-dependent predation by Dalotia coriaria on fungus-gnat larvae.",
+      "url": "https://doi.org/10.18474/JES15-14.1",
+      "confidence": "high"
+    },
+    {
+      "id": "diet_predation",
+      "category": "peer_reviewed",
+      "citation": "Laboratory dietary/predation study reporting Dalotia larval/adult consumption and adult weight.",
+      "url": "https://doi.org/10.1017/S0007485311000633",
+      "confidence": "high"
+    },
+    {
+      "id": "generic_predatory_beetle_proxy",
+      "category": "proxy",
+      "citation": "Generic predatory beetle assimilation/stoichiometry proxy used by Simarium.",
+      "confidence": "low"
+    },
+    {
+      "id": "phase6_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase6-dalotia.json.",
+      "confidence": "low"
+    }
+  ]
+}

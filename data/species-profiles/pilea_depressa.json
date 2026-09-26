@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "data_version": "0.6.0",
+  "id": "pilea_depressa",
+  "runtime_membership": "MVP",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Pilea depressa",
+    "synonyms": [],
+    "common_names": [
+      "depressed clearweed"
+    ],
+    "taxonomy": {
+      "kingdom": "Plantae",
+      "phylum": "Tracheophyta",
+      "class": "Magnoliopsida",
+      "order": "Rosales",
+      "family": "Urticaceae",
+      "genus": "Pilea",
+      "species": "depressa"
+    },
+    "taxon_source": "kew"
+  },
+  "traits": [
+    "clonal",
+    "ramet_clonal_lifecycle",
+    "producer",
+    "litter_source",
+    "groundcover",
+    "moisture_sensitive",
+    "temperature_response"
+  ],
+  "biology": {
+    "stages": [
+      "ramet_young",
+      "ramet_adult",
+      "senescent"
+    ],
+    "development_timing": {
+      "maturity_days_species_evidence": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "pennstate",
+        "notes": "Available extension evidence is genus-level; no species-specific maturity timing is frozen."
+      }
+    },
+    "lifespan": {
+      "ramet_lifespan_days_species_evidence": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "pennstate",
+        "notes": "Species-specific leaf/ramet lifespan is unresolved."
+      }
+    },
+    "reproduction": {
+      "mode": "clonal_mvp",
+      "mate_required": false,
+      "parameters": {
+        "clone_interval_days_species_evidence": {
+          "value": null,
+          "unit": "day",
+          "status": "TBD",
+          "source": "pennstate",
+          "notes": "Current clonal interval is a calibration parameter, not a measured species value."
+        }
+      }
+    },
+    "body_mass": {
+      "summary": "No direct dry-mass/leaf-area allometry for this species is frozen.",
+      "parameters": {
+        "adult_ramet_dry_mass_mg": {
+          "value": null,
+          "unit": "mg_dry",
+          "status": "TBD",
+          "source": "pennstate",
+          "notes": "Required evidence gap."
+        }
+      }
+    },
+    "water_dependence": {
+      "summary": "Moisture preference is supported only by genus-level horticultural evidence in the current evidence set.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "Warm, indirect-light horticultural conditions are a low-confidence proxy for exact thermal response.",
+      "parameters": {}
+    }
+  },
+  "ecology": {
+    "diet": [
+      "photoautotrophic producer"
+    ],
+    "prey": [],
+    "predators": [
+      "herbivores not explicitly modeled in MVP"
+    ],
+    "habitat": [
+      "wet tropical ground layer",
+      "terrarium groundcover"
+    ],
+    "locomotion": [
+      "creeping/clonal spread"
+    ],
+    "activity_layer": [
+      "substrate surface"
+    ],
+    "substrate_preference": [
+      "moist organic substrate"
+    ]
+  },
+  "simulation": {
+    "metabolism": {
+      "maintenance_respiration_rate": {
+        "value": 1.4e-8,
+        "unit": "1/s",
+        "status": "ASSUMED",
+        "source": "generic_plant_proxy",
+        "notes": "Generic plant proxy.",
+        "confidence": "low"
+      }
+    },
+    "reserve_thresholds": {},
+    "feeding_rates": {},
+    "assimilation": {},
+    "critical_mass_thresholds": {
+      "minimum_structural_carbon_for_clone": {
+        "value": 10,
+        "unit": "mg_C",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Engineering clonal-growth gate.",
+        "confidence": "low"
+      }
+    },
+    "reproduction": {
+      "clone_interval_days": {
+        "value": 30,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Integrated calibration representing fast creeping growth.",
+        "confidence": "low"
+      },
+      "clone_fraction": {
+        "value": 0.2,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Engineering allocation fraction.",
+        "confidence": "low"
+      }
+    },
+    "reproduction_costs": {},
+    "mortality_conditions": {
+      "senescence_rate": {
+        "value": 1.05e-7,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "phase2_fixture",
+        "notes": "Genus-level extension material does not measure this exact senescence rate.",
+        "confidence": "low"
+      },
+      "ramet_lifespan_days": {
+        "value": 300,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Integrated lifecycle cap; species-specific evidence unresolved.",
+        "confidence": "low"
+      }
+    },
+    "notes": [
+      "Pilea is currently the weakest of the three plant profiles because quantitative sources are mostly genus-level or model-internal."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "whole_plant_height_mm": {
+        "value": null,
+        "unit": "mm",
+        "status": "TBD",
+        "source": "pennstate",
+        "notes": "Use verified Pilea depressa references when production art begins; current source is genus-level."
+      }
+    },
+    "coloration": "Small green leaves on creeping stems.",
+    "stage_differences": [
+      "Young nodes/leaves are smaller; senescence should progress leaf-by-leaf."
+    ],
+    "locomotion_style": "Slow visible creeping spread through new rooted nodes.",
+    "reference_images_asset_notes": [
+      "Do not derive species-scale geometry from generic Pilea imagery without tagging it as proxy."
+    ]
+  },
+  "sources": [
+    {
+      "id": "kew",
+      "category": "taxonomic_database",
+      "citation": "Royal Botanic Gardens, Kew, Plants of the World Online: Pilea depressa.",
+      "url": "https://powo.science.kew.org/taxon/855364-1",
+      "confidence": "high"
+    },
+    {
+      "id": "pennstate",
+      "category": "university_extension",
+      "citation": "Penn State Extension: Pilea as a houseplant (genus-level proxy).",
+      "url": "https://extension.psu.edu/pilea-as-a-houseplant",
+      "confidence": "low",
+      "notes": "Genus-level horticultural proxy, not species-specific quantitative evidence."
+    },
+    {
+      "id": "generic_plant_proxy",
+      "category": "proxy",
+      "citation": "Generic plant respiration proxy used by Simarium fixtures.",
+      "confidence": "low"
+    },
+    {
+      "id": "phase2_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase2-multiplant.json.",
+      "confidence": "low"
+    },
+    {
+      "id": "phase7_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase7-integrated.json.",
+      "confidence": "low"
+    }
+  ]
+}
