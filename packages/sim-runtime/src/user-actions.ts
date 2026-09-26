@@ -1,4 +1,4 @@
-import type { JsonValue } from "./snapshot.js";
+import { assertJsonValue, type JsonValue } from "./snapshot.js";
 
 export type UserAction =
   | { type: "add_water"; waterG: number; targetPool?: string }
@@ -50,8 +50,22 @@ export function isUserAction(value: unknown): value is UserAction {
         (value.targetPool === undefined || nonEmpty(value.targetPool));
     }
     case "introduce_organisms":
-      return nonEmpty(value.speciesId) && Number.isInteger(value.count) && (value.count as number) > 0 &&
-        (value.lifeStage === undefined || nonEmpty(value.lifeStage));
+      if (
+        !nonEmpty(value.speciesId) ||
+        !Number.isInteger(value.count) ||
+        (value.count as number) <= 0 ||
+        (value.lifeStage !== undefined && !nonEmpty(value.lifeStage))
+      ) {
+        return false;
+      }
+      if (value.attributes !== undefined) {
+        try {
+          assertJsonValue(value.attributes, "introduce_organisms.attributes");
+        } catch {
+          return false;
+        }
+      }
+      return true;
     case "remove_organisms":
       return Array.isArray(value.entityIds) && value.entityIds.length > 0 && value.entityIds.every(nonEmpty);
     case "set_light":
@@ -64,6 +78,13 @@ export function isUserAction(value: unknown): value is UserAction {
       if (value.orientation !== undefined) {
         if (!isRecord(value.orientation)) return false;
         if (![value.orientation.x, value.orientation.y, value.orientation.z, value.orientation.w].every(finite)) return false;
+      }
+      if (value.attributes !== undefined) {
+        try {
+          assertJsonValue(value.attributes, "add_hardscape.attributes");
+        } catch {
+          return false;
+        }
       }
       return true;
     }
