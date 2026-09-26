@@ -31,7 +31,8 @@ export const mockObservationSnapshot: ObservationSnapshot = {
       currentTarget: "fungal patch #18",
       birthTimeSeconds: 42.4 * day,
       parentIds: [781],
-      offspringCount: 6
+      offspringCount: 6,
+      reproductiveState: "parthenogenetic · reserve sufficient"
     },
     {
       kind: "animal",
@@ -48,7 +49,8 @@ export const mockObservationSnapshot: ObservationSnapshot = {
       currentTarget: "Bradysia larva #3098",
       birthTimeSeconds: 26.8 * day,
       parentIds: [1603, 1604],
-      offspringCount: 3
+      offspringCount: 3,
+      reproductiveState: "mated · reproductive"
     },
     {
       kind: "plant",
@@ -97,19 +99,48 @@ export const mockObservationSnapshot: ObservationSnapshot = {
       points: [9, 9, 10, 10, 11, 12, 12, 13, 13, 14, 14, 15].map((value, i) => ({ timeSeconds: (50 + i) * day, value }))
     }
   ],
-  genealogy: [
-    { entityId: 781, label: "#781", lifeStage: "dead · adult", relation: "parent", alive: false },
-    { entityId: 1042, label: "#1042", lifeStage: "adult", relation: "current", alive: true },
-    { entityId: 1312, label: "#1312", lifeStage: "juvenile", relation: "offspring", alive: true },
-    { entityId: 1321, label: "#1321", lifeStage: "juvenile", relation: "offspring", alive: true },
-    { entityId: 1378, label: "#1378", lifeStage: "egg", relation: "offspring", alive: true }
-  ],
-  why: [
-    { label: "HUNGRY", score: 0.82 },
-    { label: "FOOD NEARBY", score: 0.67 },
-    { label: "MOISTURE", score: 0.91 },
-    { label: "PREDATOR RISK", score: 0.12 }
-  ],
+  inspectionByEntity: {
+    1042: {
+      genealogy: [
+        { entityId: 781, label: "#781", lifeStage: "dead · adult", relation: "parent", alive: false },
+        { entityId: 1042, label: "#1042", lifeStage: "adult", relation: "current", alive: true },
+        { entityId: 1312, label: "#1312", lifeStage: "juvenile", relation: "offspring", alive: true },
+        { entityId: 1321, label: "#1321", lifeStage: "juvenile", relation: "offspring", alive: true },
+        { entityId: 1378, label: "#1378", lifeStage: "egg", relation: "offspring", alive: true }
+      ],
+      why: [
+        { label: "HUNGRY", score: 0.82 },
+        { label: "FOOD NEARBY", score: 0.67 },
+        { label: "MOISTURE", score: 0.91 },
+        { label: "PREDATOR RISK", score: 0.12 }
+      ]
+    },
+    2007: {
+      genealogy: [
+        { entityId: 1603, label: "#1603", lifeStage: "dead · adult", relation: "parent", alive: false },
+        { entityId: 2007, label: "#2007", lifeStage: "adult", relation: "current", alive: true },
+        { entityId: 2412, label: "#2412", lifeStage: "larva", relation: "offspring", alive: true }
+      ],
+      why: [
+        { label: "HUNGER", score: 0.61 },
+        { label: "PREY LOCAL", score: 0.88 },
+        { label: "MOISTURE", score: 0.84 }
+      ]
+    },
+    501: {
+      genealogy: [
+        { entityId: 412, label: "#412", lifeStage: "ramet", relation: "parent", alive: true },
+        { entityId: 501, label: "#501", lifeStage: "ramet", relation: "current", alive: true },
+        { entityId: 544, label: "#544", lifeStage: "ramet", relation: "offspring", alive: true },
+        { entityId: 566, label: "#566", lifeStage: "ramet", relation: "offspring", alive: true }
+      ],
+      why: [
+        { label: "WATER STATUS", score: 0.88 },
+        { label: "LIGHT", score: 0.73 },
+        { label: "N LIMITATION", score: 0.64 }
+      ]
+    }
+  },
   foodWeb: [
     { sourceSpeciesId: "fittonia", targetSpeciesId: "linnemannia", biomassTransferMg: 73 },
     { sourceSpeciesId: "linnemannia", targetSpeciesId: "folsomia", biomassTransferMg: 48 },
