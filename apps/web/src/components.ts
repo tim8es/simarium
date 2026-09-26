@@ -99,6 +99,7 @@ export function renderEntityCard(entity: EntitySummary | undefined): string {
         metric("Birth time", `day ${(entity.birthTimeSeconds / 86400).toFixed(1)}`),
         metric("Parent IDs", entity.parentIds.length ? entity.parentIds.map(id => `#${id}`).join(", ") : "—"),
         metric("Offspring", String(entity.offspringCount)),
+        metric("Reproductive state", entity.reproductiveState),
         ...(entity.deathCause ? [metric("Death cause", entity.deathCause)] : [])
       ]
     : [
@@ -139,12 +140,14 @@ export function renderWhyPanel(reasons: ReadonlyArray<BehaviorReason>, action: s
         <strong class="decision-arrow">→ ${action}</strong>
       </div>
       <div class="reason-list">
-        ${reasons.map(reason => `
-          <div class="reason-row">
-            <div class="reason-copy"><span>${reason.label}</span><strong>${reason.score.toFixed(2)}</strong></div>
-            <div class="reason-track"><i style="width:${Math.round(reason.score * 100)}%"></i></div>
-          </div>
-        `).join("")}
+        ${reasons.length
+          ? reasons.map(reason => `
+            <div class="reason-row">
+              <div class="reason-copy"><span>${reason.label}</span><strong>${reason.score.toFixed(2)}</strong></div>
+              <div class="reason-track"><i style="width:${Math.round(reason.score * 100)}%"></i></div>
+            </div>
+          `).join("")
+          : "<p class=\"inspection-unavailable\">No behavior trace available for this entity.</p>"}
       </div>
     </section>
   `;
@@ -177,9 +180,13 @@ function sparkline(series: PopulationSeries): string {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = Math.max(1, max - min);
-  const points = values.map((value, index) => {
-    const x = (index / Math.max(1, values.length - 1)) * 100;
-    const y = 36 - ((value - min) / span) * 30;
+  const times = series.points.map(point => point.timeSeconds);
+  const minTime = Math.min(...times);
+  const maxTime = Math.max(...times);
+  const timeSpan = Math.max(1, maxTime - minTime);
+  const points = series.points.map(point => {
+    const x = ((point.timeSeconds - minTime) / timeSpan) * 100;
+    const y = 36 - ((point.value - min) / span) * 30;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(" ");
   const latest = values.at(-1) ?? 0;
@@ -210,17 +217,42 @@ export function renderGraphs(snapshot: ObservationSnapshot): string {
 }
 
 export function renderFoodWeb(snapshot: ObservationSnapshot): string {
-  const names = new Map(snapshot.species.map(species => [species.id, species.commonName]));
+  const speciesById = new Map(snapshot.species.map(species => [species.id, species]));
+  const involvedIds = [...new Set(
+    snapshot.foodWeb.flatMap(link => [link.sourceSpeciesId, link.targetSpeciesId])
+  )];
+  const maxTransfer = Math.max(
+    1,
+    ...snapshot.foodWeb.map(link => link.biomassTransferMg)
+  );
+
   return `
     <div class="bottom-content foodweb-content">
       <div class="foodweb-diagram" aria-label="Food web">
-        <div class="web-column producers"><span class="web-node">Plants</span><span class="web-node">Litter</span></div>
-        <div class="web-links"><i></i><i></i><i></i></div>
-        <div class="web-column consumers"><span class="web-node">Fungi</span><span class="web-node">Springtails</span><span class="web-node predator">Rove beetle</span></div>
+        <div class="web-node-grid">
+          ${involvedIds.map(id => {
+            const species = speciesById.get(id);
+            const predator = species?.trophicRole === "predator" ? " predator" : "";
+            return `<span class="web-node${predator}" data-species-id="${id}">${species?.commonName ?? id}</span>`;
+          }).join("")}
+        </div>
+        <div class="web-edge-list">
+          ${snapshot.foodWeb.map(link => {
+            const thickness = 1 + (link.biomassTransferMg / maxTransfer) * 5;
+            const source = speciesById.get(link.sourceSpeciesId)?.commonName ?? link.sourceSpeciesId;
+            const target = speciesById.get(link.targetSpeciesId)?.commonName ?? link.targetSpeciesId;
+            return `
+              <div class="web-edge" data-source="${link.sourceSpeciesId}" data-target="${link.targetSpeciesId}">
+                <i style="height:${thickness.toFixed(1)}px"></i>
+                <span>${source} → ${target}</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
       </div>
       <div class="transfer-list">
         ${snapshot.foodWeb.map(link => `
-          <div><span>${names.get(link.sourceSpeciesId) ?? link.sourceSpeciesId} → ${names.get(link.targetSpeciesId) ?? link.targetSpeciesId}</span><strong>${link.biomassTransferMg} mg</strong></div>
+          <div><span>${speciesById.get(link.sourceSpeciesId)?.commonName ?? link.sourceSpeciesId} → ${speciesById.get(link.targetSpeciesId)?.commonName ?? link.targetSpeciesId}</span><strong>${link.biomassTransferMg} mg</strong></div>
         `).join("")}
       </div>
     </div>
@@ -270,6 +302,12 @@ export function renderBottomPanel(snapshot: ObservationSnapshot, state: Observat
 
 export function renderViewport(snapshot: ObservationSnapshot, state: ObservationUiState): string {
   const selected = state.selectedEntityId;
+  const totalSeconds = Math.max(0, Math.floor(snapshot.environment.timeSeconds));
+  const day = Math.floor(totalSeconds / 86400);
+  const timeOfDay = totalSeconds % 86400;
+  const hours = Math.floor(timeOfDay / 3600);
+  const minutes = Math.floor((timeOfDay % 3600) / 60);
+  const clock = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
   return `
     <section class="viewport" data-active-overlay="${state.activeOverlay ?? "none"}" aria-label="Terrarium viewport placeholder">
       <div class="terrarium-glass"></div>
@@ -284,7 +322,7 @@ export function renderViewport(snapshot: ObservationSnapshot, state: Observation
       <button class="organism beetle ${selected === 2007 ? "is-selected" : ""}" data-entity-id="2007" aria-label="Select rove beetle 2007"><span></span></button>
       <button class="organism ramet ${selected === 501 ? "is-selected" : ""}" data-entity-id="501" aria-label="Select Fittonia ramet 501"><span></span></button>
       <div class="viewport-label top-left"><span>OBSERVATION CAMERA</span><strong>MACRO · 65 mm</strong></div>
-      <div class="viewport-label top-right"><span>WORLD TIME</span><strong>DAY ${Math.floor(snapshot.environment.timeSeconds / 86400)} · 13:24</strong></div>
+      <div class="viewport-label top-right"><span>WORLD TIME</span><strong>DAY ${day} · ${clock}</strong></div>
       <div class="scale-marker"><i></i><span>10 cm</span></div>
       ${state.activeOverlay ? `<div class="overlay-legend"><span>${overlayLabels.find(([key]) => key === state.activeOverlay)?.[1] ?? state.activeOverlay}</span><div class="legend-bar"></div><small>low</small><small>high</small></div>` : ""}
     </section>
