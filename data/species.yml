@@ -93,8 +93,3 @@ species:
     profile_path: data/species-profiles/bacillus_subtilis.json
     sources: [docs/BIOLOGY_SOURCES.md#bacillus-subtilis]
     runtime_parameter_status: PARTIAL
-
-parameter_policy:
-  allowed_statuses: [MEASURED, DERIVED, ASSUMED, CALIBRATED, TBD]
-  tbd_rule: TBD uses value=null; never invent a placeholder number.
-  calibrated_rule: Literature evidence is compared and proposed separately; calibrated runtime values are not silently replaced.
