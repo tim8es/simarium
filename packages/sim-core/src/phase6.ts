@@ -351,6 +351,7 @@ function stageWaterTarget(stage: DalotiaStage, adultBodyWaterG: number): number 
 
 export class DalotiaPredatorSystem implements SimSystem {
   readonly name = "dalotia-predator";
+  private readonly unavailableThisStep = new Set<number>();
 
   constructor(
     readonly population: DalotiaPopulation,
@@ -377,6 +378,7 @@ export class DalotiaPredatorSystem implements SimSystem {
   }
 
   step(world: WorldState, dtSeconds: number): void {
+    this.unavailableThisStep.clear();
     const temperature = world.environment.temperatureC.mean();
     const development = temperatureResponse(
       temperature,
@@ -418,6 +420,7 @@ export class DalotiaPredatorSystem implements SimSystem {
         dtSeconds
       );
       if (individual.material.carbonMg <= 1e-12) {
+        this.unavailableThisStep.add(individual.id);
         carbonExhausted.push(individual);
         continue;
       }
@@ -570,11 +573,15 @@ export class DalotiaPredatorSystem implements SimSystem {
     return cost;
   }
 
-  private hunt(
-    world: WorldState,
-    predator: DalotiaIndividual,
-    dtSeconds: number
-  ): boolean {
+  private feedingDrive(predator: DalotiaIndividual): number {
+    if (
+      !predator.alive ||
+      this.unavailableThisStep.has(predator.id) ||
+      (predator.stage !== "larva" && predator.stage !== "adult")
+    ) {
+      return 0;
+    }
+
     const reserveTarget =
       predator.material.carbonMg * this.p.reserveTargetFraction;
     const hunger =
@@ -590,7 +597,15 @@ export class DalotiaPredatorSystem implements SimSystem {
                 Math.max(1e-12, this.p.adultCarbonTargetMg)
           )
         : 0;
-    const feedingDrive = Math.max(hunger, growthNeed);
+    return Math.max(hunger, growthNeed);
+  }
+
+  private hunt(
+    world: WorldState,
+    predator: DalotiaIndividual,
+    dtSeconds: number
+  ): boolean {
+    const feedingDrive = this.feedingDrive(predator);
     if (feedingDrive <= 0) return false;
 
     const nearbyRefs =
@@ -615,7 +630,7 @@ export class DalotiaPredatorSystem implements SimSystem {
     // half-saturation by the number of active local hunters; no new
     // biological coefficient is introduced.
     const localHunterCount =
-      nearbyRefs === undefined ? 1 : this.countLocalHunters(nearbyRefs);
+      nearbyRefs === undefined ? 1 : this.countCompetingHunters(candidates);
     const densityFactor =
       available /
       Math.max(
@@ -645,21 +660,24 @@ export class DalotiaPredatorSystem implements SimSystem {
     return consumedAny;
   }
 
-  private countLocalHunters(refs: readonly string[]): number {
-    let count = 0;
-    for (const ref of refs) {
-      if (!ref.startsWith("dalotia_coriaria#")) continue;
-      const id = Number(ref.slice("dalotia_coriaria#".length));
-      if (!Number.isInteger(id) || id <= 0) continue;
-      const candidate = this.population.get(id);
-      if (
-        candidate.alive &&
-        (candidate.stage === "larva" || candidate.stage === "adult")
-      ) {
-        count++;
+  private countCompetingHunters(candidates: readonly PreyCandidate[]): number {
+    if (this.spatial === undefined) return 1;
+
+    const hunterIds = new Set<number>();
+    for (const target of candidates) {
+      const preyRef = `${target.species}#${target.individual.id}`;
+      for (const ref of this.spatial.nearbyRefs(
+        preyRef,
+        this.preyEncounterRadiusCells
+      )) {
+        if (!ref.startsWith("dalotia_coriaria#")) continue;
+        const id = Number(ref.slice("dalotia_coriaria#".length));
+        if (!Number.isInteger(id) || id <= 0) continue;
+        const candidate = this.population.get(id);
+        if (this.feedingDrive(candidate) > 0) hunterIds.add(id);
       }
     }
-    return Math.max(1, count);
+    return Math.max(1, hunterIds.size);
   }
 
   private collectPrey(
@@ -797,6 +815,7 @@ export class DalotiaPredatorSystem implements SimSystem {
       const candidate = this.population.get(id);
       if (
         candidate.alive &&
+        !this.unavailableThisStep.has(candidate.id) &&
         candidate.stage === "adult" &&
         candidate.sex === "male"
       ) {
