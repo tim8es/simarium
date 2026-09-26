@@ -1,5 +1,5 @@
 import { decodeSnapshot, encodeSnapshot, type EncodedSnapshot } from "./compression.js";
-import { parseRuntimeSnapshot, type JsonValue, type RuntimeSnapshotV2 } from "./snapshot.js";
+import { assertJsonValue, parseRuntimeSnapshot, type JsonValue, type RuntimeSnapshotV2 } from "./snapshot.js";
 
 export interface SharePresetV1 {
   version: 1;
@@ -45,6 +45,7 @@ export function encodeSharePreset(preset: SharePresetV1): string {
   if (preset.version !== 1 || !Number.isInteger(preset.seed) || preset.presetId.length === 0) {
     throw new Error("Invalid share preset");
   }
+  assertJsonValue(preset.config, "share preset config");
   return bytesToBase64(new TextEncoder().encode(JSON.stringify(preset)))
     .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
@@ -54,9 +55,16 @@ export function decodeSharePreset(payload: string): SharePresetV1 {
   const parsed = JSON.parse(new TextDecoder().decode(base64ToBytes(padded))) as unknown;
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) throw new Error("Invalid share preset");
   const record = parsed as Record<string, unknown>;
-  if (record.version !== 1 || !Number.isInteger(record.seed) || typeof record.presetId !== "string" || record.presetId.length === 0) {
+  if (
+    record.version !== 1 ||
+    !Number.isInteger(record.seed) ||
+    typeof record.presetId !== "string" ||
+    record.presetId.length === 0 ||
+    !Object.prototype.hasOwnProperty.call(record, "config")
+  ) {
     throw new Error("Invalid share preset");
   }
+  assertJsonValue(record.config, "share preset config");
   return parsed as SharePresetV1;
 }
 
