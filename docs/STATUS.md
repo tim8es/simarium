@@ -1,6 +1,6 @@
 # Simarium — Implementation status
 
-Updated: 2026-09-25
+Updated: 2026-09-27
 
 ## Current stage
 
@@ -8,6 +8,7 @@ Updated: 2026-09-25
 - Phase 1 deterministic conservation kernel: **PASS**.
 - Phase 2 producer + detritus loop: **PASS** — three real plant species, water-limited physiology, decomposer environment response and sensitivity tests.
 - Phase 3 *Folsomia candida* lifecycle: **PASS (engineering gate)** — individual lifecycle, multi-generation genealogy, moisture-sensitive reproduction, feeding, starvation/death and corpse transfer.
+- Phase 7 full headless ecosystem: **PASS** — accepted on a 100-seed × 180-day calibration batch plus an independent 100-seed × 180-day validation batch with unchanged `VALIDATION.md` gates.
 
 ## Phase 1 evidence
 
@@ -169,71 +170,78 @@ Validated:
 The current predation encounter function is a headless density proxy. Spatially local encounters remain an explicit Phase-7/renderer-integration requirement and are not represented as already solved.
 
 
-## Phase 7 diagnostic status — 2026-09-25
+## Phase 7 completion evidence — 2026-09-26
 
-**Status: ACTIVE — engineering gate NOT passed.**
+**Status: COMPLETE — engineering gate PASS.**
 
 Working branch:
 `agent/phase7-ecology`
 
-Branch base:
-`a9d782cbe745c7a6d9551bee7098de898f271ab8` from `main`.
+Accepted model head:
+`1aec050c3f0a9353c4d70e7655c8b8919ef62ce2`
 
-### Regression/CI evidence
+Green PR CI:
+`36258570107`
 
-Baseline main CI run `36163384320` exposed:
-- machine-scale Phase-3 water-ledger drift after repeated per-individual transfers;
-- Phase-7 integrated runtime exceeding the existing test budget.
+Full Phase-7 acceptance workflow:
+`36258567197` — **PASS**.
 
-After the fixes below, regression run `36169362386` passed the full test/build/smoke/kernel workflow.
+The workflow executed the documented split without changing the acceptance thresholds:
+- calibration: seeds `0-99`, 100 runs × 180 virtual days;
+- independent validation: seeds `100-199`, 100 runs × 180 virtual days;
+- validation seeds were not used for parameter tuning.
 
-Final diagnostic run `36169646200` also passed its regression job plus the 30-day and 60-day calibration/validation jobs. Its 180-day matrix was deliberately not accepted as evidence: the first ten calibration jobs remained running long after the 60-day jobs had completed, so the multi-seed 180-day performance gate is still unresolved. No 180-day ecological acceptance claim is made.
+### Accepted ecological calibration
 
-### Model/runtime fixes retained
+The integrated spatial Dalotia model keeps its standalone Phase-6 arena calibration separate from terrarium-scale calibration.
 
-- Folsomia hydration and metabolic ledger fluxes are batched per timestep instead of issuing one aggregate-ledger transfer per individual. Individual material state remains explicit and is audited against the aggregate pool.
-- Shared Folsomia environmental response terms are computed once per timestep.
-- Folsomia realized clutch size is now funded only from reserve carbon above the reproductive floor; the configured clutch remains a maximum, not free offspring.
-- Bradysia post-start immature survival is applied before non-viable offspring enter the long feeding cohort while preserving the documented aggregate survival probability.
-- Bradysia oviposition is reserve-funded; the retained reproductive reserve floor is `0.30` (CALIBRATED, model-internal). Calibration used seeds 0-2 only. A `0.45` trial was rejected because it broke the existing post-start-generation regression.
-- Integrated Bradysia no longer treats all plant structural shoot+root biomass as globally accessible root food while the plant model lacks an explicit root compartment.
-- Dalotia metabolism remains a documented CALIBRATED engineering coefficient; calibration seeds 0-2 were used, not validation seeds.
-- Predator prey-aggregate audits now run only on ticks where predation actually mutates prey.
-- The nutrient tracer tracks only seeded material dimensions, reducing tracing overhead without changing transfer semantics.
-- No population cap, hidden rescue, hidden food injection or hidden spawn rule was added.
+Phase-7 integrated parameters:
+- `dalotiaLocalCaptureProbability = 0.20` — **CALIBRATED**;
+- `dalotiaLocalPreyHalfSaturationCount = 3` — **CALIBRATED**.
 
-### 30/60-day headless results
+The final density-response value was selected only from calibration seeds `0-4`. After explicit local predator-competition handling was added, a 180-day sweep tested values 3, 4 and 5. Value 3 retained Folsomia, Bradysia and Dalotia in all 5/5 calibration runs; the fixture documents the rejected alternatives and why they were rejected. It is an engineering spatial-model coefficient, not a measured biological constant.
 
-Calibration seeds are `0-2`; validation seeds are `100-102`. These sets are disjoint.
+The Dalotia spatial model now accounts for multiple nearby active predators sharing the same local prey field. Without that competition term, every predator independently received the full local-density response, creating an artificial multiplicative kill-rate feedback in dense predator cohorts. This fix adds no new biological coefficient and is covered by a regression test.
 
-At 60 days, calibration:
-- invariant failures: `0/3`;
-- litter-N tracer returned to plant tissue: `3/3`;
-- all three plant species persisted: `3/3`;
-- at least one detritivore persisted: `3/3`;
-- Folsomia, Trichorhina, Bradysia and Dalotia all produced post-start generations: `3/3`;
-- mean final living: Folsomia `1784.3`, Trichorhina `104`, Bradysia `889.7`, Dalotia `1.67`;
-- Dalotia consumed real prey in every run.
+### 100 × 180-day calibration results — seeds 0-99
 
-At 60 days, validation:
-- invariant failures: `0/3`;
-- litter-N tracer returned to plant tissue: `3/3`;
-- all three plant species persisted: `3/3`;
-- at least one detritivore persisted: `3/3`;
-- Folsomia, Trichorhina, Bradysia and Dalotia all produced post-start generations: `3/3`;
-- Bradysia persisted in `2/3` runs (seed 102 was extinct by day 60);
-- mean final living: Folsomia `1761.7`, Trichorhina `104`, Bradysia `382.7`, Dalotia `1.67`;
-- Dalotia consumed real prey in every run. Example validation seed 100: 30 predation events = 16 Bradysia + 14 Folsomia.
+- invariant-failure runs: `0/100`;
+- litter-N tracer returned to plant tissue: `100/100`;
+- all producer taxa persisted: `100%` (target >=80%);
+- at least one detritivore persisted: `100%` (target >=80%);
+- Folsomia persisted: `97%`;
+- Trichorhina persisted: `100%`;
+- Bradysia persisted: `78%` (target >=70%);
+- Dalotia persisted: `100%` (target >=70%);
+- post-start generation probability: Folsomia `1.0`, Trichorhina `1.0`, Bradysia `1.0`, Dalotia `1.0`;
+- mean final living: Fittonia `26`, Peperomia `9`, Pilea `21`, Folsomia `589.35`, Trichorhina `104`, Bradysia `3740.29`, Dalotia `1271.49`;
+- unchanged MVP acceptance evaluator: **PASS**.
 
-The reserve-funded changes materially reduced the earlier 60-day explosion:
-- earlier calibration runs were approximately `4k` Folsomia and `5k-7k` Bradysia;
-- current calibration means are approximately `1.8k` Folsomia and `0.9k` Bradysia.
+### Independent 100 × 180-day validation results — seeds 100-199
 
-The standalone 75-day Folsomia regression also fell from roughly 24-32 seconds during diagnosis to roughly 9.7 seconds after reserve-funded reproduction and hot-loop fixes.
+- invariant-failure runs: `0/100`;
+- litter-N tracer returned to plant tissue: `100/100`;
+- all producer taxa persisted: `100%`;
+- at least one detritivore persisted: `100%`;
+- Folsomia persisted: `98%`;
+- Trichorhina persisted: `100%`;
+- Bradysia persisted: `79%`;
+- Dalotia persisted: `100%`;
+- post-start generation probability: Folsomia `1.0`, Trichorhina `1.0`, Bradysia `1.0`, Dalotia `1.0`;
+- mean final living: Fittonia `26`, Peperomia `9`, Pilea `21`, Folsomia `635.87`, Trichorhina `104`, Bradysia `3952.67`, Dalotia `1236.36`;
+- unchanged MVP acceptance evaluator: **PASS**.
+
+### Numerical and runtime interpretation
+
+All 200 accepted 180-day runs completed without invariant failures. The invariant layer checks C/N/P/H2O conservation and ledger validity, including negative/invalid pool detection, so the accepted batches contain no observed negative resource-pool or NaN/Infinity failures.
+
+No unbounded numerical growth was observed over the accepted 180-day horizon. The earlier runaway regimes were rejected during calibration; the accepted calibration and independent validation batches both completed with finite population summaries and similar mean final abundances across disjoint seed sets. This is finite-horizon engineering evidence, not a claim of mathematical asymptotic stability.
+
+Batch execution was also changed so completed worlds are compacted immediately and long-run seeds are isolated by process, preventing multi-seed calibration jobs from retaining every completed world in memory.
 
 ### Nutrient tracer proof
 
-The integrated tracer remains green in all completed 30/60-day calibration and validation runs:
+The accepted calibration and validation runs preserve the tracer provenance proof:
 
 ```text
 litter nitrogen
@@ -242,54 +250,16 @@ litter nitrogen
 -> living plant structural tissue
 ```
 
-This is tracer provenance, not only aggregate mass balance.
+The tracer reached plant tissue in all `200/200` accepted 180-day runs.
 
-### Why Phase 7 is not complete
+### Phase-7 guardrails retained
 
-The Definition of Done requires reproducible, practically usable 180-day headless runs. That evidence is still missing.
+- no population cap;
+- no hidden rescue;
+- no hidden food injection;
+- no hidden spawn rule;
+- no weakening of `VALIDATION.md` acceptance targets;
+- validation seeds were not used to select the accepted calibration;
+- standalone Phase-6 Dalotia arena parameters remain separate from integrated Phase-7 spatial calibration.
 
-Open issues:
-- 180-day multi-seed runs remain operationally too slow after day 60, indicating continued long-horizon population/runtime growth;
-- Bradysia already shows seed-sensitive extinction in the small validation sample;
-- Folsomia remains the dominant long-horizon population and needs additional resource-limitation/sensitivity work;
-- Dalotia persists and reproduces in completed 60-day runs but remains at low abundance, so predator/prey regulation is weak;
-- the documented VALIDATION.md probability gates cannot be honestly evaluated from the completed 60-day sample.
-
-No VALIDATION.md acceptance threshold was changed. The next calibration pass should locate the long-horizon growth inflection with 90/120/150-day checkpoints on calibration seeds before another 180-day validation set.
-
-
-### 90-day calibration checkpoint — growth inflection located
-
-Temporary calibration workflow run `36170698773` executed seeds `0-2` at 90 days. These are calibration seeds only; no validation seed was used for parameter tuning.
-
-All three completed 90-day runs still had:
-- invariant failures: `0/3`;
-- litter-N tracer return to living plant tissue: `3/3`;
-- all three plant species persistent: `3/3`;
-- at least one detritivore persistent: `3/3`;
-- post-start generations recorded for all four animal taxa.
-
-However, the ecological/runtime failure becomes clear between days 60 and 90:
-
-| seed | Folsomia | Bradysia | Dalotia | fungal C (mg) | available N (mg) | wall time | max RSS |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0 | 7,653 | 8,931 | 1 | 0 | 0.00482 | 1:06 | 244 MB |
-| 1 | 8,010 | 12,179 | 0 | 0 | 0.00483 | 1:05 | 252 MB |
-| 2 | 8,214 | 11,931 | 0 | 0 | 0.00495 | 2:02 | 353 MB |
-
-Interpretation:
-- the 60-day reduction in Folsomia/Bradysia growth was real but only delayed the long-horizon amplification;
-- fungal food is exhausted by day 90 in all three calibration seeds;
-- available mineral N is nearly exhausted;
-- Bradysia still holds very large egg/larval cohorts despite fungal exhaustion, so delayed starvation/carbon-exhaustion creates a large computational backlog;
-- Dalotia is extinct by day 90 in seeds 1 and 2 despite having produced post-start offspring earlier;
-- predation remains far too weak to regulate the prey wave (only tens of kills per run);
-- runtime and memory grow sharply with the prey cohorts.
-
-This is a model failure, not an acceptance-threshold problem. No gate should be relaxed.
-
-The next causal work is therefore:
-1. make Folsomia reproduction/feeding respond more strongly to exhausted microbial food rather than accumulating large cohorts;
-2. prevent Bradysia egg/larval cohort accumulation after fungal resource collapse through biologically explicit food/starvation/development constraints, not a population cap;
-3. diagnose why Dalotia post-start offspring do not establish a persistent predator population despite abundant prey;
-4. repeat 90-day calibration first; do not spend validation seeds or 180-day CI until the 90-day growth inflection is removed.
+Phase 7 is therefore closed for the MVP engineering gate. The larger 365-day / >=500-seed stability evaluation remains a later robustness objective described in `VALIDATION.md`, not a prerequisite that was silently substituted for the documented 100-seed × 180-day calibration gate.
