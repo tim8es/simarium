@@ -159,4 +159,13 @@ describe("normalized species profiles", () => {
     );
   });
 
+
+  it("rejects malformed entries inside quantitative parameter maps", () => {
+    const malformed = structuredClone(fittonia) as typeof fittonia;
+    (malformed.simulation.metabolism as Record<string, unknown>).broken = {};
+    expect(() => validateSpeciesProfile(malformed)).toThrow(
+      /profile\.simulation\.metabolism\.broken\.status/
+    );
+  });
+
 });
