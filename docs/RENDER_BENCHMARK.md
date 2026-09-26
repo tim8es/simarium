@@ -80,10 +80,11 @@ Use a physical laptop-class GPU rather than software rendering or a CI VM.
 4. Use a Chromium-class desktop browser with hardware acceleration enabled.
 5. Set the browser viewport to 1920×1080 and device pixel ratio to the machine default. The renderer caps DPR at 2.
 6. Close DevTools while collecting the representative run; DevTools profiling is a separate diagnostic pass.
-7. Warm the scene for 30 seconds so shaders, material programs, and JIT paths are initialized.
-8. Record at least 120 seconds in Orbit mode without user input.
-9. Record at least 60 seconds in Macro mode and at least 60 seconds in Follow mode.
-10. Repeat once after a fresh page load to detect one-off initialization artifacts.
+7. For official recording, open the benchmark with `?record=1&camera=orbit`. Recording mode removes the HUD and camera controls from the composited scene while metrics continue collecting in `window.__SIMARIUM_BENCHMARK_METRICS__`.
+8. Warm the scene for 30 seconds so shaders, material programs, and JIT paths are initialized.
+9. Record at least 120 seconds in Orbit mode without user input.
+10. Repeat with `?record=1&camera=macro` and `?record=1&camera=follow` for at least 60 seconds each.
+11. Repeat once after a fresh page load to detect one-off initialization artifacts.
 
 Record hardware, OS, browser/version, GPU, display scale/DPR, power mode, average/median FPS, representative frame time, draw calls, triangles, Long Tasks, and any visible hitching.
 
