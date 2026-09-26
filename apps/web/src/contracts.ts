@@ -25,6 +25,7 @@ export type AnimalEntitySummary = {
   birthTimeSeconds: number;
   parentIds: EntityId[];
   offspringCount: number;
+  reproductiveState: string;
   deathCause?: string;
 };
 
@@ -119,13 +120,17 @@ export type FoodWebLink = {
   biomassTransferMg: number;
 };
 
+export type EntityInspection = {
+  genealogy: ReadonlyArray<GenealogyNode>;
+  why: ReadonlyArray<BehaviorReason>;
+};
+
 export type ObservationSnapshot = {
   species: ReadonlyArray<SpeciesSummary>;
   entities: ReadonlyArray<EntitySummary>;
   environment: EnvironmentSnapshot;
   populations: ReadonlyArray<PopulationSeries>;
-  genealogy: ReadonlyArray<GenealogyNode>;
-  why: ReadonlyArray<BehaviorReason>;
+  inspectionByEntity: Readonly<Record<EntityId, EntityInspection>>;
   foodWeb: ReadonlyArray<FoodWebLink>;
 };
 
