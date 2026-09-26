@@ -4,9 +4,17 @@ import type { BenchmarkSceneMetrics } from "./BenchmarkScene";
 
 const WARMUP_MS = 30_000;
 
+export interface PerformanceSnapshot {
+  fps: number;
+  averageFrameMs: number;
+  longTaskCount: number;
+  maxLongTaskMs: number;
+  measuring: boolean;
+}
+
 export class PerformanceHud {
-  private readonly root: HTMLElement;
-  private readonly note: HTMLElement;
+  private readonly root: HTMLElement | null;
+  private readonly note: HTMLElement | null;
   private readonly fields = new Map<string, HTMLElement>();
   private readonly frameSamples = new Float32Array(120);
   private frameCursor = 0;
@@ -18,14 +26,16 @@ export class PerformanceHud {
   private readonly warmupEndsAt = performance.now() + WARMUP_MS;
   private measuring = false;
 
-  constructor(parent: HTMLElement) {
-    this.root = document.createElement("section");
-    this.root.className = "perf-hud";
-    this.root.innerHTML = `<h1>Simarium Phase 8</h1><div class="perf-grid"></div><p class="perf-note">Synthetic renderer load · 30 s warm-up</p>`;
-    parent.appendChild(this.root);
-    this.note = this.root.querySelector<HTMLElement>(".perf-note")!;
+  constructor(parent: HTMLElement | null) {
+    this.root = parent ? document.createElement("section") : null;
+    if (this.root) {
+      this.root.className = "perf-hud";
+      this.root.innerHTML = `<h1>Simarium Phase 8</h1><div class="perf-grid"></div><p class="perf-note">Synthetic renderer load · 30 s warm-up</p>`;
+      parent!.appendChild(this.root);
+    }
+    this.note = this.root?.querySelector<HTMLElement>(".perf-note") ?? null;
 
-    const grid = this.root.querySelector(".perf-grid")!;
+    const grid = this.root?.querySelector(".perf-grid") ?? null;
     for (const key of [
       "FPS",
       "Frame",
@@ -44,8 +54,8 @@ export class PerformanceHud {
       label.textContent = key;
       value.textContent = "—";
       row.append(label, value);
-      grid.appendChild(row);
-      this.fields.set(key, value);
+      grid?.appendChild(row);
+      if (grid) this.fields.set(key, value);
     }
 
     if (typeof PerformanceObserver !== "undefined" && PerformanceObserver.supportedEntryTypes.includes("longtask")) {
@@ -95,17 +105,34 @@ export class PerformanceHud {
 
     if (this.measuring) {
       this.set("Long tasks", `${this.longTaskCount} · max ${this.maxLongTaskMs.toFixed(0)} ms`);
-      this.note.textContent = "Synthetic renderer load · steady-state measurement";
+      if (this.note) {
+        this.note.textContent = "Synthetic renderer load · steady-state measurement";
+      }
     } else {
       const remainingSeconds = Math.max(0, Math.ceil((this.warmupEndsAt - nowMs) / 1000));
       this.set("Long tasks", "warm-up excluded");
-      this.note.textContent = `Synthetic renderer load · warm-up ${remainingSeconds}s`;
+      if (this.note) {
+        this.note.textContent = `Synthetic renderer load · warm-up ${remainingSeconds}s`;
+      }
     }
+  }
+
+  getSnapshot(): PerformanceSnapshot {
+    let sum = 0;
+    for (let i = 0; i < this.frameCount; i++) sum += this.frameSamples[i]!;
+    const averageFrameMs = this.frameCount > 0 ? sum / this.frameCount : 0;
+    return {
+      fps: averageFrameMs > 0 ? 1000 / averageFrameMs : 0,
+      averageFrameMs,
+      longTaskCount: this.longTaskCount,
+      maxLongTaskMs: this.maxLongTaskMs,
+      measuring: this.measuring
+    };
   }
 
   dispose(): void {
     this.observer?.disconnect();
-    this.root.remove();
+    this.root?.remove();
   }
 
   private beginMeasurement(): void {
