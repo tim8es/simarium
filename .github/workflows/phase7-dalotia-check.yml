@@ -1,5 +1,5 @@
 name: Phase 7 Dalotia Calibration Verification
-# narrow calibration sweep for local prey half-saturation
+# focused 180-day checkpoint for the selected local density response
 
 on:
   push:
@@ -18,12 +18,11 @@ concurrency:
 jobs:
   calibration:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
-      max-parallel: 15
+      max-parallel: 5
       matrix:
-        halfSat: [2, 4, 6]
         seed: [0, 1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
@@ -31,25 +30,13 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - name: Apply local half-saturation candidate
-        env:
-          HALF_SAT: ${{ matrix.halfSat }}
-        run: |
-          node --input-type=module - <<'NODE'
-          import fs from "node:fs";
-          const path = "data/experiments/phase7-integrated.json";
-          const data = JSON.parse(fs.readFileSync(path, "utf8"));
-          data.calibration.dalotiaLocalPreyHalfSaturationCount.value =
-            Number(process.env.HALF_SAT);
-          fs.writeFileSync(path, JSON.stringify(data, null, 2) + "\n");
-          NODE
       - run: npm run build
-      - name: Run 150-day calibration seed
+      - name: Run selected Dalotia calibration at 180 days
         shell: bash
         run: |
-          label="dalotia-half-sat-${{ matrix.halfSat }}-seed-${{ matrix.seed }}"
+          label="dalotia-selected-180d-${{ matrix.seed }}"
           /usr/bin/time -v node dist/tools/ecosystem-batch.js \
-            --days 150 \
+            --days 180 \
             --seeds "${{ matrix.seed }}:1" \
             --sample 10 \
             --format json > "$label.json" 2> "$label.time.txt"
