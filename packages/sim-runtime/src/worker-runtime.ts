@@ -59,7 +59,15 @@ export class SimulationWorkerRuntime {
     try {
       message = parseUiToWorkerMessage(raw);
     } catch (error) {
-      this.emitError(undefined, "INVALID_PROTOCOL", error, true);
+      const requestId =
+        typeof raw === "object" &&
+        raw !== null &&
+        !Array.isArray(raw) &&
+        typeof (raw as Record<string, unknown>).requestId === "string" &&
+        (raw as Record<string, unknown>).requestId !== ""
+          ? (raw as Record<string, unknown>).requestId as string
+          : undefined;
+      this.emitError(requestId, "INVALID_PROTOCOL", error, true);
       return;
     }
 
