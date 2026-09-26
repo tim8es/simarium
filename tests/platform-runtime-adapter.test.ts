@@ -149,4 +149,77 @@ describe("concrete simulation worker adapter", () => {
     });
     expect(() => adapter.step(1)).toThrow(/integrated ecosystem runtime adapter/);
   });
+
+  it("preserves unprocessed same-tick actions when an earlier action fails", () => {
+    const adapter = new Phase1SimulationRuntimeAdapter();
+    adapter.init({
+      type: "INIT",
+      requestId: "init",
+      seed: 88,
+      simulationVersion: "0.1.0-test",
+      speciesDataVersion: "species-test"
+    });
+
+    adapter.applyUserAction({
+      sequence: 0,
+      targetTick: 0,
+      action: { type: "add_water", waterG: 1 }
+    });
+    adapter.applyUserAction({
+      sequence: 1,
+      targetTick: 0,
+      action: {
+        type: "introduce_organisms",
+        speciesId: "folsomia_candida",
+        count: 1
+      }
+    });
+    adapter.applyUserAction({
+      sequence: 2,
+      targetTick: 0,
+      action: { type: "add_water", waterG: 2 }
+    });
+
+    expect(() => adapter.step(1)).toThrow(/integrated ecosystem runtime adapter/);
+    const saved = adapter.saveSnapshot();
+    expect(saved.tick).toBe(0);
+    expect(saved.userActionQueue).toEqual({
+      pending: [
+        {
+          sequence: 1,
+          targetTick: 0,
+          action: {
+            type: "introduce_organisms",
+            speciesId: "folsomia_candida",
+            count: 1
+          }
+        },
+        {
+          sequence: 2,
+          targetTick: 0,
+          action: { type: "add_water", waterG: 2 }
+        }
+      ],
+      lastSequence: 2,
+      lastTargetTick: 0
+    });
+  });
+
+  it("rejects snapshots whose envelope seed disagrees with authoritative core state", () => {
+    const source = new Phase1SimulationRuntimeAdapter();
+    source.init({
+      type: "INIT",
+      requestId: "init",
+      seed: 123,
+      simulationVersion: "0.1.0-test",
+      speciesDataVersion: "species-test"
+    });
+    const snapshot = source.saveSnapshot();
+    const inconsistent = structuredClone(snapshot);
+    inconsistent.seed = 456;
+
+    const restored = new Phase1SimulationRuntimeAdapter();
+    expect(() => restored.loadSnapshot(inconsistent)).toThrow(/seed does not match/);
+  });
+
 });
