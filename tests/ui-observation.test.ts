@@ -34,4 +34,25 @@ describe("observation UI contracts", () => {
     const speeds = [1, 5, 20, 100] as const;
     expect(speeds).toEqual([1, 5, 20, 100]);
   });
+
+  it("keeps entity-specific inspection metadata aligned with the selected entity", () => {
+    expect(mockObservationSnapshot.inspectionByEntity[1042]?.genealogy.some(
+      node => node.relation === "current" && node.entityId === 1042
+    )).toBe(true);
+    expect(mockObservationSnapshot.inspectionByEntity[2007]?.genealogy.some(
+      node => node.relation === "current" && node.entityId === 2007
+    )).toBe(true);
+    expect(mockObservationSnapshot.inspectionByEntity[501]?.why.some(
+      reason => reason.label === "HUNGRY"
+    )).toBe(false);
+  });
+
+  it("includes reproductive state in animal inspection DTOs", () => {
+    const animal = mockObservationSnapshot.entities.find(
+      entity => entity.kind === "animal" && entity.id === 1042
+    );
+    expect(animal && animal.kind === "animal" ? animal.reproductiveState : null)
+      .toContain("parthenogenetic");
+  });
+
 });
