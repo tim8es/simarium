@@ -147,6 +147,39 @@ describe("platform runtime snapshots", () => {
 });
 
 describe("worker protocol and renderer transport", () => {
+  it("preserves requestId on protocol parse errors", async () => {
+    class NoopAdapter implements SimulationRuntimeAdapter {
+      init(_message: Extract<UiToWorkerMessage, { type: "INIT" }>): void {}
+      loadSnapshot(_snapshot: RuntimeSnapshotV2): void {}
+      step(_ticks: number): void {}
+      applyUserAction(_action: UserActionEnvelope): void {}
+      renderSnapshot(): RenderWorldSnapshotDto { return renderSnapshot(0, 0); }
+      entityDetails(_entityId: string): JsonValue { return null; }
+      stats(): JsonValue { return null; }
+      saveSnapshot(): RuntimeSnapshotV2 {
+        return snapshotForWorld(createPhase1World({ seed: 1 }));
+      }
+    }
+
+    const emitted: WorkerToUiMessage[] = [];
+    const runtime = new SimulationWorkerRuntime(
+      new NoopAdapter(),
+      message => emitted.push(message)
+    );
+    await runtime.handle({
+      type: "SET_SPEED",
+      requestId: "speed-1",
+      speed: 2
+    });
+    expect(emitted).toContainEqual(
+      expect.objectContaining({
+        type: "ERROR",
+        requestId: "speed-1",
+        code: "INVALID_PROTOCOL"
+      })
+    );
+  });
+
   it("validates commands and rejects malformed payloads", () => {
     expect(parseUiToWorkerMessage({ type: "SET_SPEED", requestId: "r1", speed: 20 })).toEqual({ type: "SET_SPEED", requestId: "r1", speed: 20 });
     expect(() => parseUiToWorkerMessage({ type: "SET_SPEED", requestId: "r1", speed: 0 })).toThrow();
@@ -166,6 +199,17 @@ describe("worker protocol and renderer transport", () => {
     buffer.apply(delta);
     const halfway = buffer.sample(0.5)!;
     expect(halfway.entities[0]!.position.x).toBe(1);
+  });
+
+  it("can reset the render buffer to an older replacement world", () => {
+    const buffer = new RenderSnapshotBuffer();
+    buffer.push(renderSnapshot(100, 10));
+    expect(() => buffer.push(renderSnapshot(20, 2))).toThrow(/non-decreasing/);
+
+    buffer.reset(renderSnapshot(20, 2));
+    expect(buffer.sample(1)?.tick).toBe(20);
+    buffer.apply(diffRenderSnapshots(renderSnapshot(20, 2), renderSnapshot(21, 3)));
+    expect(buffer.sample(1)?.tick).toBe(21);
   });
 
   it("clears optional selected/environment state through deltas", () => {
@@ -271,6 +315,46 @@ describe("worker protocol and renderer transport", () => {
 
     runtime.dispose();
     vi.useRealTimers();
+  });
+});
+
+describe("runtime JSON boundary validation", () => {
+  it("rejects non-JSON action attributes and malformed share config", () => {
+    expect(() => parseUiToWorkerMessage({
+      type: "USER_ACTION",
+      requestId: "r-json",
+      action: {
+        sequence: 0,
+        targetTick: 0,
+        action: {
+          type: "introduce_organisms",
+          speciesId: "folsomia_candida",
+          count: 1,
+          attributes: { invalid: BigInt(1) }
+        }
+      }
+    })).toThrow();
+
+    const missingConfig = encodeURIComponent(
+      JSON.stringify({ version: 1, seed: 42, presetId: "x" })
+    );
+    expect(missingConfig.length).toBeGreaterThan(0);
+
+    const valid = encodeSharePreset({
+      version: 1,
+      seed: 42,
+      presetId: "x",
+      config: { light: 1 }
+    });
+    const decoded = decodeSharePreset(valid);
+    expect(decoded.config).toEqual({ light: 1 });
+
+    expect(() => encodeSharePreset({
+      version: 1,
+      seed: 42,
+      presetId: "x",
+      config: new Map() as unknown as JsonValue
+    })).toThrow(/JSON-serializable/);
   });
 });
 
