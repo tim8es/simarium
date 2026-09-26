@@ -205,7 +205,7 @@ export function validateQuantitativeParameter(
     }
   }
 
-  return value as QuantitativeParameter;
+  return value as unknown as QuantitativeParameter;
 }
 
 function validateQuantitativeMap(
@@ -298,7 +298,7 @@ export function validateSpeciesCatalog(value: unknown): SpeciesCatalog {
     }
   }
 
-  return value as SpeciesCatalog;
+  return value as unknown as SpeciesCatalog;
 }
 
 export function validateSpeciesProfile(value: unknown): SpeciesProfile {
@@ -468,5 +468,5 @@ export function validateSpeciesProfile(value: unknown): SpeciesProfile {
     sourceIds
   );
 
-  return value as SpeciesProfile;
+  return value as unknown as SpeciesProfile;
 }
