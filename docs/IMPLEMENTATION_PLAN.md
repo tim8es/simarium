@@ -159,7 +159,7 @@ Predation changes prey dynamics through real encounters; predator cannot survive
 
 ## Phase 7 — Full headless ecosystem
 
-**Status: ACTIVE — regression green, 30/60-day diagnostics green, 180-day engineering gate not yet passed.**
+**Status: COMPLETE — 100×180-day calibration and independent 100×180-day validation PASS on the accepted Phase-7 model.**
 
 Combine all approved species.
 
@@ -180,18 +180,24 @@ Run:
 ### Exit gate
 Pass VALIDATION.md MVP acceptance gates without rescue rules.
 
-Current Phase-7 evidence (2026-09-25):
-- regression workflow `36169362386`: PASS;
-- final diagnostic workflow `36169646200`: regression + 30/60-day calibration/validation jobs PASS;
-- calibration seeds `0-2` and validation seeds `100-102` are disjoint;
-- zero invariant failures in completed 30/60-day runs;
-- litter-N tracer reaches living plant structural tissue in every completed 30/60-day run;
-- all animal taxa produce post-start generations in completed 60-day calibration and validation runs;
-- Dalotia records real Bradysia/Folsomia predation;
-- 90-day calibration checkpoints on seeds 0-2 locate the growth inflection between days 60 and 90: Folsomia reaches ~7.7k-8.2k, Bradysia ~8.9k-12.2k, fungal carbon is exhausted, available N falls to ~0.005 mg, and Dalotia is extinct in 2/3 runs;
-- 90-day wall time is already ~1:05-2:02 per seed with ~244-353 MB max RSS, so 180-day multi-seed execution is not practically usable.
+Current Phase-7 completion evidence (2026-09-26):
+- accepted model head: `1aec050c3f0a9353c4d70e7655c8b8919ef62ce2`;
+- green PR CI: `36258570107`;
+- full Phase-7 acceptance workflow: `36258567197` — PASS;
+- calibration set: seeds `0-99`, 100 runs × 180 days;
+- independent validation set: seeds `100-199`, 100 runs × 180 days;
+- calibration persistence: all producers `100%`, at least one detritivore `100%`, Bradysia `78%`, Dalotia `100%`;
+- validation persistence: all producers `100%`, at least one detritivore `100%`, Bradysia `79%`, Dalotia `100%`;
+- Folsomia persistence: calibration `97%`, validation `98%`;
+- zero invariant failures in both 100-run batches;
+- litter-N tracer returned to living plant tissue in `200/200` accepted runs;
+- all surviving animal taxa satisfy the post-start-generation gate;
+- the unchanged `VALIDATION.md` acceptance evaluator passed both calibration and independent validation;
+- no population cap, hidden rescue, hidden food injection or hidden spawn rule was introduced.
 
-Do not mark Phase 7 complete until the 90-day growth/resource-collapse failure is removed, a practical 180-day run set finishes, and the unchanged VALIDATION.md probability gates can be evaluated.
+The accepted integrated Dalotia model uses a competition-aware local prey-density response. Nearby active predators share the same local prey field rather than each receiving the full density response independently. The Phase-7 local half-saturation is a documented **CALIBRATED** engineering coefficient selected only on calibration seeds; validation seeds were not used for tuning.
+
+The accepted 180-day batches show no observed unbounded numerical growth over the gate horizon: both disjoint 100-seed batches completed with finite population summaries and similar mean final abundances. This is finite-horizon engineering evidence; the preferred 365-day / >=500-seed stability evaluation in `VALIDATION.md` remains a later robustness exercise.
 
 ## Phase 8 — Rendering benchmark
 
@@ -315,10 +321,8 @@ Coding a phase is allowed only when:
 
 # Immediate next work
 
-1. Fix the calibration-seed 90-day resource-collapse/growth inflection before running longer validation: microbial fungal carbon is exhausted while Folsomia/Bradysia cohorts continue to expand.
-2. Make Folsomia food limitation feed back into realized reproduction/survival more strongly, without population caps or rescue rules.
-3. Make Bradysia cohort survival/development respond to fungal exhaustion so large egg/larval backlogs cannot persist without food; preserve critical-mass and reserve-funded reproduction.
-4. Diagnose Dalotia establishment failure: it produces post-start offspring but is extinct in 2/3 calibration seeds by day 90 despite abundant prey.
-5. Re-run 90-day calibration seeds first. Only when that profile is bounded should 120/150-day calibration and a separate frozen 180-day validation set be attempted.
-6. Keep VALIDATION.md thresholds unchanged unless a separate documented model decision justifies a change.
-7. Only after Phase 7 passes, proceed to the remaining renderer/bridge/product integration work.
+1. Preserve the accepted Phase-7 ecology baseline and regression tests while downstream renderer/runtime/UI integration proceeds.
+2. Keep simulation-to-render integration non-authoritative: rendering must not alter deterministic ecology results.
+3. Run the larger 365-day / >=500-seed stability evaluation when runtime budget permits; treat it as robustness validation, not as a reason to silently change the accepted MVP gate.
+4. Continue Phase 8+ renderer, worker bridge, observation UX and persistence work against the accepted Phase-7 model contracts.
+5. Any future ecology retuning must reopen calibration on calibration seeds first and rerun independent validation without weakening `VALIDATION.md` targets.
