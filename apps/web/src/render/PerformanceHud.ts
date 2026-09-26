@@ -7,6 +7,16 @@ const WARMUP_MS = 30_000;
 export interface PerformanceSnapshot {
   fps: number;
   averageFrameMs: number;
+  medianFrameMs: number;
+  measuredFrames: number;
+  measuredDurationMs: number;
+  drawCalls: number;
+  triangles: number;
+  totalEntities: number;
+  visibleEntities: number;
+  animalMeshes: number;
+  lod2Proxies: number;
+  leafInstances: number;
   longTaskCount: number;
   maxLongTaskMs: number;
   measuring: boolean;
@@ -25,6 +35,17 @@ export class PerformanceHud {
   private observer: PerformanceObserver | null = null;
   private readonly warmupEndsAt = performance.now() + WARMUP_MS;
   private measuring = false;
+  private readonly measurementFrames: number[] = [];
+  private measurementFrameSumMs = 0;
+  private latestCounters = {
+    drawCalls: 0,
+    triangles: 0,
+    totalEntities: 0,
+    visibleEntities: 0,
+    animalMeshes: 0,
+    lod2Proxies: 0,
+    leafInstances: 0
+  };
 
   constructor(parent: HTMLElement | null) {
     this.root = parent ? document.createElement("section") : null;
@@ -85,6 +106,20 @@ export class PerformanceHud {
     this.frameCursor = (this.frameCursor + 1) % this.frameSamples.length;
     this.frameCount = Math.min(this.frameCount + 1, this.frameSamples.length);
 
+    if (this.measuring) {
+      this.measurementFrames.push(frameMs);
+      this.measurementFrameSumMs += frameMs;
+    }
+    this.latestCounters = {
+      drawCalls: renderer.info.render.calls,
+      triangles: renderer.info.render.triangles,
+      totalEntities: adapter.totalEntities,
+      visibleEntities: scene.visibleEntityCount,
+      animalMeshes: scene.visibleAnimalMeshCount,
+      lod2Proxies: scene.farAnimalProxyCount,
+      leafInstances: scene.plantLeafInstanceCount
+    };
+
     if (nowMs - this.lastDomUpdate < 250) return;
     this.lastDomUpdate = nowMs;
 
@@ -118,12 +153,27 @@ export class PerformanceHud {
   }
 
   getSnapshot(): PerformanceSnapshot {
-    let sum = 0;
-    for (let i = 0; i < this.frameCount; i++) sum += this.frameSamples[i]!;
-    const averageFrameMs = this.frameCount > 0 ? sum / this.frameCount : 0;
+    const measuredFrames = this.measurementFrames.length;
+    const averageFrameMs =
+      measuredFrames > 0 ? this.measurementFrameSumMs / measuredFrames : 0;
+    const sorted = measuredFrames > 0
+      ? [...this.measurementFrames].sort((a, b) => a - b)
+      : [];
+    const middle = Math.floor(sorted.length / 2);
+    const medianFrameMs =
+      sorted.length === 0
+        ? 0
+        : sorted.length % 2 === 1
+          ? sorted[middle]!
+          : (sorted[middle - 1]! + sorted[middle]!) / 2;
+
     return {
       fps: averageFrameMs > 0 ? 1000 / averageFrameMs : 0,
       averageFrameMs,
+      medianFrameMs,
+      measuredFrames,
+      measuredDurationMs: this.measurementFrameSumMs,
+      ...this.latestCounters,
       longTaskCount: this.longTaskCount,
       maxLongTaskMs: this.maxLongTaskMs,
       measuring: this.measuring
@@ -142,6 +192,8 @@ export class PerformanceHud {
     this.frameCount = 0;
     this.longTaskCount = 0;
     this.maxLongTaskMs = 0;
+    this.measurementFrames.splice(0, this.measurementFrames.length);
+    this.measurementFrameSumMs = 0;
     this.lastDomUpdate = 0;
   }
 
