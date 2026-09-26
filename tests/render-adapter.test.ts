@@ -87,7 +87,7 @@ describe("RenderAdapter", () => {
     expect(first[0]).not.toBe(adapter.getEntity("animal-1"));
   });
 
-  it("rejects stale deltas and invalid transforms", () => {
+  it("rejects stale, gapped deltas and invalid transforms", () => {
     const adapter = new RenderAdapter();
     adapter.applySnapshot({
       sequence: 2,
@@ -96,7 +96,8 @@ describe("RenderAdapter", () => {
       entities: []
     });
 
-    expect(() => adapter.applyDelta({ sequence: 2, simulationTime: 2, upserts: [], removals: [] })).toThrow(/newer/);
+    expect(() => adapter.applyDelta({ sequence: 2, simulationTime: 2, upserts: [], removals: [] })).toThrow(/immediately follow/);
+    expect(() => adapter.applyDelta({ sequence: 4, simulationTime: 2, upserts: [], removals: [] })).toThrow(/immediately follow/);
     expect(() => adapter.applyDelta({
       sequence: 3,
       simulationTime: 2,
