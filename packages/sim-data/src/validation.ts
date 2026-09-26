@@ -208,6 +208,17 @@ export function validateQuantitativeParameter(
   return value as QuantitativeParameter;
 }
 
+function validateQuantitativeMap(
+  value: unknown,
+  path: string,
+  sourceIds: ReadonlySet<string>
+): void {
+  assertObject(value, path);
+  for (const [key, parameter] of Object.entries(value)) {
+    validateQuantitativeParameter(parameter, `${path}.${key}`, sourceIds);
+  }
+}
+
 function walkQuantitativeParameters(
   value: unknown,
   path: string,
@@ -415,9 +426,47 @@ export function validateSpeciesProfile(value: unknown): SpeciesProfile {
     throw new Error(`profile.identity.taxon_source references unknown source id: ${identity.taxon_source}`);
   }
 
-  for (const section of ["biology", "simulation", "render"]) {
-    walkQuantitativeParameters(profile[section], `profile.${section}`, sourceIds);
+  validateQuantitativeMap(
+    biology.development_timing,
+    "profile.biology.development_timing",
+    sourceIds
+  );
+  validateQuantitativeMap(biology.lifespan, "profile.biology.lifespan", sourceIds);
+  validateQuantitativeMap(
+    biologyReproduction.parameters,
+    "profile.biology.reproduction.parameters",
+    sourceIds
+  );
+  for (const section of ["body_mass", "water_dependence", "thermal_response"]) {
+    const block = biology[section] as Record<string, unknown>;
+    validateQuantitativeMap(
+      block.parameters,
+      `profile.biology.${section}.parameters`,
+      sourceIds
+    );
   }
+
+  for (const field of [
+    "metabolism",
+    "reserve_thresholds",
+    "feeding_rates",
+    "assimilation",
+    "critical_mass_thresholds",
+    "reproduction",
+    "reproduction_costs",
+    "mortality_conditions"
+  ]) {
+    validateQuantitativeMap(
+      simulation[field],
+      `profile.simulation.${field}`,
+      sourceIds
+    );
+  }
+  validateQuantitativeMap(
+    render.approximate_dimensions,
+    "profile.render.approximate_dimensions",
+    sourceIds
+  );
 
   return value as SpeciesProfile;
 }
