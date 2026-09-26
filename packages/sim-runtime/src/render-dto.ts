@@ -161,6 +161,11 @@ export class RenderSnapshotBuffer {
   private previous: RenderWorldSnapshotDto | undefined;
   private current: RenderWorldSnapshotDto | undefined;
 
+  reset(snapshot?: RenderWorldSnapshotDto): void {
+    this.previous = undefined;
+    this.current = snapshot === undefined ? undefined : structuredClone(snapshot);
+  }
+
   push(snapshot: RenderWorldSnapshotDto): void {
     if (this.current && snapshot.tick < this.current.tick) {
       throw new Error("Render snapshots must arrive in non-decreasing tick order");
