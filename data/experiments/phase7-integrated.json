@@ -93,11 +93,11 @@
       "notes": "Phase-7 local encounter/capture proxy used only by the integrated spatial ecosystem. Calibrated on seeds 0-4 with a 3-cell prey encounter kernel and Bradysia mating radius 6; 0.20 produced Bradysia/Dalotia coexistence in multiple 150-day calibration runs without the prey wipeout seen at higher values. Phase-6 standalone chambers retain their separate 0.75 arena proxy. This is not a measured attack-success probability and validation seeds are not used for tuning."
     },
     "dalotiaLocalPreyHalfSaturationCount": {
-      "value": 6,
+      "value": 3,
       "unit": "dimensionless",
       "status": "CALIBRATED",
       "source": "model_internal",
-      "notes": "Local Phase-7 prey-density response calibration for the radius-3 spatial encounter kernel. Calibration seeds 0-4 at 150 days were swept at 2, 4, and 6. Values 2 and 4 produced systematic prey collapse in multiple runs; 6 was the only tested candidate that retained Folsomia, Bradysia, and Dalotia in all five calibration runs. This is an engineering calibration for the spatial model, not a measured biological constant, and validation seeds are not used for tuning."
+      "notes": "Competition-aware Phase-7 local prey-density response calibration for the radius-3 spatial encounter kernel. After adding explicit sharing of the local prey-density response among nearby active Dalotia hunters, calibration seeds 0-4 were swept at 3, 4, and 5 for 180 days. Value 3 retained Folsomia, Bradysia, and Dalotia in all 5/5 runs while final Folsomia stayed 76-575; value 4 lost Bradysia in 3/5 runs, and value 5 produced Folsomia in the ~15k-36k range in completed runs. This is an engineering calibration for the spatial model, not a measured biological constant; validation seeds are not used for tuning."
     }
   }
 }
