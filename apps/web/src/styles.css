@@ -231,3 +231,54 @@ h2 { margin: 5px 0 0; font-size: 13px; font-weight: 550; letter-spacing: -.01em;
 }
 
 .inspection-unavailable { margin: 0; color: #748179; font-size: 8px; line-height: 1.45; }
+
+
+/* Integrated renderer + observation shell.
+   The renderer owns the visual world; UI remains a separate overlay projection. */
+#render-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+#render-layer .benchmark-canvas {
+  position: absolute;
+  inset: 0;
+}
+.integrated-mode #app {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+.integrated-mode .top-bar,
+.integrated-mode .left-rail,
+.integrated-mode .right-rail,
+.integrated-mode .bottom-panel,
+.integrated-mode .organism {
+  pointer-events: auto;
+}
+.integrated-mode .viewport {
+  pointer-events: none;
+  background: rgba(7, 10, 9, 0.05);
+  box-shadow:
+    inset 0 0 70px rgba(0,0,0,.18),
+    0 22px 60px rgba(0,0,0,.18);
+}
+.integrated-mode .viewport .terrarium-glass,
+.integrated-mode .viewport .light-cone,
+.integrated-mode .viewport .back-haze,
+.integrated-mode .viewport .hardscape,
+.integrated-mode .viewport .plant-cluster,
+.integrated-mode .viewport .soil-layer {
+  display: none;
+}
+.integrated-mode .viewport .organism {
+  pointer-events: auto;
+  opacity: .82;
+}
+.integrated-mode .glass-panel {
+  background: rgba(10, 15, 13, 0.76);
+}
+.benchmark-mode #render-layer {
+  z-index: 1;
+}
