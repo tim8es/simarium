@@ -593,7 +593,14 @@ export class DalotiaPredatorSystem implements SimSystem {
     const feedingDrive = Math.max(hunger, growthNeed);
     if (feedingDrive <= 0) return false;
 
-    const candidates = this.collectPrey(predator);
+    const nearbyRefs =
+      this.spatial === undefined
+        ? undefined
+        : this.spatial.nearbyRefs(
+            `dalotia_coriaria#${predator.id}`,
+            this.preyEncounterRadiusCells
+          );
+    const candidates = this.collectPrey(predator, nearbyRefs);
     const available = candidates.length;
     if (available === 0) return false;
 
@@ -601,9 +608,20 @@ export class DalotiaPredatorSystem implements SimSystem {
       predator.stage === "adult"
         ? this.p.maxAdultPreyPerDay
         : this.p.maxLarvalPreyPerDay;
+    // In a spatial world, nearby predators share the same local prey field.
+    // Without this denominator every predator receives the full local-density
+    // response independently, so dense offspring cohorts multiply kill rate
+    // even though they are competing for the same prey. Scale the existing
+    // half-saturation by the number of active local hunters; no new
+    // biological coefficient is introduced.
+    const localHunterCount =
+      nearbyRefs === undefined ? 1 : this.countLocalHunters(nearbyRefs);
     const densityFactor =
       available /
-      Math.max(1e-12, available + this.p.preyHalfSaturationCount);
+      Math.max(
+        1e-12,
+        available + this.p.preyHalfSaturationCount * localHunterCount
+      );
 
     predator.attackAccumulator +=
       maxPerDay *
@@ -627,7 +645,27 @@ export class DalotiaPredatorSystem implements SimSystem {
     return consumedAny;
   }
 
-  private collectPrey(predator: DalotiaIndividual): PreyCandidate[] {
+  private countLocalHunters(refs: readonly string[]): number {
+    let count = 0;
+    for (const ref of refs) {
+      if (!ref.startsWith("dalotia_coriaria#")) continue;
+      const id = Number(ref.slice("dalotia_coriaria#".length));
+      if (!Number.isInteger(id) || id <= 0) continue;
+      const candidate = this.population.get(id);
+      if (
+        candidate.alive &&
+        (candidate.stage === "larva" || candidate.stage === "adult")
+      ) {
+        count++;
+      }
+    }
+    return Math.max(1, count);
+  }
+
+  private collectPrey(
+    predator: DalotiaIndividual,
+    nearbyRefs?: readonly string[]
+  ): PreyCandidate[] {
     if (this.spatial === undefined) {
       const bradysia: PreyCandidate[] = this.prey.bradysia
         .living()
@@ -651,10 +689,10 @@ export class DalotiaPredatorSystem implements SimSystem {
     const predatorRef = `dalotia_coriaria#${predator.id}`;
     const candidates: PreyCandidate[] = [];
 
-    for (const ref of this.spatial.nearbyRefs(
-      predatorRef,
-      this.preyEncounterRadiusCells
-    )) {
+    const refs =
+      nearbyRefs ??
+      this.spatial.nearbyRefs(predatorRef, this.preyEncounterRadiusCells);
+    for (const ref of refs) {
       if (ref.startsWith("bradysia_impatiens#")) {
         const id = Number(ref.slice("bradysia_impatiens#".length));
         if (!Number.isInteger(id) || id <= 0) continue;
