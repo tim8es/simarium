@@ -43,7 +43,11 @@ export type RuntimeSnapshot = RuntimeSnapshotV1 | RuntimeSnapshotV2;
 export const CURRENT_RUNTIME_SCHEMA_VERSION = 2 as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function assertFiniteNumber(value: unknown, name: string): asserts value is number {
@@ -64,7 +68,7 @@ function assertNonEmptyString(value: unknown, name: string): asserts value is st
   }
 }
 
-function assertJsonValue(value: unknown, path = "value"): asserts value is JsonValue {
+export function assertJsonValue(value: unknown, path = "value"): asserts value is JsonValue {
   if (value === null || typeof value === "string" || typeof value === "boolean") return;
   if (typeof value === "number") {
     if (!Number.isFinite(value)) throw new Error(`${path} contains a non-finite number`);
