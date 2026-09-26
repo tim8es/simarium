@@ -146,4 +146,17 @@ describe("normalized species profiles", () => {
       "TBD"
     ]);
   });
+
+  it("rejects profiles missing required nested sections", () => {
+    const incomplete = structuredClone(fittonia) as Record<string, unknown>;
+    incomplete.biology = {};
+    expect(() => validateSpeciesProfile(incomplete)).toThrow(/profile\.biology\.stages/);
+
+    const incompleteRender = structuredClone(fittonia) as Record<string, unknown>;
+    incompleteRender.render = {};
+    expect(() => validateSpeciesProfile(incompleteRender)).toThrow(
+      /profile\.render\.approximate_dimensions/
+    );
+  });
+
 });
