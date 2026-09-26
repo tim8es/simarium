@@ -68,8 +68,10 @@ export class RenderAdapter {
 
   applyDelta(delta: RenderWorldDelta): void {
     if (this.dimensions === null) throw new Error("Cannot apply render delta before an initial snapshot");
-    if (!Number.isInteger(delta.sequence) || delta.sequence <= this.sequence) {
-      throw new Error(`Render delta sequence ${delta.sequence} must be newer than ${this.sequence}`);
+    if (!Number.isInteger(delta.sequence) || delta.sequence !== this.sequence + 1) {
+      throw new Error(
+        `Render delta sequence ${delta.sequence} must immediately follow ${this.sequence}`
+      );
     }
     if (!Number.isFinite(delta.simulationTime) || delta.simulationTime < this.simulationTime) {
       throw new Error(`Render delta simulationTime ${delta.simulationTime} regressed from ${this.simulationTime}`);
