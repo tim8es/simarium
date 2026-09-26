@@ -100,10 +100,30 @@ export class DeterministicUserActionQueue {
   }
 
   takeForTick(tick: number): UserActionEnvelope[] {
-    if (!Number.isInteger(tick) || tick < 0) throw new Error("tick must be a non-negative integer");
+    const due = this.peekForTick(tick);
+    this.pending.splice(0, due.length);
+    return due;
+  }
+
+  peekForTick(tick: number): UserActionEnvelope[] {
+    if (!Number.isInteger(tick) || tick < 0) {
+      throw new Error("tick must be a non-negative integer");
+    }
     let count = 0;
-    while (count < this.pending.length && this.pending[count]!.targetTick <= tick) count++;
-    return this.pending.splice(0, count);
+    while (count < this.pending.length && this.pending[count]!.targetTick <= tick) {
+      count++;
+    }
+    return structuredClone(this.pending.slice(0, count));
+  }
+
+  removeApplied(sequence: number): void {
+    const first = this.pending[0];
+    if (!first || first.sequence !== sequence) {
+      throw new Error(
+        `Cannot remove applied user action ${sequence}: queue head is ${first?.sequence ?? "empty"}`
+      );
+    }
+    this.pending.shift();
   }
 
   snapshot(): UserActionEnvelope[] {
