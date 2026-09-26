@@ -9,6 +9,11 @@ import { CameraController, type CameraMode } from "./CameraController";
 import { PerformanceHud } from "./PerformanceHud";
 import { SyntheticBenchmarkSource } from "./SyntheticBenchmarkSource";
 
+export interface BenchmarkAppOptions {
+  showHud?: boolean;
+  cameraMode?: CameraMode;
+}
+
 export class BenchmarkApp {
   private readonly renderer: WebGLRenderer;
   private readonly adapter = new RenderAdapter();
@@ -20,7 +25,7 @@ export class BenchmarkApp {
   private previousFrameMs = performance.now();
   private sourceAccumulator = 0;
 
-  constructor(root: HTMLElement) {
+  constructor(root: HTMLElement, options: BenchmarkAppOptions = {}) {
     const canvas = document.createElement("canvas");
     canvas.className = "benchmark-canvas";
     root.appendChild(canvas);
@@ -44,8 +49,8 @@ export class BenchmarkApp {
     this.benchmarkScene.initializeFromSnapshot();
     this.cameraController = new CameraController(canvas, this.adapter);
     this.cameraController.setFollowTarget(this.source.focusTargetId);
-    this.cameraController.setMode("orbit");
-    this.hud = new PerformanceHud(root);
+    this.cameraController.setMode(options.cameraMode ?? "orbit");
+    this.hud = new PerformanceHud(options.showHud === false ? null : root);
 
     window.addEventListener("resize", this.onResize);
   }
@@ -64,6 +69,10 @@ export class BenchmarkApp {
 
   setCameraMode(mode: CameraMode): void {
     this.cameraController.setMode(mode);
+  }
+
+  getPerformanceSnapshot() {
+    return this.hud.getSnapshot();
   }
 
   private readonly onResize = (): void => {
