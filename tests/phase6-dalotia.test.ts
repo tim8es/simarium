@@ -407,6 +407,78 @@ describe("Phase 6 Dalotia coriaria predator", () => {
   });
 
 
+  it("shares the local prey-density response among nearby active hunters", () => {
+    const loneDalotia = adultPredators(false);
+    const lonePrey = preyPopulations(1, 0);
+    const loneWorld = createWorld(loneDalotia, lonePrey);
+    const loneHabitat = new SpatialHabitat(4, 1);
+    loneHabitat.set("dalotia_coriaria#1", {
+      x: 1,
+      z: 0,
+      layer: "substrate"
+    });
+    loneHabitat.set("bradysia_impatiens#1", {
+      x: 1,
+      z: 0,
+      layer: "substrate"
+    });
+    loneDalotia.get(1).reserveCarbonMg = 0;
+
+    const responseParameters = parameters({
+      maxAdultPreyPerDay: 20,
+      preyHalfSaturationCount: 1,
+      captureProbability: 1
+    });
+    new DalotiaPredatorSystem(
+      loneDalotia,
+      lonePrey,
+      responseParameters,
+      loneHabitat,
+      1,
+      1
+    ).step(loneWorld, 60);
+    const loneAccumulator = loneDalotia.get(1).attackAccumulator;
+
+    const sharedDalotia = adultPredators(true);
+    const sharedPrey = preyPopulations(1, 0);
+    const sharedWorld = createWorld(sharedDalotia, sharedPrey);
+    const sharedHabitat = new SpatialHabitat(4, 1);
+    sharedHabitat.set("dalotia_coriaria#1", {
+      x: 1,
+      z: 0,
+      layer: "substrate"
+    });
+    sharedHabitat.set("dalotia_coriaria#2", {
+      x: 1,
+      z: 0,
+      layer: "substrate"
+    });
+    sharedHabitat.set("bradysia_impatiens#1", {
+      x: 1,
+      z: 0,
+      layer: "substrate"
+    });
+    for (const predator of sharedDalotia.living()) {
+      predator.reserveCarbonMg = 0;
+    }
+
+    new DalotiaPredatorSystem(
+      sharedDalotia,
+      sharedPrey,
+      responseParameters,
+      sharedHabitat,
+      1,
+      1
+    ).step(sharedWorld, 60);
+
+    expect(sharedDalotia.get(1).attackAccumulator).toBeLessThan(
+      loneAccumulator
+    );
+    expect(sharedDalotia.get(2).attackAccumulator).toBeLessThan(
+      loneAccumulator
+    );
+  });
+
   it("applies documented immature survival before adult emergence", () => {
     const dalotia = seedDalotiaLarvae({
       count: 4,
