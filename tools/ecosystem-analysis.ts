@@ -96,6 +96,8 @@ export interface IntegratedRunResult {
   seed: number;
   days: number;
   invariantFailures: number;
+  invariantFailureDay?: number;
+  invariantError?: string;
   samples: EcosystemSnapshot[];
   summary: EcosystemRunSummary;
   ecosystem: IntegratedEcosystem;
@@ -110,6 +112,9 @@ export interface BatchOptions {
 export interface RunOutcome {
   seed: number;
   invariantFailures: number;
+  invariantFailureDay?: number;
+  invariantError?: string;
+  finalResources: ResourceSnapshot;
   persistence: {
     fittonia: boolean;
     peperomia: boolean;
@@ -421,13 +426,17 @@ export function runIntegratedEcosystem(
     collectEcosystemSnapshot(eco, 0)
   ];
   let invariantFailures = 0;
+  let invariantFailureDay: number | undefined;
+  let invariantError: string | undefined;
 
   for (let day = 1; day <= options.days; day++) {
     eco.scheduler.step(stepsPerDay);
     try {
       eco.invariants.check(eco.world);
-    } catch {
+    } catch (error) {
       invariantFailures++;
+      invariantFailureDay = day;
+      invariantError = error instanceof Error ? error.message : String(error);
       break;
     }
 
@@ -445,6 +454,8 @@ export function runIntegratedEcosystem(
     seed: options.seed,
     days: options.days,
     invariantFailures,
+    ...(invariantFailureDay !== undefined ? { invariantFailureDay } : {}),
+    ...(invariantError !== undefined ? { invariantError } : {}),
     samples,
     summary: buildRunSummary(samples, {
       seededMg: seededNitrogenMg,
@@ -541,6 +552,13 @@ function runOutcome(run: IntegratedRunResult): RunOutcome {
   return {
     seed: run.seed,
     invariantFailures: run.invariantFailures,
+    ...(run.invariantFailureDay !== undefined
+      ? { invariantFailureDay: run.invariantFailureDay }
+      : {}),
+    ...(run.invariantError !== undefined
+      ? { invariantError: run.invariantError }
+      : {}),
+    finalResources: run.summary.finalResources,
     persistence,
     postStartGeneration: {
       folsomia: run.summary.animals.folsomia.postStartEver > 0,
@@ -669,7 +687,14 @@ export function runEcosystemBatch(options: BatchOptions): BatchSummary {
     throw new Error("Batch seeds must be unique");
   }
 
-  const runs = options.seeds.map((seed) => {
+  // Convert each completed world to its compact outcome immediately.
+  // IntegratedRunResult intentionally exposes the full ecosystem for one-run
+  // diagnostics, but retaining one full world per seed makes long multi-seed
+  // calibration batches accumulate all historical individuals in memory.
+  // Sequential compaction preserves seed order/results while allowing each
+  // completed world to become unreachable before the next seed starts.
+  const outcomes: RunOutcome[] = [];
+  for (const seed of options.seeds) {
     const runOptions: IntegratedRunOptions = {
       seed,
       days: options.days
@@ -677,14 +702,10 @@ export function runEcosystemBatch(options: BatchOptions): BatchSummary {
     if (options.sampleEveryDays !== undefined) {
       runOptions.sampleEveryDays = options.sampleEveryDays;
     }
-    return runIntegratedEcosystem(runOptions);
-  });
+    outcomes.push(runOutcome(runIntegratedEcosystem(runOptions)));
+  }
 
-  return summarizeOutcomes(
-    options.days,
-    options.seeds,
-    runs.map(runOutcome)
-  );
+  return summarizeOutcomes(options.days, options.seeds, outcomes);
 }
 
 export function mergeBatchSummaries(

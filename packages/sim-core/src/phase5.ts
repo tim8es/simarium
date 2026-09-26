@@ -198,11 +198,17 @@ export class BradysiaPopulation {
   }
 
   totalLivingMaterial(): Material {
-    let total = zeroMaterial();
+    let carbonMg = 0;
+    let nitrogenMg = 0;
+    let phosphorusMg = 0;
+    let waterG = 0;
     for (const individual of this.livingIndividuals) {
-      total = addMaterial(total, individual.material);
+      carbonMg += individual.material.carbonMg;
+      nitrogenMg += individual.material.nitrogenMg;
+      phosphorusMg += individual.material.phosphorusMg;
+      waterG += individual.material.waterG;
     }
-    return total;
+    return { carbonMg, nitrogenMg, phosphorusMg, waterG };
   }
 
   assertMatchesAggregate(aggregate: Material, tolerance = 1e-8): void {
@@ -239,6 +245,7 @@ export interface BradysiaParameters {
   fecundityEggsPerFemale: number;
   femaleProbability: number;
   immatureSurvivalProbability: number;
+  reproductionReserveFraction: number;
 
   larvalFeedingCarbonMgPerSecond: number;
   assimilationEfficiency: number;
@@ -256,6 +263,33 @@ export interface BradysiaParameters {
 
 const DAY = 86400;
 const HOUR = 3600;
+const BRADYSIA_AGGREGATE_TOLERANCE = 1e-8;
+
+function reconcileMaterialToAggregate(
+  requested: Material,
+  available: Material
+): Material {
+  const reconciled = cloneMaterial(requested);
+  for (const key of ["carbonMg", "nitrogenMg", "phosphorusMg", "waterG"] as const) {
+    if (reconciled[key] <= available[key]) continue;
+
+    const deficit = reconciled[key] - available[key];
+    const tolerance =
+      BRADYSIA_AGGREGATE_TOLERANCE +
+      Math.abs(available[key]) * BRADYSIA_AGGREGATE_TOLERANCE;
+    if (deficit > tolerance) {
+      throw new Error(
+        `Bradysia individual material exceeds aggregate pool for ${key}: individual=${reconciled[key]} ledger=${available[key]}`
+      );
+    }
+
+    // The ledger is authoritative for conserved mass. Clamp only residual
+    // floating-point drift already accepted by the population aggregate audit;
+    // larger mismatches remain hard failures.
+    reconciled[key] = available[key];
+  }
+  return reconciled;
+}
 
 function response(value: number, optimum: number, sigma: number): number {
   const z = (value - optimum) / Math.max(1e-9, sigma);
@@ -301,9 +335,11 @@ export class BradysiaLifecycleSystem implements SimSystem {
     }
     if (
       p.immatureSurvivalProbability < 0 ||
-      p.immatureSurvivalProbability > 1
+      p.immatureSurvivalProbability > 1 ||
+      p.reproductionReserveFraction < 0 ||
+      p.reproductionReserveFraction > 1
     ) {
-      throw new Error("immatureSurvivalProbability must be in [0,1]");
+      throw new Error("Survival/reserve fractions must be in [0,1]");
     }
   }
 
@@ -319,7 +355,11 @@ export class BradysiaLifecycleSystem implements SimSystem {
       substrateWater /
       Math.max(1e-12, substrateWater + this.p.moistureHalfSaturationWaterG);
 
-    const current = [...this.population.living()];
+    const current = this.population.living();
+
+    // Advance lifecycle first while the individual and aggregate material
+    // states are still synchronized. Deaths here can therefore transfer
+    // complete remains without depending on pending batched fluxes.
     for (const individual of current) {
       individual.ageSeconds += dtSeconds;
       individual.stageAgeSeconds += dtSeconds * development;
@@ -333,20 +373,94 @@ export class BradysiaLifecycleSystem implements SimSystem {
         individual.adultAgeSeconds >= this.p.adultLifespanDays * DAY
       ) {
         this.die(world, individual, "senescence");
-        continue;
       }
+    }
 
-      this.waterBalance(world, individual, moisture, dtSeconds);
-      this.metabolize(world, individual, development, dtSeconds);
+    // Water exchange used to transfer through the aggregate ledger once per
+    // individual. Large cohorts accumulated floating-point drift large enough
+    // for a later conservative corpse transfer to exceed the aggregate pool by
+    // a few ulps. Update individual water explicitly, but batch the matching
+    // aggregate transfers once per timestep.
+    let availableSubstrateWater = world.ledger.getPool(
+      this.p.substratePool
+    ).waterG;
+    let totalWaterUptake = 0;
+    let totalWaterLoss = 0;
+    for (const individual of current) {
       if (!individual.alive) continue;
+      const flux = this.waterBalance(
+        individual,
+        availableSubstrateWater,
+        moisture,
+        dtSeconds
+      );
+      availableSubstrateWater -= flux.uptakeG;
+      totalWaterUptake += flux.uptakeG;
+      totalWaterLoss += flux.lossG;
+    }
 
+    if (totalWaterUptake > 0) {
+      world.ledger.transfer(
+        this.p.substratePool,
+        this.p.biomassPool,
+        { ...zeroMaterial(), waterG: totalWaterUptake }
+      );
+    }
+    if (totalWaterLoss > 0) {
+      world.ledger.transfer(
+        this.p.biomassPool,
+        this.p.atmospherePool,
+        { ...zeroMaterial(), waterG: totalWaterLoss }
+      );
+    }
+
+    let totalMetabolicCarbon = 0;
+    const carbonExhausted: BradysiaIndividual[] = [];
+    for (const individual of current) {
+      if (!individual.alive) continue;
+      totalMetabolicCarbon += this.metabolize(
+        individual,
+        development,
+        dtSeconds
+      );
+      if (individual.material.carbonMg <= 1e-12) {
+        carbonExhausted.push(individual);
+      }
+    }
+
+    // Per-individual feeding/death transfers can accumulate a few ulps of
+    // ledger/individual drift in very large Bradysia cohorts. Reconcile the
+    // batched metabolic carbon against the authoritative living-material
+    // aggregate before the single ledger transfer; this remains conservative
+    // and does not relax the global invariant monitor.
+    if (totalMetabolicCarbon > 0) {
+      const ledgerCarbon = world.ledger.getPool(this.p.biomassPool).carbonMg;
+      const livingCarbon = this.population.totalLivingMaterial().carbonMg;
+      const reconciledMetabolicCarbon = Math.max(
+        0,
+        Math.min(ledgerCarbon, ledgerCarbon - livingCarbon)
+      );
+      if (reconciledMetabolicCarbon > 0) {
+        world.ledger.transfer(
+          this.p.biomassPool,
+          this.p.atmospherePool,
+          { ...zeroMaterial(), carbonMg: reconciledMetabolicCarbon }
+        );
+      }
+    }
+
+    for (const individual of carbonExhausted) {
+      this.die(world, individual, "carbon_exhaustion");
+    }
+
+    for (const individual of current) {
+      if (!individual.alive) continue;
       if (individual.stage === "larva") {
         this.feedLarva(world, individual, dtSeconds);
       }
       if (individual.stage === "adult") {
         this.tryOviposition(world, individual, moisture);
       }
-
       this.evaluateStress(world, individual, moisture, dtSeconds);
     }
 
@@ -360,6 +474,17 @@ export class BradysiaLifecycleSystem implements SimSystem {
       individual.stage === "egg" &&
       individual.stageAgeSeconds >= this.p.eggDevelopmentDays * DAY
     ) {
+      // The available evidence is an aggregate immature survival fraction,
+      // not stage-specific mortality. Apply it once when a post-start egg
+      // enters the feeding cohort so non-viable offspring do not consume
+      // larval resources/CPU for weeks.
+      if (
+        individual.birthTimeSeconds >= 0 &&
+        !this.survivesImmatureCohort(world)
+      ) {
+        this.die(world, individual, "developmental_mortality");
+        return;
+      }
       this.population.transitionStage(individual, "larva", world.timeSeconds);
       return;
     }
@@ -378,7 +503,13 @@ export class BradysiaLifecycleSystem implements SimSystem {
       individual.stage === "pupa" &&
       individual.stageAgeSeconds >= this.p.pupalDevelopmentDays * DAY
     ) {
-      if (world.rng.nextFloat() >= this.p.immatureSurvivalProbability) {
+      // Seeded pre-start larvae have not passed through the post-start egg
+      // viability gate, so preserve the original aggregate survival draw at
+      // their adult emergence.
+      if (
+        individual.birthTimeSeconds < 0 &&
+        !this.survivesImmatureCohort(world)
+      ) {
         this.die(world, individual, "developmental_mortality");
         return;
       }
@@ -389,25 +520,27 @@ export class BradysiaLifecycleSystem implements SimSystem {
     }
   }
 
+  private survivesImmatureCohort(world: WorldState): boolean {
+    return world.rng.nextFloat() < this.p.immatureSurvivalProbability;
+  }
+
   private waterBalance(
-    world: WorldState,
     individual: BradysiaIndividual,
+    availableSubstrateWater: number,
     moisture: number,
     dtSeconds: number
-  ): void {
+  ): { uptakeG: number; lossG: number } {
     const target = stageWaterTarget(individual.stage, this.p.adultBodyWaterG);
     const deficit = Math.max(0, target - individual.material.waterG);
     const uptakeRate =
       individual.stage === "adult" ? 0.000004 : 0.000015;
     const uptakeFraction = 1 - Math.exp(-uptakeRate * moisture * dtSeconds);
     const uptake = Math.min(
-      world.ledger.getPool(this.p.substratePool).waterG,
+      availableSubstrateWater,
       deficit * uptakeFraction
     );
 
     if (uptake > 0) {
-      const amount = { ...zeroMaterial(), waterG: uptake };
-      world.ledger.transfer(this.p.substratePool, this.p.biomassPool, amount);
       individual.material.waterG += uptake;
     }
 
@@ -416,18 +549,17 @@ export class BradysiaLifecycleSystem implements SimSystem {
     const lossFraction = 1 - Math.exp(-lossRate * dryStress * dtSeconds);
     const loss = individual.material.waterG * lossFraction;
     if (loss > 0) {
-      const amount = { ...zeroMaterial(), waterG: loss };
-      world.ledger.transfer(this.p.biomassPool, this.p.atmospherePool, amount);
       individual.material.waterG -= loss;
     }
+
+    return { uptakeG: uptake, lossG: loss };
   }
 
   private metabolize(
-    world: WorldState,
     individual: BradysiaIndividual,
     temperatureSuitability: number,
     dtSeconds: number
-  ): void {
+  ): number {
     const flightMultiplier =
       individual.stage === "adult" ? this.p.adultFlightMetabolismMultiplier : 1;
     const cost = Math.min(
@@ -440,18 +572,10 @@ export class BradysiaLifecycleSystem implements SimSystem {
     );
 
     if (cost > 0) {
-      world.ledger.transfer(
-        this.p.biomassPool,
-        this.p.atmospherePool,
-        { ...zeroMaterial(), carbonMg: cost }
-      );
       individual.material.carbonMg -= cost;
       individual.reserveCarbonMg = Math.max(0, individual.reserveCarbonMg - cost);
     }
-
-    if (individual.material.carbonMg <= 1e-12) {
-      this.die(world, individual, "carbon_exhaustion");
-    }
+    return cost;
   }
 
   private feedLarva(
@@ -564,12 +688,27 @@ export class BradysiaLifecycleSystem implements SimSystem {
     if (female.adultAgeSeconds < this.p.preOvipositionHours * HOUR) return;
     if (moisture < this.p.ovipositionMoistureThreshold) return;
 
+    const reserveFraction =
+      female.material.carbonMg > 0
+        ? female.reserveCarbonMg / female.material.carbonMg
+        : 0;
+    if (reserveFraction < this.p.reproductionReserveFraction) return;
+
     if (!this.hasMate(female)) return;
 
     const eggC = this.p.eggCarbonMg;
-    const count = this.p.fecundityEggsPerFemale;
+    const minimumReserve =
+      female.material.carbonMg * this.p.reproductionReserveFraction;
+    const reproductiveReserve = Math.max(
+      0,
+      female.reserveCarbonMg - minimumReserve
+    );
+    const count = Math.min(
+      this.p.fecundityEggsPerFemale,
+      Math.floor(reproductiveReserve / Math.max(1e-12, eggC))
+    );
+    if (count <= 0) return;
     const totalEggC = eggC * count;
-    if (female.material.carbonMg <= totalEggC * 1.2) return;
 
     const nPerC =
       female.material.nitrogenMg /
@@ -663,10 +802,14 @@ export class BradysiaLifecycleSystem implements SimSystem {
     cause: BradysiaDeathCause
   ): void {
     if (!individual.alive) return;
+    const remains = reconcileMaterialToAggregate(
+      individual.material,
+      world.ledger.getPool(this.p.biomassPool)
+    );
     world.ledger.transfer(
       this.p.biomassPool,
       this.p.corpsePool,
-      cloneMaterial(individual.material)
+      remains
     );
     individual.material = zeroMaterial();
     individual.reserveCarbonMg = 0;

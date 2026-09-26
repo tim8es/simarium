@@ -1,0 +1,177 @@
+name: Phase 7 180-Day Calibration
+# competition-model acceptance rerun
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/phase7-ecology
+    paths:
+      - ".github/workflows/phase7-calibration-180d.yml"
+      - "packages/sim-core/src/phase3.ts"
+      - "packages/sim-core/src/phase5.ts"
+      - "packages/sim-core/src/phase6.ts"
+      - "tools/ecosystem-factory.ts"
+      - "tools/ecosystem-analysis.ts"
+      - "data/experiments/phase3-folsomia.json"
+      - "data/experiments/phase5-bradysia.json"
+      - "data/experiments/phase6-dalotia.json"
+      - "data/experiments/phase7-integrated.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase7-calibration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calibration-shard:
+    name: calibration 180d shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - name: Run 5 isolated 180-day calibration seeds
+        shell: bash
+        run: |
+          START=$((${{ matrix.shard }} * 5))
+          parts=()
+          for OFFSET in 0 1 2 3 4; do
+            SEED=$((START + OFFSET))
+            PART="calibration-seed-${SEED}.json"
+            /usr/bin/time -v node dist/tools/ecosystem-batch.js \
+              --days 180 \
+              --seeds "${SEED}:1" \
+              --sample 10 \
+              --format json \
+              > "${PART}"
+            parts+=("${PART}")
+          done
+          node dist/tools/ecosystem-validation-report.js \
+            --summary-only "${parts[@]}" \
+            > "calibration-shard-${{ matrix.shard }}.json"
+          cat "calibration-shard-${{ matrix.shard }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: calibration-shard-${{ matrix.shard }}
+          path: calibration-shard-${{ matrix.shard }}.json
+          retention-days: 14
+
+  merge-calibration:
+    name: Merge calibration and evaluate unchanged MVP gates
+    needs: calibration-shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: calibration-shard-*
+          path: calibration-shards
+          merge-multiple: true
+      - name: Merge and enforce unchanged targets
+        shell: bash
+        run: |
+          node dist/tools/ecosystem-validation-report.js \
+            calibration-shards/calibration-shard-*.json \
+            > calibration-report.json
+          cat calibration-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase7-calibration-report
+          path: calibration-report.json
+          retention-days: 30
+
+  validation-shard:
+    name: validation 180d shard ${{ matrix.shard }}
+    needs: merge-calibration
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - name: Run 5 isolated 180-day validation seeds
+        shell: bash
+        run: |
+          START=$((100 + ${{ matrix.shard }} * 5))
+          parts=()
+          for OFFSET in 0 1 2 3 4; do
+            SEED=$((START + OFFSET))
+            PART="validation-seed-${SEED}.json"
+            /usr/bin/time -v node dist/tools/ecosystem-batch.js \
+              --days 180 \
+              --seeds "${SEED}:1" \
+              --sample 10 \
+              --format json \
+              > "${PART}"
+            parts+=("${PART}")
+          done
+          node dist/tools/ecosystem-validation-report.js \
+            --summary-only "${parts[@]}" \
+            > "validation-shard-${{ matrix.shard }}.json"
+          cat "validation-shard-${{ matrix.shard }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validation-shard-${{ matrix.shard }}
+          path: validation-shard-${{ matrix.shard }}.json
+          retention-days: 14
+
+  merge-validation:
+    name: Merge independent validation and evaluate unchanged MVP gates
+    needs: validation-shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: validation-shard-*
+          path: validation-shards
+          merge-multiple: true
+      - name: Merge independent validation and enforce unchanged targets
+        shell: bash
+        run: |
+          node dist/tools/ecosystem-validation-report.js \
+            validation-shards/validation-shard-*.json \
+            > validation-report.json
+          cat validation-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase7-validation-report
+          path: validation-report.json
+          retention-days: 30
+

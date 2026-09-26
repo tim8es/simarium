@@ -1,0 +1,45 @@
+name: Phase 7 Folsomia Calibration Verification
+# lifespan evidence rerun
+
+on:
+  push:
+    branches:
+      - agent/phase7-ecology
+    paths:
+      - ".github/workflows/phase7-folsomia-check.yml"
+      - "data/experiments/phase3-folsomia.json"
+      - "packages/sim-core/src/phase3.ts"
+      - "tools/ecosystem-factory.ts"
+      - "data/experiments/phase7-integrated.json"
+
+permissions:
+  contents: read
+
+jobs:
+  calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        seed: [0, 1, 2]
+        days: [120, 150]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - name: Run calibrated checkpoint
+        shell: bash
+        run: |
+          label="folsomia-cal-${{ matrix.days }}d-${{ matrix.seed }}"
+          /usr/bin/time -v node dist/tools/ecosystem-batch.js \
+            --days ${{ matrix.days }} \
+            --seeds "${{ matrix.seed }}:1" \
+            --sample 10 \
+            --format json > "$label.json" 2> "$label.time.txt"
+          cat "$label.json"
+          cat "$label.time.txt"

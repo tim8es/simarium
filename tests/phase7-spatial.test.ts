@@ -69,7 +69,7 @@ function parameters(): DalotiaParameters {
 }
 
 describe("Phase 7 local encounter index", () => {
-  it("prevents global predation and allows predation after prey enters a local cell", () => {
+  it("prevents global predation and respects the configured local prey encounter radius", () => {
     const bradysia = seedBradysiaLarvae({
       count: 1,
       ageDays: 2,
@@ -132,14 +132,16 @@ describe("Phase 7 local encounter index", () => {
       dalotia,
       { bradysia, folsomia },
       parameters(),
-      habitat
+      habitat,
+      1,
+      2
     );
     const scheduler = new FixedStepScheduler(world, [system]);
 
     scheduler.runFor(12 * 3600);
     expect(bradysia.living()).toHaveLength(1);
 
-    habitat.set("bradysia_impatiens#1", { x: 0, z: 0, layer: "substrate" });
+    habitat.set("bradysia_impatiens#1", { x: 2, z: 0, layer: "substrate" });
     scheduler.runFor(12 * 3600);
     expect(bradysia.living()).toHaveLength(0);
   });

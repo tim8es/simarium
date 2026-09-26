@@ -8,6 +8,7 @@ import {
   runEcosystemBatch,
   runIntegratedEcosystem
 } from "../tools/ecosystem-analysis.ts";
+import { mergeBatchShardDocuments } from "../tools/ecosystem-validation.ts";
 
 describe("Phase 7 report/export helpers", () => {
   it("parses deterministic seed ranges and explicit seed lists", () => {
@@ -32,6 +33,29 @@ describe("Phase 7 report/export helpers", () => {
     expect(lines[0]).toContain("dalotia_living");
     expect(lines[0]).toContain("total_carbon_mg");
     expect(lines.at(-1)?.startsWith("4,")).toBe(true);
+  }, 30_000);
+
+  it("merges compact single-seed batch shards without applying acceptance early", () => {
+    const first = runEcosystemBatch({
+      seeds: [7308],
+      days: 2,
+      sampleEveryDays: 1
+    });
+    const second = runEcosystemBatch({
+      seeds: [7309],
+      days: 2,
+      sampleEveryDays: 1
+    });
+
+    const merged = mergeBatchShardDocuments([
+      JSON.stringify(first),
+      JSON.stringify(second)
+    ]);
+
+    expect(merged.days).toBe(2);
+    expect(merged.seeds).toEqual([7308, 7309]);
+    expect(merged.runCount).toBe(2);
+    expect(merged.runOutcomes).toHaveLength(2);
   }, 30_000);
 
   it("exports aggregate persistence probabilities for batch comparison", () => {

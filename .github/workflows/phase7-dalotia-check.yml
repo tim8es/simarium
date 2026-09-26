@@ -1,0 +1,57 @@
+name: Phase 7 Dalotia Calibration Verification
+# calibration-only sweep for competition-aware local prey density response
+
+on:
+  push:
+    branches:
+      - agent/phase7-ecology
+    paths:
+      - ".github/workflows/phase7-dalotia-check.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase7-dalotia-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        halfSat: [3, 4, 5]
+        seed: [0, 1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Apply calibration candidate
+        env:
+          HALF_SAT: ${{ matrix.halfSat }}
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from "node:fs";
+          const path = "data/experiments/phase7-integrated.json";
+          const data = JSON.parse(fs.readFileSync(path, "utf8"));
+          data.calibration.dalotiaLocalPreyHalfSaturationCount.value =
+            Number(process.env.HALF_SAT);
+          fs.writeFileSync(path, JSON.stringify(data, null, 2) + "\n");
+          NODE
+      - run: npm run build
+      - name: Run 180-day calibration seed
+        shell: bash
+        run: |
+          label="dalotia-competition-halfSat-${{ matrix.halfSat }}-seed-${{ matrix.seed }}"
+          /usr/bin/time -v node dist/tools/ecosystem-batch.js \
+            --days 180 \
+            --seeds "${{ matrix.seed }}:1" \
+            --sample 10 \
+            --format json > "$label.json" 2> "$label.time.txt"
+          cat "$label.json"
+          cat "$label.time.txt"
