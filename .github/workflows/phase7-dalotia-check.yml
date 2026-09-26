@@ -1,5 +1,5 @@
 name: Phase 7 Dalotia Calibration Verification
-# narrow 180-day calibration sweep for the local prey density response
+# focused 180-day checkpoint for the selected spatial competition model
 
 on:
   push:
@@ -21,9 +21,8 @@ jobs:
     timeout-minutes: 20
     strategy:
       fail-fast: false
-      max-parallel: 10
+      max-parallel: 5
       matrix:
-        halfSat: [8, 10]
         seed: [0, 1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
@@ -31,23 +30,11 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - name: Apply local half-saturation candidate
-        env:
-          HALF_SAT: ${{ matrix.halfSat }}
-        run: |
-          node --input-type=module - <<'NODE'
-          import fs from "node:fs";
-          const path = "data/experiments/phase7-integrated.json";
-          const data = JSON.parse(fs.readFileSync(path, "utf8"));
-          data.calibration.dalotiaLocalPreyHalfSaturationCount.value =
-            Number(process.env.HALF_SAT);
-          fs.writeFileSync(path, JSON.stringify(data, null, 2) + "\n");
-          NODE
       - run: npm run build
-      - name: Run 180-day calibration seed
+      - name: Run selected 180-day calibration seed
         shell: bash
         run: |
-          label="dalotia-half-sat-${{ matrix.halfSat }}-180d-${{ matrix.seed }}"
+          label="dalotia-competition-180d-${{ matrix.seed }}"
           /usr/bin/time -v node dist/tools/ecosystem-batch.js \
             --days 180 \
             --seeds "${{ matrix.seed }}:1" \
