@@ -78,6 +78,9 @@ export class Phase1SimulationRuntimeAdapter implements SimulationRuntimeAdapter 
     if (world.tick !== snapshot.tick || world.timeSeconds !== snapshot.virtualTime) {
       throw new Error("Runtime snapshot identity does not match authoritative coreState clock");
     }
+    if (world.config.seed !== snapshot.seed) {
+      throw new Error("Runtime snapshot seed does not match authoritative coreState");
+    }
     const rng = world.rng.getState();
     if (rng.some((word, index) => word !== snapshot.rngState[index])) {
       throw new Error("Runtime snapshot RNG state does not match authoritative coreState");
@@ -103,8 +106,9 @@ export class Phase1SimulationRuntimeAdapter implements SimulationRuntimeAdapter 
     const world = this.requireWorld();
     const scheduler = this.requireScheduler();
     for (let i = 0; i < ticks; i++) {
-      for (const envelope of this.actions.takeForTick(world.tick)) {
+      for (const envelope of this.actions.peekForTick(world.tick)) {
         this.applyAtBoundary(envelope);
+        this.actions.removeApplied(envelope.sequence);
       }
       scheduler.step(1);
     }
