@@ -104,8 +104,9 @@ The command:
 - runs Macro and Follow for 60 seconds each after warm-up;
 - reads the same `window.__SIMARIUM_BENCHMARK_METRICS__` counters used by the benchmark HUD;
 - records user agent, DPR, WebGL vendor/renderer/version, FPS, average/median frame time, draw calls, triangles and Long Tasks;
+- rejects headless and common software renderers such as SwiftShader/llvmpipe as official physical-GPU evidence;
 - writes `render-hardware-report.json`;
-- exits non-zero when the diagnostic Orbit thresholds fail.
+- exits non-zero when the physical-renderer or diagnostic Orbit thresholds fail.
 
 Useful options:
 
