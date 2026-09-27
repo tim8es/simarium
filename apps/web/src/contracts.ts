@@ -105,6 +105,7 @@ export type UserActionType =
   | "CHANGE_LIGHT"
   | "CHANGE_VENTILATION"
   | "PLACE_HARDSCAPE"
+  | "REMOVE_HARDSCAPE"
   | "PLANT_RAMET";
 
 export type UserAction = {
