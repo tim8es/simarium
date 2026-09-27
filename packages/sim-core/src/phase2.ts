@@ -49,11 +49,9 @@ export class PlantProducerSystem implements SimSystem {
   constructor(private readonly p: PlantProducerParameters) {}
 
   step(world: WorldState, dtSeconds: number): void {
-    const effectiveRelativeLight =
-      this.p.relativeLight * this.externalLightMultiplier;
     const lightFactor =
-      effectiveRelativeLight /
-      Math.max(1e-12, effectiveRelativeLight + this.p.lightHalfSaturation);
+      this.p.relativeLight /
+      Math.max(1e-12, this.p.relativeLight + this.p.lightHalfSaturation);
     const tempFactor = temperatureResponse(
       world.environment.temperatureC.mean(),
       this.p.temperatureOptimumC,
@@ -325,9 +323,11 @@ export class PlantPhysiologySystem implements SimSystem {
       );
     }
 
+    const effectiveRelativeLight =
+      this.p.relativeLight * this.externalLightMultiplier;
     const lightFactor =
-      this.p.relativeLight /
-      Math.max(1e-12, this.p.relativeLight + this.p.lightHalfSaturation);
+      effectiveRelativeLight /
+      Math.max(1e-12, effectiveRelativeLight + this.p.lightHalfSaturation);
 
     const mobileWater = world.ledger.getPool(this.p.mobileWaterPool);
     const transpirationFraction =
