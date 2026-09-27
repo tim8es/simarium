@@ -53,6 +53,11 @@ try {
     throw new Error(`World clock did not advance: ${initialClock} -> ${advancedClock}`);
   }
 
+  await page.getByText(/Initial world autosaved/).waitFor({ timeout: 30_000 });
+  if (new URL(page.url()).searchParams.has("seed")) {
+    throw new Error("Explicit seed manifest was not consumed from the browser URL");
+  }
+
   await page.locator("[data-command='pause']").click();
   await page.waitForSelector(".runtime-banner.paused");
   await page.locator("[data-speed='20']").click();
