@@ -58,6 +58,22 @@ describe("Phase 7 report/export helpers", () => {
     expect(merged.runOutcomes).toHaveLength(2);
   }, 30_000);
 
+  it("retains long-run stability telemetry in compact batch outcomes", () => {
+    const batch = runEcosystemBatch({
+      seeds: [7312, 7313],
+      days: 5,
+      sampleEveryDays: 1
+    });
+
+    expect(batch.runOutcomes).toHaveLength(2);
+    expect(batch.runOutcomes[0]?.stability.folsomia.meanLiving).toBeGreaterThanOrEqual(0);
+    expect(batch.runOutcomes[0]?.stability.dalotia.coefficientOfVariation).toBeGreaterThanOrEqual(0);
+    expect(batch.meanLiving.bradysia).toBeGreaterThanOrEqual(0);
+    expect(batch.meanCoefficientOfVariation.folsomia).toBeGreaterThanOrEqual(0);
+    expect(batch.meanGenerationTurnover.trichorhina).toBeGreaterThanOrEqual(0);
+    expect(Number.isFinite(batch.meanResourceDrift.litterCarbonMg)).toBe(true);
+  }, 30_000);
+
   it("exports aggregate persistence probabilities for batch comparison", () => {
     const batch = runEcosystemBatch({
       seeds: [7310, 7311],
