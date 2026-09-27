@@ -194,4 +194,42 @@ describe("integrated browser runtime", () => {
     );
   });
 
+
+  it("keeps all animal species represented when render populations exceed the visual budget", () => {
+    const adapter = init(7053);
+    const species = [
+      "folsomia_candida",
+      "trichorhina_tomentosa",
+      "bradysia_impatiens",
+      "dalotia_coriaria"
+    ] as const;
+
+    species.forEach((speciesId, sequence) => {
+      adapter.applyUserAction({
+        sequence,
+        targetTick: 0,
+        action: {
+          type: "introduce_organisms",
+          speciesId,
+          count: 400
+        }
+      });
+    });
+    adapter.step(1);
+
+    const snapshot = adapter.renderSnapshot();
+    const renderedAnimals = snapshot.entities.filter(
+      (entity) => !entity.speciesId.includes("fittonia") &&
+        !entity.speciesId.includes("peperomia") &&
+        !entity.speciesId.includes("pilea")
+    );
+    expect(renderedAnimals.length).toBeLessThanOrEqual(1200);
+    for (const speciesId of species) {
+      const rendered = renderedAnimals.filter(
+        (entity) => entity.speciesId === speciesId
+      );
+      expect(rendered.length).toBe(300);
+    }
+  });
+
 });
