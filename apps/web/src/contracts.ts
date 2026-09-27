@@ -159,10 +159,19 @@ export type ScientificResources = {
   corpseCarbonMg: number;
 };
 
+export type ScientificEventRecord = {
+  timeSeconds: number;
+  speciesId: SpeciesId;
+  type: string;
+  entityId: EntityId | null;
+  label: string;
+};
+
 export type ScientificEvents = {
   predation: number;
   births: Readonly<Record<string, number>>;
   deaths: Readonly<Record<string, number>>;
+  recent: ReadonlyArray<ScientificEventRecord>;
 };
 
 export type RuntimeProfilerSnapshot = {
