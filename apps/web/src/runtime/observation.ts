@@ -224,3 +224,31 @@ export function entityDetailsToUi(details: JsonValue): {
     inspection: { genealogy, why }
   };
 }
+
+
+export interface HardscapeProjection {
+  id: string;
+  kind: string;
+  position: { x: number; y: number; z: number };
+}
+
+export function hardscapeFromStats(stats: JsonValue): HardscapeProjection[] {
+  const root = record(stats, "stats");
+  return array(root.hardscape).flatMap((entry): HardscapeProjection[] => {
+    const item = record(entry, "hardscape entry");
+    const value = record(item.value, "hardscape entry value");
+    const position = record(value.position, "hardscape position");
+    const id = stringValue(item.id) || stringValue(value.hardscapeId);
+    const kind = stringValue(value.kind, "rock");
+    if (!id) return [];
+    return [{
+      id,
+      kind,
+      position: {
+        x: numberValue(position.x),
+        y: numberValue(position.y, 0.14),
+        z: numberValue(position.z)
+      }
+    }];
+  });
+}
