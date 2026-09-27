@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - agent/integration
     paths:
       - ".github/workflows/phase7-dalotia-check.yml"
 
