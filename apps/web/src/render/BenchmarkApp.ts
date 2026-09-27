@@ -135,6 +135,48 @@ export class BenchmarkApp {
     return this.hud.getSnapshot();
   }
 
+  getRenderedEntityIds(): string[] {
+    const ids: string[] = [];
+    this.adapter.forEachRenderableEntity((entity) => ids.push(entity.id));
+    return ids;
+  }
+
+  getDynamicHardscapeCount(): number {
+    return this.benchmarkScene.getDynamicHardscapeCount();
+  }
+
+  findValidationPickTarget(): {
+    clientX: number;
+    clientY: number;
+    entityId: string;
+  } | null {
+    const canvas = this.renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+
+    const columns = 32;
+    const rows = 20;
+    for (let radius = 0; radius <= Math.max(columns, rows); radius++) {
+      for (let row = 0; row < rows; row++) {
+        for (let column = 0; column < columns; column++) {
+          const dx = Math.abs(column - (columns - 1) / 2);
+          const dy = Math.abs(row - (rows - 1) / 2);
+          if (Math.floor(Math.max(dx, dy)) !== radius) continue;
+          const clientX = rect.left + ((column + 0.5) / columns) * rect.width;
+          const clientY = rect.top + ((row + 0.5) / rows) * rect.height;
+          const entityId = this.benchmarkScene.pick(
+            clientX,
+            clientY,
+            this.cameraController.camera,
+            canvas
+          );
+          if (entityId) return { clientX, clientY, entityId };
+        }
+      }
+    }
+    return null;
+  }
+
   private readonly onResize = (): void => {
     const width = window.innerWidth;
     const height = window.innerHeight;
