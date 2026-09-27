@@ -92,6 +92,12 @@ try {
   await page.getByText(/Loaded latest save/).waitFor({ timeout: 30_000 });
 
   const savedClock = await worldClock.textContent();
+  const clockSeconds = value => {
+    const match = /^DAY\s+(\d+)\s+·\s+(\d{2}):(\d{2})$/.exec(value ?? "");
+    if (!match) return -1;
+    return Number(match[1]) * 86400 + Number(match[2]) * 3600 + Number(match[3]) * 60;
+  };
+  const savedSeconds = clockSeconds(savedClock);
   await page.goto(`${baseUrl}/`, {
     waitUntil: "networkidle",
     timeout: 30_000
@@ -99,7 +105,8 @@ try {
   await page.waitForSelector(".runtime-banner.running", { timeout: 30_000 });
   await page.getByText(/Autosave resumed/).waitFor({ timeout: 30_000 });
   const resumedClock = await page.locator(".viewport-label.top-right strong").textContent();
-  if (!savedClock || !resumedClock || resumedClock < savedClock) {
+  const resumedSeconds = clockSeconds(resumedClock);
+  if (savedSeconds < 0 || resumedSeconds < savedSeconds) {
     throw new Error(`Reload did not resume saved world: ${savedClock} -> ${resumedClock}`);
   }
 
