@@ -25,7 +25,8 @@ export type DalotiaDeathCause =
   | "dehydration"
   | "senescence"
   | "carbon_exhaustion"
-  | "developmental_mortality";
+  | "developmental_mortality"
+  | "user_removal";
 
 export interface DalotiaIndividual {
   id: number;

@@ -278,6 +278,7 @@ export interface PlantPhysiologyParameters extends PlantProducerParameters {
 
 export class PlantPhysiologySystem implements SimSystem {
   readonly name = "plant-physiology";
+  private externalLightMultiplier = 1;
 
   constructor(private readonly p: PlantPhysiologyParameters) {
     const nonNegative = [
@@ -290,6 +291,17 @@ export class PlantPhysiologySystem implements SimSystem {
     if (nonNegative.some((value) => !Number.isFinite(value) || value < 0)) {
       throw new Error("Plant physiology rates must be finite and non-negative");
     }
+  }
+
+  setLightMultiplier(multiplier: number): void {
+    if (!Number.isFinite(multiplier) || multiplier < 0) {
+      throw new Error("Plant light multiplier must be finite and non-negative");
+    }
+    this.externalLightMultiplier = multiplier;
+  }
+
+  getLightMultiplier(): number {
+    return this.externalLightMultiplier;
   }
 
   step(world: WorldState, dtSeconds: number): void {
@@ -311,9 +323,11 @@ export class PlantPhysiologySystem implements SimSystem {
       );
     }
 
+    const effectiveRelativeLight =
+      this.p.relativeLight * this.externalLightMultiplier;
     const lightFactor =
-      this.p.relativeLight /
-      Math.max(1e-12, this.p.relativeLight + this.p.lightHalfSaturation);
+      effectiveRelativeLight /
+      Math.max(1e-12, effectiveRelativeLight + this.p.lightHalfSaturation);
 
     const mobileWater = world.ledger.getPool(this.p.mobileWaterPool);
     const transpirationFraction =

@@ -96,3 +96,52 @@ export class TemperatureBoundarySystem implements SimSystem {
     );
   }
 }
+
+
+export interface VentilationBoundaryTarget {
+  carbonMg: number;
+  waterG: number;
+}
+
+/**
+ * Exchanges atmospheric carbon/water with an explicit external boundary.
+ * A zero rate is exactly inert, preserving sealed-world baseline behavior.
+ */
+export class VentilationBoundarySystem implements SimSystem {
+  readonly name = "ventilation-boundary";
+  private ratePerSecond = 0;
+
+  constructor(private readonly target: VentilationBoundaryTarget) {
+    if (
+      !Number.isFinite(target.carbonMg) ||
+      target.carbonMg < 0 ||
+      !Number.isFinite(target.waterG) ||
+      target.waterG < 0
+    ) {
+      throw new Error("Ventilation target must be finite and non-negative");
+    }
+  }
+
+  setRatePerSecond(ratePerSecond: number): void {
+    if (!Number.isFinite(ratePerSecond) || ratePerSecond < 0) {
+      throw new Error("Ventilation rate must be finite and non-negative");
+    }
+    this.ratePerSecond = ratePerSecond;
+  }
+
+  getRatePerSecond(): number {
+    return this.ratePerSecond;
+  }
+
+  step(world: WorldState, dtSeconds: number): void {
+    if (this.ratePerSecond <= 0) return;
+    const fraction = 1 - Math.exp(-this.ratePerSecond * dtSeconds);
+    const atmosphere = world.ledger.getPool("atmosphere");
+    world.ledger.applyBoundaryFlux("atmosphere", {
+      carbonMg: (this.target.carbonMg - atmosphere.carbonMg) * fraction,
+      nitrogenMg: 0,
+      phosphorusMg: 0,
+      waterG: (this.target.waterG - atmosphere.waterG) * fraction
+    });
+  }
+}

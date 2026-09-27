@@ -14,7 +14,8 @@ export type TrichorhinaDeathCause =
   | "starvation"
   | "dehydration"
   | "senescence"
-  | "carbon_exhaustion";
+  | "carbon_exhaustion"
+  | "user_removal";
 
 export interface TrichorhinaIndividual {
   id: number;

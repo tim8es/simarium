@@ -7,3 +7,5 @@ export * from "./share.js";
 export * from "./snapshot.js";
 export * from "./user-actions.js";
 export * from "./worker-runtime.js";
+export * from "./integrated-adapter.js";
+export * from "./integrated-ecosystem.js";

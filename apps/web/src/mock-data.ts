@@ -18,7 +18,7 @@ export const mockObservationSnapshot: ObservationSnapshot = {
   entities: [
     {
       kind: "animal",
-      id: 1042,
+      id: "folsomia_candida#1042",
       speciesId: "folsomia",
       commonName: "Springtail",
       scientificName: "Folsomia candida",
@@ -30,13 +30,13 @@ export const mockObservationSnapshot: ObservationSnapshot = {
       currentAction: "FORAGE",
       currentTarget: "fungal patch #18",
       birthTimeSeconds: 42.4 * day,
-      parentIds: [781],
+      parentIds: ["folsomia_candida#781"],
       offspringCount: 6,
       reproductiveState: "parthenogenetic · reserve sufficient"
     },
     {
       kind: "animal",
-      id: 2007,
+      id: "dalotia_coriaria#2007",
       speciesId: "dalotia",
       commonName: "Rove beetle",
       scientificName: "Dalotia coriaria",
@@ -48,13 +48,13 @@ export const mockObservationSnapshot: ObservationSnapshot = {
       currentAction: "HUNT",
       currentTarget: "Bradysia larva #3098",
       birthTimeSeconds: 26.8 * day,
-      parentIds: [1603, 1604],
+      parentIds: ["dalotia_coriaria#1603", "dalotia_coriaria#1604"],
       offspringCount: 3,
       reproductiveState: "mated · reproductive"
     },
     {
       kind: "plant",
-      id: 501,
+      id: "fittonia_albivenis#501",
       speciesId: "fittonia",
       commonName: "Nerve plant",
       scientificName: "Fittonia albivenis",
@@ -63,8 +63,8 @@ export const mockObservationSnapshot: ObservationSnapshot = {
       biomassMg: 4860,
       waterStatus: 0.88,
       nutrientLimitation: "nitrogen",
-      parentRametId: 412,
-      offspringRametIds: [544, 566]
+      parentRametId: "fittonia_albivenis#412",
+      offspringRametIds: ["fittonia_albivenis#544", "fittonia_albivenis#566"]
     }
   ],
   environment: {
@@ -80,7 +80,15 @@ export const mockObservationSnapshot: ObservationSnapshot = {
     availablePMgKg: 3.7,
     fungalBiomassMg: 944,
     bacterialBiomassMg: 1720,
-    litterMg: 34800
+    litterMg: 34800,
+    availableNitrogenMg: 8.1,
+    availablePhosphorusMg: 3.7
+  },
+  temperatureGrid: {
+    width: 2,
+    height: 1,
+    depth: 2,
+    values: [24.2, 24.8, 25.1, 24.5]
   },
   populations: [
     {
@@ -100,14 +108,15 @@ export const mockObservationSnapshot: ObservationSnapshot = {
     }
   ],
   inspectionByEntity: {
-    1042: {
+    "folsomia_candida#1042": {
       genealogy: [
-        { entityId: 781, label: "#781", lifeStage: "dead · adult", relation: "parent", alive: false },
-        { entityId: 1042, label: "#1042", lifeStage: "adult", relation: "current", alive: true },
-        { entityId: 1312, label: "#1312", lifeStage: "juvenile", relation: "offspring", alive: true },
-        { entityId: 1321, label: "#1321", lifeStage: "juvenile", relation: "offspring", alive: true },
-        { entityId: 1378, label: "#1378", lifeStage: "egg", relation: "offspring", alive: true }
+        { entityId: "folsomia_candida#781", label: "#781", lifeStage: "dead · adult", relation: "parent", alive: false },
+        { entityId: "folsomia_candida#1042", label: "#1042", lifeStage: "adult", relation: "current", alive: true },
+        { entityId: "folsomia_candida#1312", label: "#1312", lifeStage: "juvenile", relation: "offspring", alive: true },
+        { entityId: "folsomia_candida#1321", label: "#1321", lifeStage: "juvenile", relation: "offspring", alive: true },
+        { entityId: "folsomia_candida#1378", label: "#1378", lifeStage: "egg", relation: "offspring", alive: true }
       ],
+      history: [],
       why: [
         { label: "HUNGRY", score: 0.82 },
         { label: "FOOD NEARBY", score: 0.67 },
@@ -115,25 +124,27 @@ export const mockObservationSnapshot: ObservationSnapshot = {
         { label: "PREDATOR RISK", score: 0.12 }
       ]
     },
-    2007: {
+    "dalotia_coriaria#2007": {
       genealogy: [
-        { entityId: 1603, label: "#1603", lifeStage: "dead · adult", relation: "parent", alive: false },
-        { entityId: 2007, label: "#2007", lifeStage: "adult", relation: "current", alive: true },
-        { entityId: 2412, label: "#2412", lifeStage: "larva", relation: "offspring", alive: true }
+        { entityId: "dalotia_coriaria#1603", label: "#1603", lifeStage: "dead · adult", relation: "parent", alive: false },
+        { entityId: "dalotia_coriaria#2007", label: "#2007", lifeStage: "adult", relation: "current", alive: true },
+        { entityId: "dalotia_coriaria#2412", label: "#2412", lifeStage: "larva", relation: "offspring", alive: true }
       ],
+      history: [],
       why: [
         { label: "HUNGER", score: 0.61 },
         { label: "PREY LOCAL", score: 0.88 },
         { label: "MOISTURE", score: 0.84 }
       ]
     },
-    501: {
+    "fittonia_albivenis#501": {
       genealogy: [
-        { entityId: 412, label: "#412", lifeStage: "ramet", relation: "parent", alive: true },
-        { entityId: 501, label: "#501", lifeStage: "ramet", relation: "current", alive: true },
-        { entityId: 544, label: "#544", lifeStage: "ramet", relation: "offspring", alive: true },
-        { entityId: 566, label: "#566", lifeStage: "ramet", relation: "offspring", alive: true }
+        { entityId: "fittonia_albivenis#412", label: "#412", lifeStage: "ramet", relation: "parent", alive: true },
+        { entityId: "fittonia_albivenis#501", label: "#501", lifeStage: "ramet", relation: "current", alive: true },
+        { entityId: "fittonia_albivenis#544", label: "#544", lifeStage: "ramet", relation: "offspring", alive: true },
+        { entityId: "fittonia_albivenis#566", label: "#566", lifeStage: "ramet", relation: "offspring", alive: true }
       ],
+      history: [],
       why: [
         { label: "WATER STATUS", score: 0.88 },
         { label: "LIGHT", score: 0.73 },
@@ -147,5 +158,72 @@ export const mockObservationSnapshot: ObservationSnapshot = {
     { sourceSpeciesId: "pilea", targetSpeciesId: "trichorhina", biomassTransferMg: 36 },
     { sourceSpeciesId: "folsomia", targetSpeciesId: "dalotia", biomassTransferMg: 18 },
     { sourceSpeciesId: "bradysia", targetSpeciesId: "dalotia", biomassTransferMg: 26 }
-  ]
+  ],
+  resources: {
+    availableNitrogenMg: 8.1,
+    availablePhosphorusMg: 3.7,
+    litterCarbonMg: 34800,
+    fungalCarbonMg: 944,
+    bacterialCarbonMg: 1720,
+    corpseCarbonMg: 112
+  },
+  events: {
+    predation: 44,
+    births: {
+      folsomia: 171,
+      trichorhina: 28,
+      bradysia: 55,
+      dalotia: 15
+    },
+    deaths: {
+      folsomia: 31,
+      trichorhina: 4,
+      bradysia: 17,
+      dalotia: 2
+    },
+    recent: [
+      {
+        timeSeconds: 61 * day,
+        speciesId: "dalotia",
+        type: "predation",
+        entityId: "dalotia_coriaria#2007",
+        label: "captured bradysia_impatiens#3098"
+      }
+    ]
+  },
+  materialLedger: {
+    totals: {
+      carbonMg: 110791.16,
+      nitrogenMg: 1012.1,
+      phosphorusMg: 203.7,
+      waterG: 55050
+    },
+    cumulativeBoundaryFlux: {
+      carbonMg: 0,
+      nitrogenMg: 0,
+      phosphorusMg: 0,
+      waterG: 0
+    },
+    residuals: {
+      carbonMg: { actual: 110791.16, expected: 110791.16, residual: 0, tolerance: 0.0000554 },
+      nitrogenMg: { actual: 1012.1, expected: 1012.1, residual: 0, tolerance: 0.000000506 },
+      phosphorusMg: { actual: 203.7, expected: 203.7, residual: 0, tolerance: 0.000000102 },
+      waterG: { actual: 55050, expected: 55050, residual: 0, tolerance: 0.0000275 }
+    }
+  },
+  runtimeProfiler: {
+    running: true,
+    speed: 1,
+    ticksPerSecondAt1x: 1,
+    pulseIntervalMs: 100,
+    maxTicksPerPulse: 50,
+    lastStepTicks: 1,
+    lastStepWallMs: 2.4,
+    emaStepWallMs: 2.2,
+    averageWallMsPerTick: 2.1,
+    totalTicksStepped: 200,
+    framesEmitted: 200,
+    backlogTicks: 0.1,
+    maxObservedBacklogTicks: 0.4
+  }
 };

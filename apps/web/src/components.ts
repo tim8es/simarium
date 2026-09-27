@@ -1,5 +1,6 @@
 import type {
   BehaviorReason,
+  CausalHistoryEvent,
   EntitySummary,
   GenealogyNode,
   ObservationSnapshot,
@@ -33,6 +34,7 @@ const actionLabels: ReadonlyArray<[UserActionType, string, string]> = [
   ["CHANGE_LIGHT", "Change light", "Boundary condition"],
   ["CHANGE_VENTILATION", "Change ventilation", "Boundary condition"],
   ["PLACE_HARDSCAPE", "Place hardscape", "Habitat geometry"],
+  ["REMOVE_HARDSCAPE", "Remove hardscape", "Habitat geometry"],
   ["PLANT_RAMET", "Plant new ramet", "Population intervention"]
 ];
 
@@ -60,7 +62,7 @@ export function renderOverlayPanel(snapshot: ObservationSnapshot, state: Observa
           <span class="eyebrow">ENVIRONMENT</span>
           <h2>Scientific overlays</h2>
         </div>
-        <span class="status-dot" title="Synthetic snapshot"></span>
+        <span class="status-dot" title="Live worker simulation state"></span>
       </div>
       <div class="overlay-grid">
         ${overlayLabels.map(([key, label]) => `
@@ -76,6 +78,11 @@ export function renderOverlayPanel(snapshot: ObservationSnapshot, state: Observa
 
 function metric(label: string, value: string): string {
   return `<div class="metric"><span>${label}</span><strong>${value}</strong></div>`;
+}
+
+function displayEntityId(id: string): string {
+  const index = id.lastIndexOf("#");
+  return index >= 0 ? id.slice(index + 1) : id;
 }
 
 export function renderEntityCard(entity: EntitySummary | undefined): string {
@@ -97,7 +104,7 @@ export function renderEntityCard(entity: EntitySummary | undefined): string {
         metric("Action", entity.currentAction),
         metric("Target", entity.currentTarget ?? "—"),
         metric("Birth time", `day ${(entity.birthTimeSeconds / 86400).toFixed(1)}`),
-        metric("Parent IDs", entity.parentIds.length ? entity.parentIds.map(id => `#${id}`).join(", ") : "—"),
+        metric("Parent IDs", entity.parentIds.length ? entity.parentIds.map(displayEntityId).join(", ") : "—"),
         metric("Offspring", String(entity.offspringCount)),
         metric("Reproductive state", entity.reproductiveState),
         ...(entity.deathCause ? [metric("Death cause", entity.deathCause)] : [])
@@ -106,8 +113,8 @@ export function renderEntityCard(entity: EntitySummary | undefined): string {
         metric("Biomass", `${(entity.biomassMg / 1000).toFixed(2)} g`),
         metric("Water status", formatPercent(entity.waterStatus)),
         metric("Nutrient limit", entity.nutrientLimitation.toUpperCase()),
-        metric("Parent ramet", entity.parentRametId ? `#${entity.parentRametId}` : "—"),
-        metric("Offspring ramets", entity.offspringRametIds.length ? entity.offspringRametIds.map(id => `#${id}`).join(", ") : "—")
+        metric("Parent ramet", entity.parentRametId ? displayEntityId(entity.parentRametId) : "—"),
+        metric("Offspring ramets", entity.offspringRametIds.length ? entity.offspringRametIds.map(displayEntityId).join(", ") : "—")
       ];
 
   return `
@@ -115,7 +122,7 @@ export function renderEntityCard(entity: EntitySummary | undefined): string {
       <div class="entity-header">
         <div class="entity-mark ${entity.kind}"></div>
         <div>
-          <span class="eyebrow">SELECTED · #${entity.id}</span>
+          <span class="eyebrow">SELECTED · #${displayEntityId(entity.id)}</span>
           <h2>${entity.commonName}</h2>
           <em>${entity.scientificName}</em>
         </div>
@@ -134,7 +141,7 @@ export function renderWhyPanel(reasons: ReadonlyArray<BehaviorReason>, action: s
     <section class="glass-panel why-panel">
       <div class="panel-heading compact">
         <div>
-          <span class="eyebrow">UTILITY TRACE</span>
+          <span class="eyebrow">STATE TRACE</span>
           <h2>Why?</h2>
         </div>
         <strong class="decision-arrow">→ ${action}</strong>
@@ -148,6 +155,32 @@ export function renderWhyPanel(reasons: ReadonlyArray<BehaviorReason>, action: s
             </div>
           `).join("")
           : "<p class=\"inspection-unavailable\">No behavior trace available for this entity.</p>"}
+      </div>
+    </section>
+  `;
+}
+
+
+export function renderEntityHistory(
+  events: ReadonlyArray<CausalHistoryEvent>
+): string {
+  const rows = events.slice(-12).reverse().map((event) => {
+    const day = event.timeSeconds / 86400;
+    return `
+      <div class="history-row">
+        <span>day ${day.toFixed(1)}</span>
+        <strong>${event.type}</strong>
+        <small>${event.label}</small>
+      </div>
+    `;
+  }).join("");
+  return `
+    <section class="glass-panel history-panel">
+      <div class="panel-heading compact">
+        <div><span class="eyebrow">CAUSAL HISTORY</span><h2>Entity events</h2></div>
+      </div>
+      <div class="history-list">
+        ${rows || '<p class="inspection-unavailable">No recorded events for this entity.</p>'}
       </div>
     </section>
   `;
@@ -205,7 +238,7 @@ export function renderGraphs(snapshot: ObservationSnapshot): string {
     <div class="bottom-content graph-content">
       <div class="graph-summary">
         <span class="eyebrow">POPULATION BY SPECIES</span>
-        <p>12-day synthetic window</p>
+        <p>Daily samples from the live simulation</p>
       </div>
       <div class="series-grid">${snapshot.populations.map(sparkline).join("")}</div>
       <div class="future-metrics" aria-label="Prepared graph contracts">
@@ -259,6 +292,33 @@ export function renderFoodWeb(snapshot: ObservationSnapshot): string {
   `;
 }
 
+
+function renderProfiler(snapshot: ObservationSnapshot): string {
+  const p = snapshot.runtimeProfiler;
+  return `
+    <div class="bottom-content profiler-content">
+      <div class="resource-grid">
+        ${metric("Worker", p.running ? "running" : "paused")}
+        ${metric("Speed", `${p.speed}×`)}
+        ${metric("Last step", `${p.lastStepWallMs.toFixed(2)} ms / ${p.lastStepTicks} ticks`)}
+        ${metric("EMA step", `${p.emaStepWallMs.toFixed(2)} ms`)}
+        ${metric("Avg / tick", `${p.averageWallMsPerTick.toFixed(3)} ms`)}
+        ${metric("Backlog", `${p.backlogTicks.toFixed(2)} ticks`)}
+        ${metric("Max backlog", `${p.maxObservedBacklogTicks.toFixed(2)} ticks`)}
+        ${metric("Frames emitted", String(p.framesEmitted))}
+      </div>
+      <div class="ledger-panel">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">WORKER PROFILER</span><h2>Simulation runtime</h2></div>
+        </div>
+        <p class="ledger-note">
+          Wall-clock telemetry is diagnostic only. It is not serialized into the deterministic world and cannot change ecology results.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
 export function renderActions(state: ObservationUiState): string {
   return `
     <div class="bottom-content actions-content">
@@ -282,17 +342,94 @@ export function renderActions(state: ObservationUiState): string {
   `;
 }
 
+function renderResources(snapshot: ObservationSnapshot): string {
+  const r = snapshot.resources;
+  const ledger = snapshot.materialLedger;
+  const residualRows = Object.entries(ledger.residuals).map(([key, value]) => `
+    <div class="ledger-row">
+      <span>${key}</span>
+      <strong>${value.actual.toPrecision(6)}</strong>
+      <small>Δ ${value.residual.toExponential(2)} / tol ${value.tolerance.toExponential(2)}</small>
+    </div>
+  `).join("");
+  return `
+    <div class="bottom-content resource-content">
+      <div class="resource-grid">
+        ${metric("Available N", `${r.availableNitrogenMg.toFixed(3)} mg`)}
+        ${metric("Available P", `${r.availablePhosphorusMg.toFixed(3)} mg`)}
+        ${metric("Litter C", `${r.litterCarbonMg.toFixed(1)} mg`)}
+        ${metric("Fungal C", `${r.fungalCarbonMg.toFixed(2)} mg`)}
+        ${metric("Bacterial C", `${r.bacterialCarbonMg.toFixed(2)} mg`)}
+        ${metric("Corpse C", `${r.corpseCarbonMg.toFixed(3)} mg`)}
+      </div>
+      <div class="ledger-panel">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">MATERIAL LEDGER</span><h2>Conservation residuals</h2></div>
+        </div>
+        ${residualRows}
+        <p class="ledger-note">Boundary flux is explicit and included in each expected total.</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderEvents(snapshot: ObservationSnapshot): string {
+  const speciesById = new Map(snapshot.species.map(species => [species.id, species.commonName]));
+  const ids = [...new Set([
+    ...Object.keys(snapshot.events.births),
+    ...Object.keys(snapshot.events.deaths)
+  ])];
+  return `
+    <div class="bottom-content event-content">
+      <div class="event-summary">
+        <span class="eyebrow">CAUSAL EVENTS</span>
+        <strong>${snapshot.events.predation} predation events</strong>
+      </div>
+      <div class="event-table">
+        <div class="event-table-head"><span>Species</span><span>Born / ever</span><span>Deaths</span></div>
+        ${ids.map(id => `
+          <div class="event-table-row">
+            <span>${speciesById.get(id) ?? id}</span>
+            <strong>${snapshot.events.births[id] ?? 0}</strong>
+            <strong>${snapshot.events.deaths[id] ?? 0}</strong>
+          </div>
+        `).join("")}
+      </div>
+      <div class="event-browser" aria-label="Recent causal events">
+        <span class="eyebrow">RECENT EVENT STREAM</span>
+        ${snapshot.events.recent.slice(0, 40).map(event => `
+          <div class="event-browser-row">
+            <span>day ${(event.timeSeconds / 86400).toFixed(1)}</span>
+            <strong>${speciesById.get(event.speciesId) ?? event.speciesId}</strong>
+            <code>${event.type}</code>
+            <small>${event.label}</small>
+          </div>
+        `).join("") || '<p class="inspection-unavailable">No events recorded yet.</p>'}
+      </div>
+    </div>
+  `;
+}
+
 export function renderBottomPanel(snapshot: ObservationSnapshot, state: ObservationUiState): string {
   const content = state.bottomPanel === "graphs"
     ? renderGraphs(snapshot)
     : state.bottomPanel === "foodWeb"
       ? renderFoodWeb(snapshot)
-      : renderActions(state);
+      : state.bottomPanel === "resources"
+        ? renderResources(snapshot)
+        : state.bottomPanel === "events"
+          ? renderEvents(snapshot)
+          : state.bottomPanel === "profiler"
+            ? renderProfiler(snapshot)
+            : renderActions(state);
   return `
     <section class="glass-panel bottom-panel">
       <div class="bottom-tabs" role="tablist">
         <button data-bottom-tab="graphs" class="${state.bottomPanel === "graphs" ? "is-active" : ""}">Graphs</button>
         <button data-bottom-tab="foodWeb" class="${state.bottomPanel === "foodWeb" ? "is-active" : ""}">Food web</button>
+        <button data-bottom-tab="resources" class="${state.bottomPanel === "resources" ? "is-active" : ""}">Resources</button>
+        <button data-bottom-tab="events" class="${state.bottomPanel === "events" ? "is-active" : ""}">Events</button>
+        <button data-bottom-tab="profiler" class="${state.bottomPanel === "profiler" ? "is-active" : ""}">Profiler</button>
         <button data-bottom-tab="actions" class="${state.bottomPanel === "actions" ? "is-active" : ""}">Interventions</button>
       </div>
       ${content}
@@ -301,27 +438,16 @@ export function renderBottomPanel(snapshot: ObservationSnapshot, state: Observat
 }
 
 export function renderViewport(snapshot: ObservationSnapshot, state: ObservationUiState): string {
-  const selected = state.selectedEntityId;
   const totalSeconds = Math.max(0, Math.floor(snapshot.environment.timeSeconds));
   const day = Math.floor(totalSeconds / 86400);
   const timeOfDay = totalSeconds % 86400;
   const hours = Math.floor(timeOfDay / 3600);
   const minutes = Math.floor((timeOfDay % 3600) / 60);
   const clock = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  const cameraLabel = state.cameraMode.toUpperCase();
   return `
-    <section class="viewport" data-active-overlay="${state.activeOverlay ?? "none"}" aria-label="Terrarium viewport placeholder">
-      <div class="terrarium-glass"></div>
-      <div class="light-cone"></div>
-      <div class="back-haze"></div>
-      <div class="hardscape rock-a"></div>
-      <div class="hardscape wood-a"></div>
-      <div class="plant-cluster cluster-a"><i></i><i></i><i></i><i></i><i></i></div>
-      <div class="plant-cluster cluster-b"><i></i><i></i><i></i><i></i></div>
-      <div class="soil-layer"></div>
-      <button class="organism springtail ${selected === 1042 ? "is-selected" : ""}" data-entity-id="1042" aria-label="Select springtail 1042"><span></span></button>
-      <button class="organism beetle ${selected === 2007 ? "is-selected" : ""}" data-entity-id="2007" aria-label="Select rove beetle 2007"><span></span></button>
-      <button class="organism ramet ${selected === 501 ? "is-selected" : ""}" data-entity-id="501" aria-label="Select Fittonia ramet 501"><span></span></button>
-      <div class="viewport-label top-left"><span>OBSERVATION CAMERA</span><strong>MACRO · 65 mm</strong></div>
+    <section class="viewport" data-active-overlay="${state.activeOverlay ?? "none"}" aria-label="Live terrarium viewport">
+      <div class="viewport-label top-left"><span>OBSERVATION CAMERA</span><strong>${cameraLabel}</strong></div>
       <div class="viewport-label top-right"><span>WORLD TIME</span><strong>DAY ${day} · ${clock}</strong></div>
       <div class="scale-marker"><i></i><span>10 cm</span></div>
       ${state.activeOverlay ? `<div class="overlay-legend"><span>${overlayLabels.find(([key]) => key === state.activeOverlay)?.[1] ?? state.activeOverlay}</span><div class="legend-bar"></div><small>low</small><small>high</small></div>` : ""}

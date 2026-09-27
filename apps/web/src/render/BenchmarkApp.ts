@@ -3,8 +3,16 @@ import {
   SRGBColorSpace,
   WebGLRenderer
 } from "three";
-import { RenderAdapter } from "@simarium/render-core";
-import { BenchmarkScene } from "./BenchmarkScene";
+import {
+  RenderAdapter,
+  type RenderWorldDelta,
+  type RenderWorldSnapshot
+} from "@simarium/render-core";
+import {
+  BenchmarkScene,
+  type DynamicHardscapeEntry,
+  type TemperatureGridProjection
+} from "./BenchmarkScene";
 import { CameraController, type CameraMode } from "./CameraController";
 import { PerformanceHud } from "./PerformanceHud";
 import { SyntheticBenchmarkSource } from "./SyntheticBenchmarkSource";
@@ -12,12 +20,14 @@ import { SyntheticBenchmarkSource } from "./SyntheticBenchmarkSource";
 export interface BenchmarkAppOptions {
   showHud?: boolean;
   cameraMode?: CameraMode;
+  sourceMode?: "synthetic" | "external";
+  onEntitySelected?: (entityId: string) => void;
 }
 
 export class BenchmarkApp {
   private readonly renderer: WebGLRenderer;
   private readonly adapter = new RenderAdapter();
-  private readonly source = new SyntheticBenchmarkSource();
+  private readonly source: SyntheticBenchmarkSource | null;
   private readonly benchmarkScene: BenchmarkScene;
   private readonly cameraController: CameraController;
   private readonly hud: PerformanceHud;
@@ -44,13 +54,29 @@ export class BenchmarkApp {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
 
-    this.adapter.applySnapshot(this.source.createSnapshot());
+    this.source =
+      options.sourceMode === "external" ? null : new SyntheticBenchmarkSource();
+    if (this.source) this.adapter.applySnapshot(this.source.createSnapshot());
     this.benchmarkScene = new BenchmarkScene(this.adapter);
-    this.benchmarkScene.initializeFromSnapshot();
+    if (this.source) this.benchmarkScene.initializeFromSnapshot();
     this.cameraController = new CameraController(canvas, this.adapter);
-    this.cameraController.setFollowTarget(this.source.focusTargetId);
+    if (this.source) {
+      this.cameraController.setFollowTarget(this.source.focusTargetId);
+    }
     this.cameraController.setMode(options.cameraMode ?? "orbit");
     this.hud = new PerformanceHud(options.showHud === false ? null : root);
+
+    if (options.onEntitySelected) {
+      canvas.addEventListener("click", (event) => {
+        const entityId = this.benchmarkScene.pick(
+          event.clientX,
+          event.clientY,
+          this.cameraController.camera,
+          canvas
+        );
+        if (entityId) options.onEntitySelected?.(entityId);
+      });
+    }
 
     window.addEventListener("resize", this.onResize);
   }
@@ -71,6 +97,40 @@ export class BenchmarkApp {
     this.cameraController.setMode(mode);
   }
 
+  setFollowTarget(entityId: string): void {
+    this.cameraController.setFollowTarget(entityId);
+  }
+
+  setDynamicHardscape(entries: readonly DynamicHardscapeEntry[]): void {
+    this.benchmarkScene.setDynamicHardscape(entries);
+  }
+
+  setTemperatureGridOverlay(
+    grid: TemperatureGridProjection | null,
+    visible: boolean
+  ): void {
+    this.benchmarkScene.setTemperatureGridOverlay(grid, visible);
+  }
+
+  setBiologicalLight(lightPar: number, nightObservationAid: boolean): void {
+    this.benchmarkScene.setBiologicalLight(lightPar, nightObservationAid);
+  }
+
+  applyExternalSnapshot(snapshot: RenderWorldSnapshot): void {
+    if (this.source) {
+      throw new Error("Cannot apply external snapshot in synthetic benchmark mode");
+    }
+    this.adapter.applySnapshot(snapshot);
+    this.benchmarkScene.initializeFromSnapshot();
+  }
+
+  applyExternalDelta(delta: RenderWorldDelta): void {
+    if (this.source) {
+      throw new Error("Cannot apply external delta in synthetic benchmark mode");
+    }
+    this.adapter.applyDelta(delta);
+  }
+
   getPerformanceSnapshot() {
     return this.hud.getSnapshot();
   }
@@ -87,15 +147,20 @@ export class BenchmarkApp {
     const dtSeconds = Math.min(0.1, rawFrameMs / 1000);
     this.previousFrameMs = nowMs;
 
-    this.sourceAccumulator += dtSeconds;
-    const sourceStep = 1 / 20;
-    if (this.sourceAccumulator >= sourceStep) {
-      this.adapter.applyDelta(this.source.step(this.sourceAccumulator));
-      this.sourceAccumulator = 0;
+    if (this.source) {
+      this.sourceAccumulator += dtSeconds;
+      const sourceStep = 1 / 20;
+      if (this.sourceAccumulator >= sourceStep) {
+        this.adapter.applyDelta(this.source.step(this.sourceAccumulator));
+        this.sourceAccumulator = 0;
+      }
     }
 
     this.cameraController.update(dtSeconds);
-    const sceneMetrics = this.benchmarkScene.update(this.cameraController.camera);
+    const sceneMetrics = this.benchmarkScene.update(
+      this.cameraController.camera,
+      dtSeconds
+    );
     this.renderer.render(this.benchmarkScene.scene, this.cameraController.camera);
     this.hud.update(rawFrameMs, this.renderer, this.adapter.getMetrics(), sceneMetrics, nowMs);
 

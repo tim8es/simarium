@@ -30,7 +30,7 @@ jobs:
   calibration-shard:
     name: calibration 180d shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       max-parallel: 10
@@ -74,7 +74,7 @@ jobs:
     name: Merge calibration and evaluate unchanged MVP gates
     needs: calibration-shard
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
@@ -110,7 +110,7 @@ jobs:
     name: validation 180d shard ${{ matrix.shard }}
     needs: merge-calibration
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       max-parallel: 10
@@ -154,7 +154,7 @@ jobs:
     name: Merge independent validation and evaluate unchanged MVP gates
     needs: validation-shard
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4

@@ -1,4 +1,4 @@
-export type EntityId = number;
+export type EntityId = string;
 export type SpeciesId = string;
 
 export type SpeciesSummary = {
@@ -53,10 +53,12 @@ export type EnvironmentSnapshot = {
   soilWater: number;
   lightPar: number;
   co2Ppm: number;
-  o2Percent: number;
-  nh4MgKg: number;
-  no3MgKg: number;
-  availablePMgKg: number;
+  o2Percent: number | null;
+  nh4MgKg: number | null;
+  no3MgKg: number | null;
+  availablePMgKg: number | null;
+  availableNitrogenMg: number;
+  availablePhosphorusMg: number;
   fungalBiomassMg: number;
   bacterialBiomassMg: number;
   litterMg: number;
@@ -103,6 +105,7 @@ export type UserActionType =
   | "CHANGE_LIGHT"
   | "CHANGE_VENTILATION"
   | "PLACE_HARDSCAPE"
+  | "REMOVE_HARDSCAPE"
   | "PLANT_RAMET";
 
 export type UserAction = {
@@ -110,7 +113,7 @@ export type UserAction = {
   source: "USER_ACTION";
   type: UserActionType;
   createdAtUiMs: number;
-  status: "queued";
+  status: "queued" | "accepted" | "error";
   payload: Readonly<Record<string, string | number | boolean>>;
 };
 
@@ -120,18 +123,98 @@ export type FoodWebLink = {
   biomassTransferMg: number;
 };
 
+export type CausalHistoryEvent = {
+  timeSeconds: number;
+  type: string;
+  label: string;
+  relatedEntityIds: ReadonlyArray<EntityId>;
+};
+
 export type EntityInspection = {
   genealogy: ReadonlyArray<GenealogyNode>;
   why: ReadonlyArray<BehaviorReason>;
+  history: ReadonlyArray<CausalHistoryEvent>;
+};
+
+export type MaterialValues = {
+  carbonMg: number;
+  nitrogenMg: number;
+  phosphorusMg: number;
+  waterG: number;
+};
+
+export type MaterialResidual = {
+  actual: number;
+  expected: number;
+  residual: number;
+  tolerance: number;
+};
+
+export type ScientificResources = {
+  availableNitrogenMg: number;
+  availablePhosphorusMg: number;
+  litterCarbonMg: number;
+  fungalCarbonMg: number;
+  bacterialCarbonMg: number;
+  corpseCarbonMg: number;
+};
+
+export type ScientificEventRecord = {
+  timeSeconds: number;
+  speciesId: SpeciesId;
+  type: string;
+  entityId: EntityId | null;
+  label: string;
+};
+
+export type ScientificEvents = {
+  predation: number;
+  births: Readonly<Record<string, number>>;
+  deaths: Readonly<Record<string, number>>;
+  recent: ReadonlyArray<ScientificEventRecord>;
+};
+
+export type RuntimeProfilerSnapshot = {
+  running: boolean;
+  speed: number;
+  ticksPerSecondAt1x: number;
+  pulseIntervalMs: number;
+  maxTicksPerPulse: number;
+  lastStepTicks: number;
+  lastStepWallMs: number;
+  emaStepWallMs: number;
+  averageWallMsPerTick: number;
+  totalTicksStepped: number;
+  framesEmitted: number;
+  backlogTicks: number;
+  maxObservedBacklogTicks: number;
+};
+
+export type MaterialLedgerSnapshot = {
+  totals: MaterialValues;
+  cumulativeBoundaryFlux: MaterialValues;
+  residuals: Readonly<Record<keyof MaterialValues, MaterialResidual>>;
+};
+
+export type TemperatureGridSnapshot = {
+  width: number;
+  height: number;
+  depth: number;
+  values: ReadonlyArray<number>;
 };
 
 export type ObservationSnapshot = {
   species: ReadonlyArray<SpeciesSummary>;
   entities: ReadonlyArray<EntitySummary>;
   environment: EnvironmentSnapshot;
+  temperatureGrid: TemperatureGridSnapshot | null;
   populations: ReadonlyArray<PopulationSeries>;
   inspectionByEntity: Readonly<Record<EntityId, EntityInspection>>;
   foodWeb: ReadonlyArray<FoodWebLink>;
+  resources: ScientificResources;
+  events: ScientificEvents;
+  materialLedger: MaterialLedgerSnapshot;
+  runtimeProfiler: RuntimeProfilerSnapshot;
 };
 
 export type ObservationUiState = {
@@ -139,6 +222,12 @@ export type ObservationUiState = {
   speed: 1 | 5 | 20 | 100;
   selectedEntityId: EntityId | null;
   activeOverlay: OverlayKey | null;
-  bottomPanel: "graphs" | "foodWeb" | "actions";
+  bottomPanel: "graphs" | "foodWeb" | "resources" | "events" | "profiler" | "actions";
   userActions: ReadonlyArray<UserAction>;
+  cameraMode: "orbit" | "free" | "macro" | "follow";
+  seed: number;
+  runtimeStatus: "starting" | "running" | "paused" | "error";
+  runtimeMessage?: string;
+  saveMessage?: string;
+  nightObservationAid: boolean;
 };

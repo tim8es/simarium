@@ -9,6 +9,13 @@ Updated: 2026-09-27
 - Phase 2 producer + detritus loop: **PASS** — three real plant species, water-limited physiology, decomposer environment response and sensitivity tests.
 - Phase 3 *Folsomia candida* lifecycle: **PASS (engineering gate)** — individual lifecycle, multi-generation genealogy, moisture-sensitive reproduction, feeding, starvation/death and corpse transfer.
 - Phase 7 full headless ecosystem: **ACCEPTED BASELINE PASS** — the accepted baseline passed a 100-seed × 180-day calibration batch plus an independent 100-seed × 180-day validation batch with unchanged `VALIDATION.md` gates. The current integration branch contains post-acceptance ecology fixes and must rerun the same full gate before that PASS is transferred to the integrated HEAD.
+- Phase 8 rendering benchmark: **IMPLEMENTED / TARGET-HARDWARE FPS PENDING** — synthetic 1,200-animal benchmark, LOD/instancing, four camera modes and production bundle are automated; CI/software rendering does not substitute for the required laptop-GPU recording.
+- Phase 9 simulation-to-render bridge: **ENGINEERING PASS** — real Phase-7 world runs in a Web Worker, emits snapshots/deltas, renderer interpolation/picking is non-authoritative, and rendering/stats observation is regression-tested not to alter deterministic ecology.
+- Phase 10 species assets: **TECHNICAL MVP COMPLETE** — documented procedural species/stage-specific low-poly assets and LOD are implemented; this is not final production art.
+- Phase 11 observation UX: **COMPLETE FOR MVP** — orbit/free/macro/follow, time controls, entity inspection, Why/state trace, genealogy, causal history and visual-only night observation aid are wired to the live worker.
+- Phase 12 scientific/debug UX: **COMPLETE FOR MVP** — population charts, food-web transfers, real temperature-grid heatmap, material/resource ledger, invariant residuals, bounded event browser and worker profiler are available without opening a debugger.
+- Phase 13 persistence: **ENGINEERING PASS** — IndexedDB autosave/manual save, schema migration, deterministic replay load/resume and repeated save-load-resume stress tests are implemented.
+- Phase 14 final MVP validation: **ACTIVE** — Chromium production browser validation passed on code head `c0d1300e72fa41c9180969fb9205e7c4cc37690e` (run `36326164750`); current-head full Phase-7 180-day revalidation and target-hardware GPU FPS recording remain release gates.
 
 ## Phase 1 evidence
 
@@ -265,3 +272,32 @@ The tracer reached plant tissue in all `200/200` accepted 180-day runs.
 - standalone Phase-6 Dalotia arena parameters remain separate from integrated Phase-7 spatial calibration.
 
 Phase 7 is therefore closed for the MVP engineering gate. The larger 365-day / >=500-seed stability evaluation remains a later robustness objective described in `VALIDATION.md`, not a prerequisite that was silently substituted for the documented 100-seed × 180-day calibration gate.
+
+
+## Phase 8–14 browser integration evidence — 2026-09-27
+
+Working branch:
+`agent/browser-live-simulation`
+
+Live browser code head validated in Chromium:
+`c0d1300e72fa41c9180969fb9205e7c4cc37690e`
+
+Browser Validation workflow:
+`36326164750` — **PASS**.
+
+The automated production-browser run verified:
+- Vite production bundle and WebGL2 context;
+- real Phase-7 Simulation Core running in a Web Worker from Day 0;
+- world-time advancement plus pause, 20× and 100× controls;
+- real scientific Resources / Events / Profiler panels;
+- the real temperature-grid overlay path;
+- an explicit user water-boundary action accepted through the worker protocol;
+- IndexedDB manual save and deterministic load/resume;
+- visual-only night observation aid;
+- accelerated unattended browser soak with no page/console errors.
+
+This browser workflow uses headless Chromium/software rendering. It proves browser integration and runtime stability, **not laptop-class GPU FPS**. The physical-hardware Phase-8 performance procedure in `docs/RENDER_BENCHMARK.md` remains required before release.
+
+Phase-9 determinism is additionally protected by a regression test that runs identical worlds with and without render/stats observation and compares RNG, pools, organisms, plants and spatial state. Phase-13 persistence has a repeated save→load→resume stress test with user actions and the same state comparisons.
+
+The live renderer now interpolates visual transforms between worker updates. Interpolation, LOD, heatmaps, camera smoothing and the night observation aid remain renderer-only and never write into ecology state.

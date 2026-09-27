@@ -1,0 +1,61 @@
+name: Browser Validation
+
+on:
+  push:
+    branches: ["main", "agent/**"]
+    paths:
+      - "apps/web/**"
+      - "packages/render-core/**"
+      - "packages/sim-runtime/**"
+      - "packages/sim-core/**"
+      - "data/experiments/**"
+      - "tools/browser-smoke.mjs"
+      - "package.json"
+      - ".github/workflows/browser-validation.yml"
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - "packages/render-core/**"
+      - "packages/sim-runtime/**"
+      - "packages/sim-core/**"
+      - "data/experiments/**"
+      - "tools/browser-smoke.mjs"
+      - "package.json"
+      - ".github/workflows/browser-validation.yml"
+
+concurrency:
+  group: browser-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run web:build
+      - name: Start production preview
+        run: |
+          npm run preview:render -- --host 127.0.0.1 --port 4173 > /tmp/simarium-vite.log 2>&1 &
+          echo $! > /tmp/simarium-vite.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/simarium-vite.log
+          exit 1
+      - name: Live browser smoke and accelerated soak
+        env:
+          SIMARIUM_BROWSER_URL: http://127.0.0.1:4173
+          SIMARIUM_SOAK_MS: "20000"
+        run: npm run browser:smoke
+      - name: Preview log
+        if: always()
+        run: cat /tmp/simarium-vite.log || true
