@@ -2,7 +2,9 @@ import {
   BoxGeometry,
   BufferAttribute,
   BufferGeometry,
+  CapsuleGeometry,
   Color,
+  ConeGeometry,
   CylinderGeometry,
   DirectionalLight,
   DoubleSide,
@@ -26,6 +28,7 @@ import {
   Quaternion,
   Raycaster,
   Scene,
+  SphereGeometry,
   Vector2,
   Vector3
 } from "three";
@@ -99,6 +102,33 @@ const animalStyle: Record<AnimalVisualKey, { color: number; length: number; heig
 function animalKey(entity: Readonly<RenderEntity>): AnimalVisualKey | null {
   const key = `${entity.speciesId}:${entity.lifeStage}` as AnimalVisualKey;
   return ANIMAL_VISUAL_KEYS.includes(key) ? key : null;
+}
+
+function animalGeometry(key: AnimalVisualKey): BufferGeometry {
+  if (key.startsWith("folsomia-candida:")) {
+    const geometry = new CapsuleGeometry(0.22, 0.56, 3, 6);
+    geometry.rotateZ(Math.PI / 2);
+    return geometry;
+  }
+  if (key.startsWith("trichorhina-tomentosa:")) {
+    return new SphereGeometry(0.5, 8, 5);
+  }
+  if (key === "bradysia-impatiens:adult") {
+    const geometry = new ConeGeometry(0.34, 1, 6);
+    geometry.rotateZ(-Math.PI / 2);
+    return geometry;
+  }
+  if (key.startsWith("bradysia-impatiens:")) {
+    const geometry = new CapsuleGeometry(0.18, 0.64, 3, 6);
+    geometry.rotateZ(Math.PI / 2);
+    return geometry;
+  }
+  if (key.startsWith("dalotia-coriaria:")) {
+    const geometry = new CapsuleGeometry(0.28, 0.5, 3, 6);
+    geometry.rotateZ(Math.PI / 2);
+    return geometry;
+  }
+  return new DodecahedronGeometry(0.5, 0);
 }
 
 function hash01(value: string): number {
@@ -415,7 +445,7 @@ export class BenchmarkScene {
     for (const key of ANIMAL_VISUAL_KEYS) {
       const style = animalStyle[key];
       const mesh = new InstancedMesh(
-        new DodecahedronGeometry(0.5, 0),
+        animalGeometry(key),
         new MeshStandardMaterial({ color: style.color, roughness: 0.72, metalness: 0 }),
         MAX_NEAR_ANIMALS
       );
