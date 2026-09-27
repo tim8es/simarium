@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - main
+      - agent/integration
     paths:
       - ".github/workflows/phase7-calibration-180d.yml"
       - "packages/sim-core/src/**"
