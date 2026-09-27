@@ -80,6 +80,12 @@ export interface BenchmarkSceneMetrics {
   dynamicHardscapeCount: number;
 }
 
+export interface AnimalPickTarget {
+  entityId: string;
+  clientX: number;
+  clientY: number;
+}
+
 type VisibleAnimal = {
   entity: Readonly<RenderEntity>;
   distanceSq: number;
@@ -419,6 +425,50 @@ export class BenchmarkScene {
       }
     }
     return null;
+  }
+
+  getAnimalPickTargets(
+    camera: PerspectiveCamera,
+    domElement: HTMLElement
+  ): AnimalPickTarget[] {
+    const rect = domElement.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return [];
+
+    camera.updateMatrixWorld();
+    const instanceMatrix = new Matrix4();
+    const worldPosition = new Vector3();
+    const projected = new Vector3();
+    const targets: AnimalPickTarget[] = [];
+
+    for (const [key, mesh] of this.animalMeshes) {
+      mesh.updateMatrixWorld(true);
+      const ids = this.animalInstanceIds.get(key) ?? [];
+      for (let index = 0; index < mesh.count; index++) {
+        const entityId = ids[index];
+        if (!entityId) continue;
+        mesh.getMatrixAt(index, instanceMatrix);
+        worldPosition
+          .setFromMatrixPosition(instanceMatrix)
+          .applyMatrix4(mesh.matrixWorld);
+        projected.copy(worldPosition).project(camera);
+        if (
+          projected.z < -1 ||
+          projected.z > 1 ||
+          projected.x < -1 ||
+          projected.x > 1 ||
+          projected.y < -1 ||
+          projected.y > 1
+        ) {
+          continue;
+        }
+        targets.push({
+          entityId,
+          clientX: rect.left + ((projected.x + 1) * 0.5) * rect.width,
+          clientY: rect.top + ((1 - projected.y) * 0.5) * rect.height
+        });
+      }
+    }
+    return targets;
   }
 
   setBiologicalLight(lightPar: number, nightObservationAid: boolean): void {
