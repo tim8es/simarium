@@ -159,7 +159,7 @@ Predation changes prey dynamics through real encounters; predator cannot survive
 
 ## Phase 7 — Full headless ecosystem
 
-**Status: COMPLETE — 100×180-day calibration and independent 100×180-day validation PASS on the accepted Phase-7 model.**
+**Status: ACCEPTED BASELINE COMPLETE — 100×180-day calibration and independent 100×180-day validation PASS on the accepted Phase-7 model. Current integration HEAD is pending the same full revalidation after post-acceptance ecology fixes.**
 
 Combine all approved species.
 
@@ -321,7 +321,7 @@ Coding a phase is allowed only when:
 
 # Immediate next work
 
-1. Preserve the accepted Phase-7 ecology baseline and regression tests while downstream renderer/runtime/UI integration proceeds.
+1. Preserve the accepted Phase-7 ecology baseline and regression tests. Before transferring the Phase-7 PASS label to the integrated main HEAD, rerun the unchanged 100-seed calibration + independent 100-seed validation gate against the post-acceptance ecology fixes.
 2. Keep simulation-to-render integration non-authoritative: rendering must not alter deterministic ecology results.
 3. Run the larger 365-day / >=500-seed stability evaluation when runtime budget permits; treat it as robustness validation, not as a reason to silently change the accepted MVP gate.
 4. Continue Phase 8+ renderer, worker bridge, observation UX and persistence work against the accepted Phase-7 model contracts.
