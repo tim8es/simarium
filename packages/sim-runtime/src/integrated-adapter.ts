@@ -1271,7 +1271,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
         eco.world.ledger.applyBoundaryFlux(poolName, negativeMaterial(removal));
       }
     }
-    population.markDead(id, eco.world.timeSeconds);
+    population.markDead(id, eco.world.timeSeconds, "user_removal");
     population.normalizeShares();
     population.assertShares();
   }
