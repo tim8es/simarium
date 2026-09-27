@@ -201,6 +201,8 @@ The accepted 180-day batches show no observed unbounded numerical growth over th
 
 ## Phase 8 — Rendering benchmark
 
+**Status: IMPLEMENTED — automated renderer/build/browser integration is green; physical target-hardware FPS recording remains the exit gate.**
+
 Before real art, build synthetic visuals:
 - terrarium shell;
 - environmental lighting;
@@ -214,6 +216,8 @@ Target browser hardware demonstrates acceptable frame rate and no main-thread st
 
 ## Phase 9 — Simulation-to-render bridge
 
+**Status: COMPLETE — live Phase-7 Web Worker bridge, snapshots/deltas, renderer interpolation, picking, inspection and animation-state mapping are implemented; rendering on/off determinism regression passes.**
+
 Implement:
 - worker protocol;
 - snapshot buffers;
@@ -226,6 +230,8 @@ Implement:
 Turning rendering on/off does not change deterministic ecology results.
 
 ## Phase 10 — Species assets and terrarium visuals
+
+**Status: TECHNICAL MVP COMPLETE — procedural species/stage-specific assets, hardscape, scale/LOD and provenance are documented in `RENDER_ASSETS.md`; production-art polish remains replaceable renderer work.**
 
 Create/obtain documented species-specific assets.
 
@@ -243,6 +249,8 @@ Species are recognizable, correctly scaled and LOD-ready.
 
 ## Phase 11 — Observation UX
 
+**Status: COMPLETE FOR MVP — cameras, minimal HUD, entity card, Why/state trace, genealogy, causal event history, time controls and renderer-only night observation aid are live.**
+
 Implement:
 - orbit/free/macro/follow camera;
 - minimal HUD;
@@ -258,6 +266,8 @@ A user can follow one post-start individual from birth through feeding/reproduct
 
 ## Phase 12 — Scientific/debug UX
 
+**Status: COMPLETE FOR MVP — live population/resource graphs, food-web transfers, real temperature heatmap, ledger/residuals, bounded event browser and worker profiler are implemented.**
+
 Implement:
 - population charts;
 - food-web flows;
@@ -272,6 +282,8 @@ A developer can diagnose extinction/resource drift without opening a debugger.
 
 ## Phase 13 — Persistence and offline-ready browser build
 
+**Status: ENGINEERING PASS — IndexedDB autosave/manual save, versioned snapshots/migration, deterministic replay load/resume and repeated save-load-resume stress coverage are implemented.**
+
 Implement:
 - IndexedDB;
 - autosave;
@@ -283,6 +295,8 @@ Implement:
 Reloading the browser resumes the same world without mass/state discontinuity.
 
 ## Phase 14 — Final MVP validation
+
+**Status: ACTIVE — production Chromium browser smoke/accelerated soak passed (run `36326164750`); current-head 180-day ecosystem revalidation and physical target-GPU FPS are still pending release gates.**
 
 Run final:
 - deterministic regression suite;
@@ -321,8 +335,8 @@ Coding a phase is allowed only when:
 
 # Immediate next work
 
-1. Preserve the accepted Phase-7 ecology baseline and regression tests. Before transferring the Phase-7 PASS label to the integrated main HEAD, rerun the unchanged 100-seed calibration + independent 100-seed validation gate against the post-acceptance ecology fixes.
-2. Keep simulation-to-render integration non-authoritative: rendering must not alter deterministic ecology results.
+1. Let the unchanged full Phase-7 calibration + independent validation workflow complete on the integrated code line; do not retune on validation seeds or weaken `VALIDATION.md` targets.
+2. Record the Phase-8 benchmark on physical laptop-class hardware at 1920×1080; CI/software rendering is not accepted as the FPS result.
 3. Run the larger 365-day / >=500-seed stability evaluation when runtime budget permits; treat it as robustness validation, not as a reason to silently change the accepted MVP gate.
-4. Continue Phase 8+ renderer, worker bridge, observation UX and persistence work against the accepted Phase-7 model contracts.
+4. Perform final release review for P0 invariant, persistence, browser and lifecycle failures. Renderer/art polish may continue independently because it is non-authoritative.
 5. Any future ecology retuning must reopen calibration on calibration seeds first and rerun independent validation without weakening `VALIDATION.md` targets.
