@@ -32,6 +32,7 @@ const AIR_Y_MIN_M = 0.2;
 const AIR_Y_MAX_M = 0.72;
 const DAY_SECONDS = 86_400;
 const MAX_RENDER_ANIMALS = 1_200;
+const MAX_RENDER_ANIMALS_PER_SPECIES = Math.floor(MAX_RENDER_ANIMALS / 4);
 
 type SpeciesMeta = {
   commonName: string;
@@ -321,31 +322,19 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       }
     }
 
-    let animalSlots = MAX_RENDER_ANIMALS;
-    animalSlots = this.appendAnimalRenderEntities(
-      entities,
-      "folsomia_candida",
-      eco.animals.folsomia.living(),
-      animalSlots
-    );
-    animalSlots = this.appendAnimalRenderEntities(
-      entities,
-      "trichorhina_tomentosa",
-      eco.animals.trichorhina.living(),
-      animalSlots
-    );
-    animalSlots = this.appendAnimalRenderEntities(
-      entities,
-      "bradysia_impatiens",
-      eco.animals.bradysia.living(),
-      animalSlots
-    );
-    this.appendAnimalRenderEntities(
-      entities,
-      "dalotia_coriaria",
-      eco.animals.dalotia.living(),
-      animalSlots
-    );
+    for (const [speciesId, individuals] of [
+      ["folsomia_candida", eco.animals.folsomia.living()],
+      ["trichorhina_tomentosa", eco.animals.trichorhina.living()],
+      ["bradysia_impatiens", eco.animals.bradysia.living()],
+      ["dalotia_coriaria", eco.animals.dalotia.living()]
+    ] as const) {
+      this.appendAnimalRenderEntities(
+        entities,
+        speciesId,
+        individuals,
+        MAX_RENDER_ANIMALS_PER_SPECIES
+      );
+    }
 
     return {
       tick: eco.world.tick,
@@ -576,25 +565,39 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       reserveCarbonMg: number;
       starvationSeconds: number;
     }[],
-    slots: number
-  ): number {
-    if (slots <= 0) return 0;
+    limit: number
+  ): void {
+    if (limit <= 0 || individuals.length === 0) return;
     const eco = this.requireEco();
-    for (const individual of individuals) {
-      if (slots <= 0) break;
+    const renderCount = Math.min(limit, individuals.length);
+    const stride = individuals.length / renderCount;
+
+    for (let sampleIndex = 0; sampleIndex < renderCount; sampleIndex++) {
+      const individual =
+        individuals[Math.min(
+          individuals.length - 1,
+          Math.floor(sampleIndex * stride)
+        )]!;
       const ref = entityRef(speciesId, individual.id);
       const habitat = eco.habitat.get(ref);
       const fallbackX = Math.floor(hash01(`${ref}:x`) * eco.habitat.width);
       const fallbackZ = Math.floor(hash01(`${ref}:z`) * eco.habitat.depth);
       const cellX = habitat?.x ?? fallbackX;
       const cellZ = habitat?.z ?? fallbackZ;
-      const layer = habitat?.layer ?? (speciesId === "bradysia_impatiens" && individual.stage === "adult" ? "air" : "substrate");
-      const x = ((cellX + 0.5) / eco.habitat.width - 0.5) * WORLD_WIDTH_M * 0.96;
-      const z = ((cellZ + 0.5) / eco.habitat.depth - 0.5) * WORLD_DEPTH_M * 0.94;
+      const layer =
+        habitat?.layer ??
+        (speciesId === "bradysia_impatiens" && individual.stage === "adult"
+          ? "air"
+          : "substrate");
+      const x =
+        ((cellX + 0.5) / eco.habitat.width - 0.5) * WORLD_WIDTH_M * 0.96;
+      const z =
+        ((cellZ + 0.5) / eco.habitat.depth - 0.5) * WORLD_DEPTH_M * 0.94;
       const airT = hash01(`${ref}:height`);
-      const y = layer === "air"
-        ? AIR_Y_MIN_M + (AIR_Y_MAX_M - AIR_Y_MIN_M) * airT
-        : SUBSTRATE_Y_M;
+      const y =
+        layer === "air"
+          ? AIR_Y_MIN_M + (AIR_Y_MAX_M - AIR_Y_MIN_M) * airT
+          : SUBSTRATE_Y_M;
       target.push({
         entityId: ref,
         speciesId,
@@ -602,16 +605,18 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
         position: { x, y, z },
         orientation: { x: 0, y: 0, z: 0, w: 1 },
         displayScale: stageScale(individual.stage),
-        action: this.actionFor(speciesId, individual.stage, individual.starvationSeconds),
+        action: this.actionFor(
+          speciesId,
+          individual.stage,
+          individual.starvationSeconds
+        ),
         debugAttributes: {
           ageSeconds: individual.ageSeconds,
           carbonMg: individual.material.carbonMg,
           reserveCarbonMg: individual.reserveCarbonMg
         }
       });
-      slots--;
     }
-    return slots;
   }
 
   private actionFor(speciesId: string, stage: string, starvationSeconds: number): string {
