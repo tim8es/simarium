@@ -508,11 +508,22 @@ if (benchmarkOnly) {
       } else if (command === "load") {
         setState({ saveMessage: "Loading latest save…" });
         void client.loadLatest()
-          .then(found => setState({
-            saveMessage: found ? "Loaded latest save" : "No saved world found",
-            runtimeStatus: found ? "running" : state.runtimeStatus,
-            paused: found ? false : state.paused
-          }))
+          .then(loaded => {
+            if (!loaded) {
+              setState({ saveMessage: "No saved world found" });
+              return;
+            }
+            selectedEntity = undefined;
+            selectedInspection = undefined;
+            setState({
+              seed: loaded.seed,
+              selectedEntityId: null,
+              saveMessage: "Loaded latest save",
+              runtimeStatus: "running",
+              runtimeMessage: `Loaded deterministic save at day ${(loaded.virtualTime / 86400).toFixed(1)}`,
+              paused: false
+            });
+          })
           .catch(error => setState({
             runtimeStatus: "error",
             runtimeMessage: error instanceof Error ? error.message : String(error)
