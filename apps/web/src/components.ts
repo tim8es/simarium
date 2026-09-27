@@ -118,7 +118,7 @@ export function renderEntityCard(entity: EntitySummary | undefined): string {
       ];
 
   return `
-    <section class="glass-panel entity-card" data-entity-id="${entity.id}">
+    <section class="glass-panel entity-card" data-entity-id="${entity.id}" data-entity-kind="${entity.kind}">
       <div class="entity-header">
         <div class="entity-mark ${entity.kind}"></div>
         <div>
