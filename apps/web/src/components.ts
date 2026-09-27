@@ -1,5 +1,6 @@
 import type {
   BehaviorReason,
+  CausalHistoryEvent,
   EntitySummary,
   GenealogyNode,
   ObservationSnapshot,
@@ -154,6 +155,32 @@ export function renderWhyPanel(reasons: ReadonlyArray<BehaviorReason>, action: s
             </div>
           `).join("")
           : "<p class=\"inspection-unavailable\">No behavior trace available for this entity.</p>"}
+      </div>
+    </section>
+  `;
+}
+
+
+export function renderEntityHistory(
+  events: ReadonlyArray<CausalHistoryEvent>
+): string {
+  const rows = events.slice(-12).reverse().map((event) => {
+    const day = event.timeSeconds / 86400;
+    return `
+      <div class="history-row">
+        <span>day ${day.toFixed(1)}</span>
+        <strong>${event.type}</strong>
+        <small>${event.label}</small>
+      </div>
+    `;
+  }).join("");
+  return `
+    <section class="glass-panel history-panel">
+      <div class="panel-heading compact">
+        <div><span class="eyebrow">CAUSAL HISTORY</span><h2>Entity events</h2></div>
+      </div>
+      <div class="history-list">
+        ${rows || '<p class="inspection-unavailable">No recorded events for this entity.</p>'}
       </div>
     </section>
   `;
