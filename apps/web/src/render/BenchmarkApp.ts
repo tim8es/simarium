@@ -8,7 +8,10 @@ import {
   type RenderWorldDelta,
   type RenderWorldSnapshot
 } from "@simarium/render-core";
-import { BenchmarkScene } from "./BenchmarkScene";
+import {
+  BenchmarkScene,
+  type DynamicHardscapeEntry
+} from "./BenchmarkScene";
 import { CameraController, type CameraMode } from "./CameraController";
 import { PerformanceHud } from "./PerformanceHud";
 import { SyntheticBenchmarkSource } from "./SyntheticBenchmarkSource";
@@ -95,6 +98,10 @@ export class BenchmarkApp {
 
   setFollowTarget(entityId: string): void {
     this.cameraController.setFollowTarget(entityId);
+  }
+
+  setDynamicHardscape(entries: readonly DynamicHardscapeEntry[]): void {
+    this.benchmarkScene.setDynamicHardscape(entries);
   }
 
   applyExternalSnapshot(snapshot: RenderWorldSnapshot): void {
