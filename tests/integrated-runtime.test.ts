@@ -149,4 +149,49 @@ describe("integrated browser runtime", () => {
     expect(details.history.every((event) => Number.isFinite(event.timeSeconds))).toBe(true);
   });
 
+
+  it("survives repeated integrated save-load-resume cycles without state drift", () => {
+    const direct = init(7099);
+    let cycled = init(7099);
+
+    for (let cycle = 0; cycle < 5; cycle++) {
+      const action: UserActionEnvelope = {
+        sequence: cycle,
+        targetTick: direct.saveSnapshot().tick,
+        action:
+          cycle % 2 === 0
+            ? { type: "set_light", intensity: 0.8 + cycle * 0.05 }
+            : { type: "add_water", waterG: 0.5 + cycle * 0.1 }
+      };
+      direct.applyUserAction(action);
+      cycled.applyUserAction(structuredClone(action));
+
+      direct.step(12);
+      cycled.step(12);
+
+      const saved = cycled.saveSnapshot();
+      const replacement = new IntegratedEcosystemRuntimeAdapter();
+      replacement.loadSnapshot(saved);
+      cycled = replacement;
+    }
+
+    const directEnd = direct.saveSnapshot();
+    const cycledEnd = cycled.saveSnapshot();
+    expect(cycledEnd.tick).toBe(directEnd.tick);
+    expect(cycledEnd.virtualTime).toBe(directEnd.virtualTime);
+    expect(cycledEnd.rngState).toEqual(directEnd.rngState);
+    expect(cycledEnd.sections.materialPools).toEqual(
+      directEnd.sections.materialPools
+    );
+    expect(cycledEnd.sections.organisms).toEqual(
+      directEnd.sections.organisms
+    );
+    expect(cycledEnd.sections.plants).toEqual(
+      directEnd.sections.plants
+    );
+    expect(cycledEnd.sections.spatialState).toEqual(
+      directEnd.sections.spatialState
+    );
+  });
+
 });
