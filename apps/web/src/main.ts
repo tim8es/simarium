@@ -156,6 +156,10 @@ if (benchmarkOnly) {
     configurable: true,
     get: () => renderer.getPerformanceSnapshot()
   });
+  Object.defineProperty(window, "__SIMARIUM_RENDER_ENTITY_IDS__", {
+    configurable: true,
+    get: () => renderer.getRenderedEntityIds()
+  });
 
   const client = new SimulationClient();
 
