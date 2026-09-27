@@ -7,6 +7,7 @@ import { SimulationClient } from "./runtime/SimulationClient.js";
 import {
   emptyObservationSnapshot,
   entityDetailsToUi,
+  hardscapeFromStats,
   statsToObservation
 } from "./runtime/observation.js";
 import type {
@@ -354,6 +355,7 @@ if (benchmarkOnly) {
   client.hooks.onStats = (stats: JsonValue) => {
     try {
       snapshot = statsToObservation(stats);
+      renderer.setDynamicHardscape(hardscapeFromStats(stats));
       if (state.selectedEntityId) {
         client.requestEntity(state.selectedEntityId);
       }
