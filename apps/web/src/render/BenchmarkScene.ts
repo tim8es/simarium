@@ -24,7 +24,9 @@ import {
   Points,
   PointsMaterial,
   Quaternion,
+  Raycaster,
   Scene,
+  Vector2,
   Vector3
 } from "three";
 import { RenderAdapter, type RenderEntity } from "@simarium/render-core";
@@ -35,10 +37,19 @@ const MAX_NEAR_ANIMALS = 260;
 const MAX_ANIMALS = 1200;
 
 const ANIMAL_VISUAL_KEYS = [
+  "folsomia-candida:egg",
+  "folsomia-candida:juvenile",
   "folsomia-candida:adult",
+  "trichorhina-tomentosa:manca",
+  "trichorhina-tomentosa:juvenile",
   "trichorhina-tomentosa:adult",
+  "bradysia-impatiens:egg",
   "bradysia-impatiens:larva",
+  "bradysia-impatiens:pupa",
   "bradysia-impatiens:adult",
+  "dalotia-coriaria:egg",
+  "dalotia-coriaria:larva",
+  "dalotia-coriaria:pupa",
   "dalotia-coriaria:adult"
 ] as const;
 
@@ -63,10 +74,19 @@ const plantStyle = {
 } as const;
 
 const animalStyle: Record<AnimalVisualKey, { color: number; length: number; height: number; width: number }> = {
+  "folsomia-candida:egg": { color: 0xf4f6f4, length: 0.00045, height: 0.00032, width: 0.0004 },
+  "folsomia-candida:juvenile": { color: 0xeaf0f3, length: 0.00115, height: 0.00038, width: 0.00048 },
   "folsomia-candida:adult": { color: 0xe7edf1, length: 0.0018, height: 0.00045, width: 0.00055 },
+  "trichorhina-tomentosa:manca": { color: 0xe4e9e5, length: 0.0016, height: 0.00055, width: 0.0009 },
+  "trichorhina-tomentosa:juvenile": { color: 0xdde4df, length: 0.0028, height: 0.0008, width: 0.00155 },
   "trichorhina-tomentosa:adult": { color: 0xd6ddd8, length: 0.0042, height: 0.0011, width: 0.0022 },
+  "bradysia-impatiens:egg": { color: 0xf1e9d0, length: 0.00055, height: 0.00032, width: 0.0004 },
   "bradysia-impatiens:larva": { color: 0xe7dfbe, length: 0.006, height: 0.00075, width: 0.0009 },
+  "bradysia-impatiens:pupa": { color: 0x8e735a, length: 0.0033, height: 0.00085, width: 0.0011 },
   "bradysia-impatiens:adult": { color: 0x263036, length: 0.003, height: 0.0008, width: 0.001 },
+  "dalotia-coriaria:egg": { color: 0xe9dcc8, length: 0.00065, height: 0.00042, width: 0.00048 },
+  "dalotia-coriaria:larva": { color: 0x6d4937, length: 0.0032, height: 0.00072, width: 0.0009 },
+  "dalotia-coriaria:pupa": { color: 0x755843, length: 0.0036, height: 0.0009, width: 0.00115 },
   "dalotia-coriaria:adult": { color: 0x492f24, length: 0.0045, height: 0.001, width: 0.00135 }
 };
 
@@ -89,8 +109,11 @@ export class BenchmarkScene {
 
   private readonly adapter: RenderAdapter;
   private readonly leafMeshes = new Map<string, InstancedMesh>();
+  private readonly leafEntityIds = new Map<string, string[]>();
   private readonly animalMeshes = new Map<AnimalVisualKey, InstancedMesh>();
+  private readonly animalInstanceIds = new Map<AnimalVisualKey, string[]>();
   private readonly stemMesh: InstancedMesh;
+  private readonly stemEntityIds: string[] = [];
   private readonly farPoints: Points;
   private readonly farPositions = new Float32Array(MAX_ANIMALS * 3);
   private readonly farColors = new Float32Array(MAX_ANIMALS * 3);
@@ -101,7 +124,9 @@ export class BenchmarkScene {
   private readonly frustum = new Frustum();
   private readonly projectionView = new Matrix4();
   private readonly visibleAnimals: VisibleAnimal[] = [];
-  private plantsBuilt = false;
+  private readonly raycaster = new Raycaster();
+  private readonly pointer = new Vector2();
+  private plantSignature = "";
   private metrics: BenchmarkSceneMetrics = {
     visibleEntityCount: 0,
     visibleAnimalMeshCount: 0,
@@ -121,13 +146,11 @@ export class BenchmarkScene {
   }
 
   initializeFromSnapshot(): void {
-    if (!this.plantsBuilt) {
-      this.buildPlantInstances();
-      this.plantsBuilt = true;
-    }
+    this.refreshPlantInstances(true);
   }
 
   update(camera: PerspectiveCamera): BenchmarkSceneMetrics {
+    this.refreshPlantInstances(false);
     camera.updateMatrixWorld();
     this.projectionView.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.projectionView);
@@ -172,6 +195,44 @@ export class BenchmarkScene {
 
   getMetrics(): BenchmarkSceneMetrics {
     return { ...this.metrics };
+  }
+
+  pick(
+    clientX: number,
+    clientY: number,
+    camera: PerspectiveCamera,
+    domElement: HTMLElement
+  ): string | null {
+    const rect = domElement.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    this.pointer.set(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
+    this.raycaster.setFromCamera(this.pointer, camera);
+
+    const objects = [
+      ...this.animalMeshes.values(),
+      ...this.leafMeshes.values(),
+      this.stemMesh
+    ];
+    for (const hit of this.raycaster.intersectObjects(objects, false)) {
+      if (hit.instanceId === undefined) continue;
+      if (hit.object === this.stemMesh) {
+        return this.stemEntityIds[hit.instanceId] ?? null;
+      }
+      for (const [key, mesh] of this.animalMeshes) {
+        if (hit.object === mesh) {
+          return this.animalInstanceIds.get(key)?.[hit.instanceId] ?? null;
+        }
+      }
+      for (const [speciesId, mesh] of this.leafMeshes) {
+        if (hit.object === mesh) {
+          return this.leafEntityIds.get(speciesId)?.[hit.instanceId] ?? null;
+        }
+      }
+    }
+    return null;
   }
 
   private addLighting(): void {
@@ -276,7 +337,7 @@ export class BenchmarkScene {
     const mesh = new InstancedMesh(
       new CylinderGeometry(0.003, 0.004, 1, 6),
       new MeshStandardMaterial({ color: 0x38593b, roughness: 0.92 }),
-      180
+      512
     );
     mesh.castShadow = true;
     this.scene.add(mesh);
@@ -321,8 +382,33 @@ export class BenchmarkScene {
     }
   }
 
-  private buildPlantInstances(): void {
-    const plants = this.adapter.getRenderableEntities().filter((entity) => PLANT_SPECIES.has(entity.speciesId));
+  private refreshPlantInstances(force: boolean): void {
+    const plants = this.adapter
+      .getRenderableEntities()
+      .filter((entity) => PLANT_SPECIES.has(entity.speciesId));
+    const signature = plants
+      .map((plant) => `${plant.id}:${plant.scale.toFixed(4)}`)
+      .sort()
+      .join("|");
+    if (!force && signature === this.plantSignature) return;
+    this.plantSignature = signature;
+    this.buildPlantInstances(plants);
+  }
+
+  private buildPlantInstances(plants: readonly RenderEntity[]): void {
+    for (const mesh of this.leafMeshes.values()) {
+      this.scene.remove(mesh);
+      mesh.geometry.dispose();
+      if (Array.isArray(mesh.material)) {
+        for (const material of mesh.material) material.dispose();
+      } else {
+        mesh.material.dispose();
+      }
+    }
+    this.leafMeshes.clear();
+    this.leafEntityIds.clear();
+    this.stemEntityIds.splice(0, this.stemEntityIds.length);
+
     const speciesPlants = new Map<string, RenderEntity[]>();
     for (const plant of plants) {
       const bucket = speciesPlants.get(plant.speciesId) ?? [];
@@ -335,45 +421,71 @@ export class BenchmarkScene {
 
     for (const [speciesId, style] of Object.entries(plantStyle)) {
       const members = speciesPlants.get(speciesId) ?? [];
+      const capacity = Math.max(1, members.length * LEAVES_PER_PLANT);
       const mesh = new InstancedMesh(
         new PlaneGeometry(1, 1),
-        new MeshStandardMaterial({ color: style.color, roughness: 0.86, side: DoubleSide }),
-        members.length * LEAVES_PER_PLANT
+        new MeshStandardMaterial({
+          color: style.color,
+          roughness: 0.86,
+          side: DoubleSide
+        }),
+        capacity
       );
       mesh.castShadow = true;
       mesh.receiveShadow = false;
 
       let leafIndex = 0;
+      const leafIds: string[] = [];
       for (const plant of members) {
         const baseAngle = hash01(plant.id) * Math.PI * 2;
         for (let leaf = 0; leaf < LEAVES_PER_PLANT; leaf++) {
           const t = leaf / LEAVES_PER_PLANT;
           const angle = baseAngle + leaf * 2.399963229728653;
           const radius = (0.018 + 0.07 * Math.sqrt(t)) * plant.scale;
-          const height = (0.035 + style.height * (0.25 + t * 0.75)) * plant.scale;
+          const height =
+            (0.035 + style.height * (0.25 + t * 0.75)) * plant.scale;
           this.dummy.position.set(
             plant.position[0] + Math.cos(angle) * radius,
             plant.position[1] + height,
             plant.position[2] + Math.sin(angle) * radius
           );
-          this.dummy.rotation.set(-Math.PI / 2 + 0.28 * Math.sin(angle), angle, 0.18 * Math.cos(angle));
+          this.dummy.rotation.set(
+            -Math.PI / 2 + 0.28 * Math.sin(angle),
+            angle,
+            0.18 * Math.cos(angle)
+          );
           const leafScale = (0.7 + 0.5 * t) * plant.scale;
-          this.dummy.scale.set(style.length * leafScale, style.width * leafScale, 1);
+          this.dummy.scale.set(
+            style.length * leafScale,
+            style.width * leafScale,
+            1
+          );
           this.dummy.updateMatrix();
-          mesh.setMatrixAt(leafIndex++, this.dummy.matrix);
+          mesh.setMatrixAt(leafIndex, this.dummy.matrix);
+          leafIds[leafIndex] = plant.id;
+          leafIndex++;
         }
 
+        if (stemIndex >= 512) continue;
         const stemHeight = style.height * plant.scale;
-        this.dummy.position.set(plant.position[0], plant.position[1] + stemHeight * 0.5, plant.position[2]);
+        this.dummy.position.set(
+          plant.position[0],
+          plant.position[1] + stemHeight * 0.5,
+          plant.position[2]
+        );
         this.dummy.rotation.set(0, 0, 0);
         this.dummy.scale.set(plant.scale, stemHeight, plant.scale);
         this.dummy.updateMatrix();
-        this.stemMesh.setMatrixAt(stemIndex++, this.dummy.matrix);
+        this.stemMesh.setMatrixAt(stemIndex, this.dummy.matrix);
+        this.stemEntityIds[stemIndex] = plant.id;
+        stemIndex++;
       }
 
+      mesh.count = leafIndex;
       mesh.instanceMatrix.needsUpdate = true;
       this.scene.add(mesh);
       this.leafMeshes.set(speciesId, mesh);
+      this.leafEntityIds.set(speciesId, leafIds);
       totalLeaves += leafIndex;
     }
 
@@ -389,6 +501,9 @@ export class BenchmarkScene {
     const counts = new Map<AnimalVisualKey, number>(
       ANIMAL_VISUAL_KEYS.map((key): [AnimalVisualKey, number] => [key, 0])
     );
+    for (const key of ANIMAL_VISUAL_KEYS) {
+      this.animalInstanceIds.set(key, []);
+    }
 
     for (let i = 0; i < nearCount; i++) {
       const entity = animals[i]!.entity;
@@ -406,6 +521,7 @@ export class BenchmarkScene {
       this.dummy.scale.copy(this.scale);
       this.dummy.updateMatrix();
       mesh.setMatrixAt(index, this.dummy.matrix);
+      this.animalInstanceIds.get(key)![index] = entity.id;
       counts.set(key, index + 1);
     }
 
