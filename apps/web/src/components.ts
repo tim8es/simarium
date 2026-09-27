@@ -60,7 +60,7 @@ export function renderOverlayPanel(snapshot: ObservationSnapshot, state: Observa
           <span class="eyebrow">ENVIRONMENT</span>
           <h2>Scientific overlays</h2>
         </div>
-        <span class="status-dot" title="Synthetic snapshot"></span>
+        <span class="status-dot" title="Live worker simulation state"></span>
       </div>
       <div class="overlay-grid">
         ${overlayLabels.map(([key, label]) => `
@@ -76,6 +76,11 @@ export function renderOverlayPanel(snapshot: ObservationSnapshot, state: Observa
 
 function metric(label: string, value: string): string {
   return `<div class="metric"><span>${label}</span><strong>${value}</strong></div>`;
+}
+
+function displayEntityId(id: string): string {
+  const index = id.lastIndexOf("#");
+  return index >= 0 ? id.slice(index + 1) : id;
 }
 
 export function renderEntityCard(entity: EntitySummary | undefined): string {
@@ -97,7 +102,7 @@ export function renderEntityCard(entity: EntitySummary | undefined): string {
         metric("Action", entity.currentAction),
         metric("Target", entity.currentTarget ?? "—"),
         metric("Birth time", `day ${(entity.birthTimeSeconds / 86400).toFixed(1)}`),
-        metric("Parent IDs", entity.parentIds.length ? entity.parentIds.map(id => `#${id}`).join(", ") : "—"),
+        metric("Parent IDs", entity.parentIds.length ? entity.parentIds.map(displayEntityId).join(", ") : "—"),
         metric("Offspring", String(entity.offspringCount)),
         metric("Reproductive state", entity.reproductiveState),
         ...(entity.deathCause ? [metric("Death cause", entity.deathCause)] : [])
@@ -106,8 +111,8 @@ export function renderEntityCard(entity: EntitySummary | undefined): string {
         metric("Biomass", `${(entity.biomassMg / 1000).toFixed(2)} g`),
         metric("Water status", formatPercent(entity.waterStatus)),
         metric("Nutrient limit", entity.nutrientLimitation.toUpperCase()),
-        metric("Parent ramet", entity.parentRametId ? `#${entity.parentRametId}` : "—"),
-        metric("Offspring ramets", entity.offspringRametIds.length ? entity.offspringRametIds.map(id => `#${id}`).join(", ") : "—")
+        metric("Parent ramet", entity.parentRametId ? displayEntityId(entity.parentRametId) : "—"),
+        metric("Offspring ramets", entity.offspringRametIds.length ? entity.offspringRametIds.map(displayEntityId).join(", ") : "—")
       ];
 
   return `
@@ -115,7 +120,7 @@ export function renderEntityCard(entity: EntitySummary | undefined): string {
       <div class="entity-header">
         <div class="entity-mark ${entity.kind}"></div>
         <div>
-          <span class="eyebrow">SELECTED · #${entity.id}</span>
+          <span class="eyebrow">SELECTED · #${displayEntityId(entity.id)}</span>
           <h2>${entity.commonName}</h2>
           <em>${entity.scientificName}</em>
         </div>
@@ -134,7 +139,7 @@ export function renderWhyPanel(reasons: ReadonlyArray<BehaviorReason>, action: s
     <section class="glass-panel why-panel">
       <div class="panel-heading compact">
         <div>
-          <span class="eyebrow">UTILITY TRACE</span>
+          <span class="eyebrow">STATE TRACE</span>
           <h2>Why?</h2>
         </div>
         <strong class="decision-arrow">→ ${action}</strong>
@@ -205,7 +210,7 @@ export function renderGraphs(snapshot: ObservationSnapshot): string {
     <div class="bottom-content graph-content">
       <div class="graph-summary">
         <span class="eyebrow">POPULATION BY SPECIES</span>
-        <p>12-day synthetic window</p>
+        <p>Daily samples from the live simulation</p>
       </div>
       <div class="series-grid">${snapshot.populations.map(sparkline).join("")}</div>
       <div class="future-metrics" aria-label="Prepared graph contracts">
@@ -301,27 +306,16 @@ export function renderBottomPanel(snapshot: ObservationSnapshot, state: Observat
 }
 
 export function renderViewport(snapshot: ObservationSnapshot, state: ObservationUiState): string {
-  const selected = state.selectedEntityId;
   const totalSeconds = Math.max(0, Math.floor(snapshot.environment.timeSeconds));
   const day = Math.floor(totalSeconds / 86400);
   const timeOfDay = totalSeconds % 86400;
   const hours = Math.floor(timeOfDay / 3600);
   const minutes = Math.floor((timeOfDay % 3600) / 60);
   const clock = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  const cameraLabel = state.cameraMode.toUpperCase();
   return `
-    <section class="viewport" data-active-overlay="${state.activeOverlay ?? "none"}" aria-label="Terrarium viewport placeholder">
-      <div class="terrarium-glass"></div>
-      <div class="light-cone"></div>
-      <div class="back-haze"></div>
-      <div class="hardscape rock-a"></div>
-      <div class="hardscape wood-a"></div>
-      <div class="plant-cluster cluster-a"><i></i><i></i><i></i><i></i><i></i></div>
-      <div class="plant-cluster cluster-b"><i></i><i></i><i></i><i></i></div>
-      <div class="soil-layer"></div>
-      <button class="organism springtail ${selected === 1042 ? "is-selected" : ""}" data-entity-id="1042" aria-label="Select springtail 1042"><span></span></button>
-      <button class="organism beetle ${selected === 2007 ? "is-selected" : ""}" data-entity-id="2007" aria-label="Select rove beetle 2007"><span></span></button>
-      <button class="organism ramet ${selected === 501 ? "is-selected" : ""}" data-entity-id="501" aria-label="Select Fittonia ramet 501"><span></span></button>
-      <div class="viewport-label top-left"><span>OBSERVATION CAMERA</span><strong>MACRO · 65 mm</strong></div>
+    <section class="viewport" data-active-overlay="${state.activeOverlay ?? "none"}" aria-label="Live terrarium viewport">
+      <div class="viewport-label top-left"><span>OBSERVATION CAMERA</span><strong>${cameraLabel}</strong></div>
       <div class="viewport-label top-right"><span>WORLD TIME</span><strong>DAY ${day} · ${clock}</strong></div>
       <div class="scale-marker"><i></i><span>10 cm</span></div>
       ${state.activeOverlay ? `<div class="overlay-legend"><span>${overlayLabels.find(([key]) => key === state.activeOverlay)?.[1] ?? state.activeOverlay}</span><div class="legend-bar"></div><small>low</small><small>high</small></div>` : ""}
