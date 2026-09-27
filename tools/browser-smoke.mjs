@@ -495,9 +495,16 @@ try {
   await page.waitForSelector(".runtime-banner.paused");
 
   await clickControl(page, "[data-bottom-tab='events']");
+  await page.waitForFunction(
+    () => /(birth|reproduction|oviposition|clone)/i.test(
+      document.querySelector(".event-browser")?.textContent ?? ""
+    ),
+    undefined,
+    { timeout: 5_000 }
+  ).catch(() => undefined);
   const eventText = await page.locator(".event-browser").innerText();
   if (!/(birth|reproduction|oviposition|clone)/i.test(eventText)) {
-    throw new Error("Accelerated live run did not expose lifecycle turnover events");
+    throw new Error("Accelerated live run did not expose lifecycle turnover events after stats refresh");
   }
   if (newLifecycleEntityId === null) {
     throw new Error("Lifecycle turnover occurred but no new entity ID reached the renderer");
