@@ -664,9 +664,19 @@ if (benchmarkOnly) {
           client.setSpeed(state.speed);
         });
       })
-    : client.initialize(state.seed).then(() => {
-        client.setSpeed(state.speed);
-      });
+    : client.initialize(state.seed)
+        .then(() => {
+          client.setSpeed(state.speed);
+          return client.save("Autosave", "autosave");
+        })
+        .then(() => {
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete("seed");
+          window.history.replaceState(null, "", cleanUrl);
+          setState({
+            saveMessage: "Initial world autosaved; reload will resume it"
+          });
+        });
 
   void boot.catch((error) => {
     setState({
