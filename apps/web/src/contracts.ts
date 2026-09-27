@@ -165,6 +165,22 @@ export type ScientificEvents = {
   deaths: Readonly<Record<string, number>>;
 };
 
+export type RuntimeProfilerSnapshot = {
+  running: boolean;
+  speed: number;
+  ticksPerSecondAt1x: number;
+  pulseIntervalMs: number;
+  maxTicksPerPulse: number;
+  lastStepTicks: number;
+  lastStepWallMs: number;
+  emaStepWallMs: number;
+  averageWallMsPerTick: number;
+  totalTicksStepped: number;
+  framesEmitted: number;
+  backlogTicks: number;
+  maxObservedBacklogTicks: number;
+};
+
 export type MaterialLedgerSnapshot = {
   totals: MaterialValues;
   cumulativeBoundaryFlux: MaterialValues;
@@ -181,6 +197,7 @@ export type ObservationSnapshot = {
   resources: ScientificResources;
   events: ScientificEvents;
   materialLedger: MaterialLedgerSnapshot;
+  runtimeProfiler: RuntimeProfilerSnapshot;
 };
 
 export type ObservationUiState = {
@@ -188,7 +205,7 @@ export type ObservationUiState = {
   speed: 1 | 5 | 20 | 100;
   selectedEntityId: EntityId | null;
   activeOverlay: OverlayKey | null;
-  bottomPanel: "graphs" | "foodWeb" | "resources" | "events" | "actions";
+  bottomPanel: "graphs" | "foodWeb" | "resources" | "events" | "profiler" | "actions";
   userActions: ReadonlyArray<UserAction>;
   cameraMode: "orbit" | "free" | "macro" | "follow";
   seed: number;
