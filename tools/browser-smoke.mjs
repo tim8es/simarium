@@ -212,6 +212,9 @@ try {
   if (!/proxy/i.test(await page.locator("[data-overlay='co2']").innerText())) {
     throw new Error("CO₂ proxy was not labeled as a proxy");
   }
+  if (!/proxy/i.test(await page.locator("[data-overlay='soilWater']").innerText())) {
+    throw new Error("Substrate-water proxy was not labeled as a proxy");
+  }
 
   await page.getByText(/Initial world autosaved/).waitFor({ timeout: 30_000 });
   const consumedUrl = new URL(page.url());
