@@ -91,6 +91,18 @@ try {
   await page.locator("[data-world-command='load']").click();
   await page.getByText(/Loaded latest save/).waitFor({ timeout: 30_000 });
 
+  const savedClock = await worldClock.textContent();
+  await page.goto(`${baseUrl}/`, {
+    waitUntil: "networkidle",
+    timeout: 30_000
+  });
+  await page.waitForSelector(".runtime-banner.running", { timeout: 30_000 });
+  await page.getByText(/Autosave resumed/).waitFor({ timeout: 30_000 });
+  const resumedClock = await page.locator(".viewport-label.top-right strong").textContent();
+  if (!savedClock || !resumedClock || resumedClock < savedClock) {
+    throw new Error(`Reload did not resume saved world: ${savedClock} -> ${resumedClock}`);
+  }
+
   await page.locator("[data-world-command='night-aid']").click();
   await page.getByText(/Visual night observation aid enabled/).waitFor();
 
