@@ -97,7 +97,8 @@ if (benchmarkOnly) {
   document.body.classList.add("integrated-mode");
   cameraControls.hidden = true;
 
-  const defaultSeed = Number(params.get("seed") ?? 7001);
+  const explicitSeedParam = params.get("seed");
+  const defaultSeed = Number(explicitSeedParam ?? 7001);
   let snapshot: ObservationSnapshot = emptyObservationSnapshot();
   let selectedEntity: EntitySummary | undefined;
   let selectedInspection: EntityInspection | undefined;
@@ -645,14 +646,34 @@ if (benchmarkOnly) {
   });
 
   renderUi();
-  void client.initialize(state.seed)
-    .then(() => client.setSpeed(state.speed))
-    .catch((error) => {
-      setState({
-        runtimeStatus: "error",
-        runtimeMessage: error instanceof Error ? error.message : String(error)
+  const boot = explicitSeedParam === null
+    ? client.loadLatest().then((loaded) => {
+        if (loaded) {
+          snapshot = emptyObservationSnapshot();
+          setState({
+            seed: loaded.seed,
+            selectedEntityId: null,
+            paused: false,
+            runtimeStatus: "running",
+            runtimeMessage: `Resumed autosave at day ${(loaded.virtualTime / 86400).toFixed(1)}`,
+            saveMessage: "Autosave resumed"
+          });
+          return;
+        }
+        return client.initialize(state.seed).then(() => {
+          client.setSpeed(state.speed);
+        });
+      })
+    : client.initialize(state.seed).then(() => {
+        client.setSpeed(state.speed);
       });
+
+  void boot.catch((error) => {
+    setState({
+      runtimeStatus: "error",
+      runtimeMessage: error instanceof Error ? error.message : String(error)
     });
+  });
 
   window.addEventListener(
     "beforeunload",
