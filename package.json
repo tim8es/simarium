@@ -23,7 +23,8 @@
     "build:render": "npm run web:build",
     "preview:render": "vite preview apps/web",
     "typecheck:render": "npm run typecheck:web",
-    "browser:smoke": "node tools/browser-smoke.mjs"
+    "browser:smoke": "node tools/browser-smoke.mjs",
+    "render:hardware-benchmark": "npm run build:render && node tools/render-hardware-benchmark.mjs"
   },
   "dependencies": {
     "three": "^0.180.0"
