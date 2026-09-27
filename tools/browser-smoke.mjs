@@ -109,7 +109,7 @@ async function renderedEntityIds(page) {
 }
 
 async function boundaryFlux(page) {
-  await page.locator("[data-bottom-tab='resources']").click();
+  await clickControl(page, "[data-bottom-tab='resources']");
   const flux = page.locator(".boundary-flux");
   await flux.waitFor();
   return flux.evaluate((node) => ({
@@ -121,18 +121,18 @@ async function boundaryFlux(page) {
 }
 
 async function applyPausedAction(page, type, dialogResponses = []) {
-  await page.locator("[data-bottom-tab='actions']").click();
+  await clickControl(page, "[data-bottom-tab='actions']");
   const selector = `[data-action-type='${type}']`;
   const before = await page.locator(selector).count();
   await withDialogs(page, dialogResponses, async () => {
-    await page.locator(`[data-user-action='${type}']`).click();
+    await clickControl(page, `[data-user-action='${type}']`);
   });
   const rows = page.locator(selector);
   await rows.nth(before).waitFor({ timeout: 10_000 });
   await rows.nth(before).locator("strong").getByText("accepted", { exact: true }).waitFor({
     timeout: 10_000
   });
-  await page.locator("[data-world-command='step']").click();
+  await clickControl(page, "[data-world-command='step']");
   await page.waitForSelector(".runtime-banner.paused");
   await page.waitForTimeout(1_200);
   return rows.nth(before);
@@ -215,6 +215,24 @@ try {
   await page.waitForSelector(".runtime-banner.running", { timeout: 30_000 });
   await page.waitForSelector("#render-layer canvas", { timeout: 30_000 });
 
+  const benchmarkControlsState = await page.locator("#benchmark-camera-controls").evaluate((node) => {
+    const style = getComputedStyle(node);
+    return {
+      hidden: node instanceof HTMLElement ? node.hidden : false,
+      display: style.display,
+      pointerEvents: style.pointerEvents
+    };
+  });
+  if (
+    !benchmarkControlsState.hidden ||
+    benchmarkControlsState.display !== "none" ||
+    benchmarkControlsState.pointerEvents !== "none"
+  ) {
+    throw new Error(
+      `Hidden benchmark controls can intercept the live UI: ${JSON.stringify(benchmarkControlsState)}`
+    );
+  }
+
   const webgl = await page.locator("#render-layer canvas").evaluate(canvas => {
     const context = canvas.getContext("webgl2");
     return {
@@ -273,16 +291,16 @@ try {
     throw new Error("Pause did not keep world time stable");
   }
 
-  await page.locator("[data-world-command='step']").click();
+  await clickControl(page, "[data-world-command='step']");
   const steppedClock = await waitForClockChange(page, worldClock, pausedClock, 4_000);
   if (parseWorldClock(steppedClock) - parseWorldClock(pausedClock) !== 30) {
     throw new Error(`STEP did not advance exactly one 30-minute ecology tick: ${pausedClock} -> ${steppedClock}`);
   }
 
   for (const speed of [1, 5, 20, 100]) {
-    await page.locator(`[data-speed='${speed}']`).click();
+    await clickControl(page, `[data-speed='${speed}']`);
     await page.locator(`[data-speed='${speed}'].is-active`).waitFor();
-    await page.locator("[data-bottom-tab='profiler']").click();
+    await clickControl(page, "[data-bottom-tab='profiler']");
     await page.locator(".profiler-content").getByText(`${speed}×`, { exact: true }).waitFor({
       timeout: 4_000
     });
@@ -292,10 +310,10 @@ try {
   await clickControl(page, "[data-command='pause']");
   await page.waitForSelector(".runtime-banner.paused");
 
-  await page.locator("[data-overlay='temperature']").click();
+  await clickControl(page, "[data-overlay='temperature']");
   await page.locator("[data-overlay='temperature'].is-active").waitFor();
 
-  await page.locator("[data-bottom-tab='graphs']").click();
+  await clickControl(page, "[data-bottom-tab='graphs']");
   const graphRows = page.locator(".series-row");
   await graphRows.first().waitFor();
   const graphPointCounts = await graphRows.evaluateAll(rows =>
@@ -305,7 +323,7 @@ try {
     throw new Error(`Population graphs did not receive live multi-sample data: ${graphPointCounts.join(",")}`);
   }
 
-  await page.locator("[data-bottom-tab='foodWeb']").click();
+  await clickControl(page, "[data-bottom-tab='foodWeb']");
   const foodEdges = page.locator(".web-edge[data-biomass-mg]");
   await foodEdges.first().waitFor({ timeout: 5_000 });
   const foodTransfers = await foodEdges.evaluateAll(edges =>
@@ -315,11 +333,11 @@ try {
     throw new Error("Food web did not expose real positive transfer telemetry");
   }
 
-  await page.locator("[data-bottom-tab='resources']").click();
+  await clickControl(page, "[data-bottom-tab='resources']");
   await page.getByText("Conservation residuals").waitFor();
-  await page.locator("[data-bottom-tab='profiler']").click();
+  await clickControl(page, "[data-bottom-tab='profiler']");
   await page.getByText("Simulation runtime").waitFor();
-  await page.locator("[data-bottom-tab='events']").click();
+  await clickControl(page, "[data-bottom-tab='events']");
   await page.getByText("RECENT EVENT STREAM").waitFor();
 
   const selectedId = await pickVisibleEntity(page);
@@ -334,7 +352,7 @@ try {
     throw new Error("Causal history did not load for selected entity");
   }
 
-  await page.locator("[data-live-camera='follow']").click();
+  await clickControl(page, "[data-live-camera='follow']");
   await page.locator("[data-live-camera='follow'].is-active").waitFor();
 
   const waterBefore = await boundaryFlux(page);
@@ -392,7 +410,7 @@ try {
   if (await page.locator(`.entity-card[data-entity-id="${selectedId}"]`).count()) {
     throw new Error("Removed entity remained selected in the UI");
   }
-  await page.locator("[data-bottom-tab='events']").click();
+  await clickControl(page, "[data-bottom-tab='events']");
   await page.getByText(/user_removal/).first().waitFor({ timeout: 5_000 });
 
   const downloadPromise = page.waitForEvent("download");
@@ -414,17 +432,30 @@ try {
   await page.getByText(/Saved: manual-/).waitFor({ timeout: 30_000 });
   const savedClock = await worldClock.textContent();
 
-  await page.locator("[data-world-command='load']").click();
-  await page.getByText(/Loaded latest save/).waitFor({ timeout: 30_000 });
+  await clickControl(page, "[data-world-command='load']");
+  const loadedMessage = page.getByText(/Loaded deterministic save at day/);
+  await loadedMessage.waitFor({ timeout: 30_000 });
+  const loadedMessageText = await loadedMessage.textContent();
+  const loadedDayMatch = /Loaded deterministic save at day\s+([0-9]+(?:\.[0-9]+)?)/.exec(
+    loadedMessageText ?? ""
+  );
+  if (!savedClock || !loadedDayMatch) {
+    throw new Error(`Load latest did not report the restored snapshot time: ${loadedMessageText}`);
+  }
+  const loadedSnapshotMinutes = Number(loadedDayMatch[1]) * 1440;
+  if (Math.abs(loadedSnapshotMinutes - parseWorldClock(savedClock)) > 180) {
+    throw new Error(
+      `Load latest restored the wrong snapshot: ${savedClock} vs ${loadedMessageText}`
+    );
+  }
   await clickControl(page, "[data-command='pause']");
   await page.waitForSelector(".runtime-banner.paused");
-  const loadedClock = await worldClock.textContent();
+  const loadedClock = await waitForClockStable(page, worldClock);
   if (
-    !savedClock ||
     !loadedClock ||
-    Math.abs(parseWorldClock(loadedClock) - parseWorldClock(savedClock)) > 60
+    parseWorldClock(loadedClock) + 60 < parseWorldClock(savedClock)
   ) {
-    throw new Error(`Load latest did not resume the saved world: ${savedClock} -> ${loadedClock}`);
+    throw new Error(`Loaded world regressed behind the saved world: ${savedClock} -> ${loadedClock}`);
   }
 
   await page.goto(`${baseUrl}/`, {
@@ -443,11 +474,11 @@ try {
   }
   const saveIds = await indexedDbSaveIds(page);
 
-  await page.locator("[data-world-command='night-aid']").click();
+  await clickControl(page, "[data-world-command='night-aid']");
   await page.getByText(/Visual night observation aid enabled/).waitFor();
 
   const preLifecycleIds = new Set(await renderedEntityIds(page));
-  await page.locator("[data-speed='100']").click();
+  await clickControl(page, "[data-speed='100']");
   const soakStartedAt = Date.now();
   let newLifecycleEntityId = null;
   while (Date.now() - soakStartedAt < soakMs && newLifecycleEntityId === null) {
@@ -463,7 +494,7 @@ try {
   await clickControl(page, "[data-command='pause']");
   await page.waitForSelector(".runtime-banner.paused");
 
-  await page.locator("[data-bottom-tab='events']").click();
+  await clickControl(page, "[data-bottom-tab='events']");
   const eventText = await page.locator(".event-browser").innerText();
   if (!/(birth|reproduction|oviposition|clone)/i.test(eventText)) {
     throw new Error("Accelerated live run did not expose lifecycle turnover events");
@@ -477,7 +508,7 @@ try {
     throw new Error(`Renderer lost the live world during accelerated lifecycle turnover: ${JSON.stringify(finalRenderMetrics)}`);
   }
 
-  await page.locator("[data-bottom-tab='profiler']").click();
+  await clickControl(page, "[data-bottom-tab='profiler']");
   const profilerText = await page.locator(".profiler-content").innerText();
   if (!/Avg \/ tick/i.test(profilerText) || !/Frames emitted/i.test(profilerText)) {
     throw new Error("Profiler telemetry did not render after soak");
