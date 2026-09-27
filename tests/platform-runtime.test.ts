@@ -185,6 +185,14 @@ describe("worker protocol and renderer transport", () => {
     expect(() => parseUiToWorkerMessage({ type: "SET_SPEED", requestId: "r1", speed: 0 })).toThrow();
     expect(() => parseUiToWorkerMessage({ type: "STEP", requestId: "r2", ticks: 1.5 })).toThrow();
     expect(() => parseUiToWorkerMessage({ type: "USER_ACTION", requestId: "r3", action: { sequence: 0, targetTick: 0, action: { type: "add_water", waterG: -1 } } })).toThrow();
+    expect(() => parseUiToWorkerMessage({
+      type: "INIT",
+      requestId: "r4",
+      seed: 1,
+      simulationVersion: "0.1",
+      speciesDataVersion: "1",
+      config: { fixedDtSeconds: BigInt(10) }
+    })).toThrow(/INIT\.config/);
   });
 
   it("produces deltas and renderer-side interpolation without Three.js objects", () => {
