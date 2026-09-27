@@ -120,7 +120,8 @@ function createDalotiaAdultPair(): DalotiaPopulation {
       dehydrationSeconds: 0,
       eggsLaid: 0,
       eggAccumulator: 0,
-      attackAccumulator: 0
+      attackAccumulator: 0,
+      hasMated: false
     });
   }
   return population;
@@ -228,6 +229,7 @@ function folsomiaParameters(): FolsomiaParameters {
     temperatureOptimumC: value(p.temperatureOptimumC),
     temperatureSigmaC: value(p.temperatureSigmaC),
     eggDevelopmentDays: value(p.eggDevelopmentDays),
+    eggHatchProbability: value(p.eggHatchProbability),
     adultDevelopmentDays: value(p.adultDevelopmentDays),
     reproductionIntervalDays: value(p.reproductionIntervalDays),
     clutchSize: value(p.clutchSize),
@@ -294,11 +296,12 @@ function bradysiaParameters(): BradysiaParameters {
     biomassPool: "bradysia_biomass",
     feedBufferPool: "bradysia_feed_buffer",
     fungusPool: "linnemannia_biomass",
-    rootTissuePools: [
-      "fittonia_structural",
-      "peperomia_structural",
-      "pilea_structural"
-    ],
+    // The current plant model has no explicit root compartment. Treating all
+    // structural shoot+root biomass as larval root food made essentially the
+    // entire producer standing crop globally edible. Until explicit root pools
+    // exist, the integrated ecosystem keeps Bradysia on the modeled fungal
+    // resource rather than inventing accessible root mass.
+    rootTissuePools: [],
     litterPool: "litter",
     atmospherePool: "atmosphere",
     substratePool: "substrate",
@@ -314,6 +317,7 @@ function bradysiaParameters(): BradysiaParameters {
     fecundityEggsPerFemale: value(p.fecundityEggsPerFemale),
     femaleProbability: value(p.femaleProbability),
     immatureSurvivalProbability: value(p.immatureSurvivalProbability),
+    reproductionReserveFraction: value(p.reproductionReserveFraction),
     larvalFeedingCarbonMgPerSecond:
       value(p.larvalFeedingCarbonMgPerSecond),
     assimilationEfficiency: value(p.assimilationEfficiency),
@@ -333,7 +337,10 @@ function bradysiaParameters(): BradysiaParameters {
   };
 }
 
-function dalotiaParameters(): DalotiaParameters {
+function dalotiaParameters(
+  captureProbabilityOverride?: number,
+  preyHalfSaturationCountOverride?: number
+): DalotiaParameters {
   const p = dalotiaFixture.parameters;
   return {
     biomassPool: "dalotia_biomass",
@@ -359,8 +366,10 @@ function dalotiaParameters(): DalotiaParameters {
     preOvipositionDays: value(p.preOvipositionDays),
     maxAdultPreyPerDay: value(p.maxAdultPreyPerDay),
     maxLarvalPreyPerDay: value(p.maxLarvalPreyPerDay),
-    preyHalfSaturationCount: value(p.preyHalfSaturationCount),
-    captureProbability: value(p.captureProbability),
+    preyHalfSaturationCount:
+      preyHalfSaturationCountOverride ?? value(p.preyHalfSaturationCount),
+    captureProbability:
+      captureProbabilityOverride ?? value(p.captureProbability),
     assimilationEfficiency: value(p.assimilationEfficiency),
     reserveTargetFraction: value(p.reserveTargetFraction),
     basalMetabolismCarbonMgPerSecond:
@@ -557,9 +566,13 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
     new DalotiaPredatorSystem(
       dalotia,
       { bradysia, folsomia },
-      dalotiaParameters(),
+      dalotiaParameters(
+        value(integratedFixture.calibration.dalotiaLocalCaptureProbability),
+        value(integratedFixture.calibration.dalotiaLocalPreyHalfSaturationCount)
+      ),
       habitat,
-      integratedFixture.spatial.dalotiaMatingRadiusCells
+      integratedFixture.spatial.dalotiaMatingRadiusCells,
+      integratedFixture.spatial.dalotiaPreyEncounterRadiusCells
     )
   ];
 

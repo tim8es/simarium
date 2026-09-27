@@ -16,8 +16,9 @@
       "dalotiaLarva": 0.01375,
       "dalotiaAdult": 0.0275
     },
-    "bradysiaMatingRadiusCells": 3,
-    "dalotiaMatingRadiusCells": 3
+    "bradysiaMatingRadiusCells": 6,
+    "dalotiaMatingRadiusCells": 3,
+    "dalotiaPreyEncounterRadiusCells": 3
   },
   "plants": {
     "fittonia_albivenis": {
@@ -78,9 +79,25 @@
     "validationSeeds": 20
   },
   "parameter_status": "CALIBRATED",
-  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. Spatial habitat is 60x30 substrate cells across the 120x60 cm footprint (~2 cm/cell). Movement event rates are scaled by the square of the cell-size ratio so the diffusive physical displacement remains comparable to the earlier 10 cm grid; spatial integration samples net random-walk displacement over each ecological timestep. These are not biological population-density claims. Full-ecosystem invariant tolerance is explicitly looser than kernel tests to account for floating-point accumulation over millions of conservative transfers; it remains sub-part-per-billion relative. Mating encounter radii are 3 cells (~6 cm) to compensate for endpoint-only encounter detection over 30-minute spatial timesteps; they are numerical encounter-kernel calibration values, not sensory-range claims.",
+  "notes": "Initial counts, clonal timings, movement rates and decomposition multipliers are bounded engineering calibration inputs. Spatial habitat is 60x30 substrate cells across the 120x60 cm footprint (~2 cm/cell). Movement event rates are scaled by the square of the cell-size ratio so the diffusive physical displacement remains comparable to the earlier 10 cm grid; spatial integration samples net random-walk displacement over each ecological timestep. These are not biological population-density claims. Full-ecosystem invariant tolerance is explicitly looser than kernel tests to account for floating-point accumulation over millions of conservative transfers; it remains sub-part-per-billion relative. Bradysia mating radius is 6 cells (~12 cm) and Dalotia mating/prey encounter radii are 3 cells (~6 cm). These are CALIBRATED numerical encounter-kernel values that compensate for endpoint-only encounter detection over 30-minute spatial timesteps, not sensory-range claims or global access. Bradysia radius 6 was selected using calibration seeds 0-4: with Dalotia capture 0.20 and prey radius 3, all 5/5 150-day runs retained Bradysia and 4/5 retained Dalotia; radius 3 retained Bradysia in 4/5. Validation seeds were not used for tuning. Dalotia prey lookup remains restricted to the bounded local neighborhood.",
   "numerics": {
     "invariantAbsoluteTolerance": 1e-8,
     "invariantRelativeTolerance": 5e-10
+  },
+  "calibration": {
+    "dalotiaLocalCaptureProbability": {
+      "value": 0.2,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "predation_2015",
+      "notes": "Phase-7 local encounter/capture proxy used only by the integrated spatial ecosystem. Calibrated on seeds 0-4 with a 3-cell prey encounter kernel and Bradysia mating radius 6; 0.20 produced Bradysia/Dalotia coexistence in multiple 150-day calibration runs without the prey wipeout seen at higher values. Phase-6 standalone chambers retain their separate 0.75 arena proxy. This is not a measured attack-success probability and validation seeds are not used for tuning."
+    },
+    "dalotiaLocalPreyHalfSaturationCount": {
+      "value": 3,
+      "unit": "dimensionless",
+      "status": "CALIBRATED",
+      "source": "model_internal",
+      "notes": "Competition-aware Phase-7 local prey-density response calibration for the radius-3 spatial encounter kernel. After adding explicit sharing of the local prey-density response among nearby active Dalotia hunters, calibration seeds 0-4 were swept at 3, 4, and 5 for 180 days. Value 3 retained Folsomia, Bradysia, and Dalotia in all 5/5 runs while final Folsomia stayed 76-575; value 4 lost Bradysia in 3/5 runs, and value 5 produced Folsomia in the ~15k-36k range in completed runs. This is an engineering calibration for the spatial model, not a measured biological constant; validation seeds are not used for tuning."
+    }
   }
 }

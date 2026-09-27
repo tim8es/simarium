@@ -1,6 +1,6 @@
 # Simarium — Implementation status
 
-Updated: 2026-09-25
+Updated: 2026-09-27
 
 ## Current stage
 
@@ -8,6 +8,7 @@ Updated: 2026-09-25
 - Phase 1 deterministic conservation kernel: **PASS**.
 - Phase 2 producer + detritus loop: **PASS** — three real plant species, water-limited physiology, decomposer environment response and sensitivity tests.
 - Phase 3 *Folsomia candida* lifecycle: **PASS (engineering gate)** — individual lifecycle, multi-generation genealogy, moisture-sensitive reproduction, feeding, starvation/death and corpse transfer.
+- Phase 7 full headless ecosystem: **ACCEPTED BASELINE PASS** — the accepted baseline passed a 100-seed × 180-day calibration batch plus an independent 100-seed × 180-day validation batch with unchanged `VALIDATION.md` gates. The current integration branch contains post-acceptance ecology fixes and must rerun the same full gate before that PASS is transferred to the integrated HEAD.
 
 ## Phase 1 evidence
 
@@ -167,3 +168,100 @@ Validated:
 - predators die without prey rather than receiving hidden food.
 
 The current predation encounter function is a headless density proxy. Spatially local encounters remain an explicit Phase-7/renderer-integration requirement and are not represented as already solved.
+
+
+## Phase 7 completion evidence — 2026-09-26
+
+**Status: ACCEPTED BASELINE COMPLETE — engineering gate PASS.**
+
+The evidence below applies to the accepted model head recorded in this section. The current integration branch contains subsequent ecology fixes (including diagnostics and local predator-competition corrections). Those changes are covered by regression/smoke tests but have not yet rerun the full 100-seed calibration + independent 100-seed validation gate. Therefore the accepted baseline remains valid evidence, while the integrated HEAD is **pending full Phase-7 revalidation**.
+
+Working branch:
+`agent/phase7-ecology`
+
+Accepted model head:
+`1aec050c3f0a9353c4d70e7655c8b8919ef62ce2`
+
+Green PR CI:
+`36258570107`
+
+Full Phase-7 acceptance workflow:
+`36258567197` — **PASS**.
+
+The workflow executed the documented split without changing the acceptance thresholds:
+- calibration: seeds `0-99`, 100 runs × 180 virtual days;
+- independent validation: seeds `100-199`, 100 runs × 180 virtual days;
+- validation seeds were not used for parameter tuning.
+
+### Accepted ecological calibration
+
+The integrated spatial Dalotia model keeps its standalone Phase-6 arena calibration separate from terrarium-scale calibration.
+
+Phase-7 integrated parameters:
+- `dalotiaLocalCaptureProbability = 0.20` — **CALIBRATED**;
+- `dalotiaLocalPreyHalfSaturationCount = 3` — **CALIBRATED**.
+
+The final density-response value was selected only from calibration seeds `0-4`. After explicit local predator-competition handling was added, a 180-day sweep tested values 3, 4 and 5. Value 3 retained Folsomia, Bradysia and Dalotia in all 5/5 calibration runs; the fixture documents the rejected alternatives and why they were rejected. It is an engineering spatial-model coefficient, not a measured biological constant.
+
+The Dalotia spatial model now accounts for multiple nearby active predators sharing the same local prey field. Without that competition term, every predator independently received the full local-density response, creating an artificial multiplicative kill-rate feedback in dense predator cohorts. This fix adds no new biological coefficient and is covered by a regression test.
+
+### 100 × 180-day calibration results — seeds 0-99
+
+- invariant-failure runs: `0/100`;
+- litter-N tracer returned to plant tissue: `100/100`;
+- all producer taxa persisted: `100%` (target >=80%);
+- at least one detritivore persisted: `100%` (target >=80%);
+- Folsomia persisted: `97%`;
+- Trichorhina persisted: `100%`;
+- Bradysia persisted: `78%` (target >=70%);
+- Dalotia persisted: `100%` (target >=70%);
+- post-start generation probability: Folsomia `1.0`, Trichorhina `1.0`, Bradysia `1.0`, Dalotia `1.0`;
+- mean final living: Fittonia `26`, Peperomia `9`, Pilea `21`, Folsomia `589.35`, Trichorhina `104`, Bradysia `3740.29`, Dalotia `1271.49`;
+- unchanged MVP acceptance evaluator: **PASS**.
+
+### Independent 100 × 180-day validation results — seeds 100-199
+
+- invariant-failure runs: `0/100`;
+- litter-N tracer returned to plant tissue: `100/100`;
+- all producer taxa persisted: `100%`;
+- at least one detritivore persisted: `100%`;
+- Folsomia persisted: `98%`;
+- Trichorhina persisted: `100%`;
+- Bradysia persisted: `79%`;
+- Dalotia persisted: `100%`;
+- post-start generation probability: Folsomia `1.0`, Trichorhina `1.0`, Bradysia `1.0`, Dalotia `1.0`;
+- mean final living: Fittonia `26`, Peperomia `9`, Pilea `21`, Folsomia `635.87`, Trichorhina `104`, Bradysia `3952.67`, Dalotia `1236.36`;
+- unchanged MVP acceptance evaluator: **PASS**.
+
+### Numerical and runtime interpretation
+
+All 200 accepted 180-day runs completed without invariant failures. The invariant layer checks C/N/P/H2O conservation and ledger validity, including negative/invalid pool detection, so the accepted batches contain no observed negative resource-pool or NaN/Infinity failures.
+
+No unbounded numerical growth was observed over the accepted 180-day horizon. The earlier runaway regimes were rejected during calibration; the accepted calibration and independent validation batches both completed with finite population summaries and similar mean final abundances across disjoint seed sets. This is finite-horizon engineering evidence, not a claim of mathematical asymptotic stability.
+
+Batch execution was also changed so completed worlds are compacted immediately and long-run seeds are isolated by process, preventing multi-seed calibration jobs from retaining every completed world in memory.
+
+### Nutrient tracer proof
+
+The accepted calibration and validation runs preserve the tracer provenance proof:
+
+```text
+litter nitrogen
+-> decomposer biomass
+-> available nutrient pool
+-> living plant structural tissue
+```
+
+The tracer reached plant tissue in all `200/200` accepted 180-day runs.
+
+### Phase-7 guardrails retained
+
+- no population cap;
+- no hidden rescue;
+- no hidden food injection;
+- no hidden spawn rule;
+- no weakening of `VALIDATION.md` acceptance targets;
+- validation seeds were not used to select the accepted calibration;
+- standalone Phase-6 Dalotia arena parameters remain separate from integrated Phase-7 spatial calibration.
+
+Phase 7 is therefore closed for the MVP engineering gate. The larger 365-day / >=500-seed stability evaluation remains a later robustness objective described in `VALIDATION.md`, not a prerequisite that was silently substituted for the documented 100-seed × 180-day calibration gate.

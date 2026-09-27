@@ -1,0 +1,384 @@
+{
+  "schema_version": 1,
+  "data_version": "0.6.0",
+  "id": "folsomia_candida",
+  "runtime_membership": "MVP",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Folsomia candida",
+    "synonyms": [],
+    "common_names": [
+      "white springtail"
+    ],
+    "taxonomy": {
+      "kingdom": "Animalia",
+      "phylum": "Arthropoda",
+      "class": "Collembola",
+      "order": "Entomobryomorpha",
+      "family": "Isotomidae",
+      "genus": "Folsomia",
+      "species": "candida"
+    },
+    "taxon_source": "oecd232"
+  },
+  "traits": [
+    "parthenogenetic",
+    "egg_juvenile_adult",
+    "fungivore",
+    "microbivore",
+    "substrate_walker",
+    "moisture_sensitive",
+    "temperature_response"
+  ],
+  "biology": {
+    "stages": [
+      "egg",
+      "juvenile",
+      "adult"
+    ],
+    "development_timing": {
+      "egg_development_days_20c": {
+        "value": 10,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "life_cycle_2024",
+        "notes": "Approximate egg hatching time at 20 C.",
+        "conditions": "Laboratory culture near 20 C.",
+        "confidence": "high"
+      },
+      "first_oviposition_midpoint_days_20c": {
+        "value": 22.5,
+        "unit": "day",
+        "status": "DERIVED",
+        "source": "life_cycle_2024",
+        "notes": "Midpoint of the reported approximately 21-24 day first-oviposition window; this is not a direct single-age measurement.",
+        "valid_range": {
+          "min": 21,
+          "max": 24
+        },
+        "conditions": "Laboratory culture near 20 C.",
+        "confidence": "high"
+      },
+      "high_food_interclutch_median_days": {
+        "value": 7,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "frontiers2023",
+        "notes": "Approximate median interval under high-food treatment; interval is strongly food- and age-dependent.",
+        "confidence": "high"
+      }
+    },
+    "lifespan": {
+      "adult_lifespan_days_20_21c": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "roeben2023",
+        "notes": "Longevity is strongly temperature-dependent; no single species constant should replace the current calibrated runtime cap."
+      }
+    },
+    "reproduction": {
+      "mode": "parthenogenetic",
+      "mate_required": false,
+      "parameters": {
+        "mean_clutch_size_observed": {
+          "value": 39,
+          "unit": "count",
+          "status": "MEASURED",
+          "source": "frontiers2023",
+          "notes": "Mean across observed clutches in the cited feeding/age study; not a fixed per-event fecundity.",
+          "valid_range": {
+            "min": 1,
+            "max": 178
+          },
+          "conditions": "Laboratory study spanning food treatments and maternal ages.",
+          "confidence": "high"
+        },
+        "first_clutch_mean_high_food": {
+          "value": 22,
+          "unit": "count",
+          "status": "MEASURED",
+          "source": "frontiers2023",
+          "notes": "Approximate mean first clutch under ad libitum/high-food treatment; diet dependent.",
+          "confidence": "high"
+        }
+      }
+    },
+    "body_mass": {
+      "summary": "Adult dry mass has a direct recent laboratory anchor; carbon is derived from a generic dry-mass carbon fraction and is therefore not measured.",
+      "parameters": {
+        "adult_dry_mass_mg": {
+          "value": 0.04,
+          "unit": "mg_dry",
+          "status": "MEASURED",
+          "source": "bak2025",
+          "notes": "Approximate dry mass for medium-sized adults aged 25 ± 3 days in that culture.",
+          "conditions": "25 ± 3 day laboratory adults.",
+          "confidence": "high"
+        },
+        "adult_carbon_mg": {
+          "value": 0.018,
+          "unit": "mg_C",
+          "status": "DERIVED",
+          "source": "bak2025",
+          "notes": "Derived from 0.04 mg dry mass using an assumed 45% carbon fraction; conversion is not species-specific.",
+          "confidence": "medium"
+        }
+      }
+    },
+    "water_dependence": {
+      "summary": "Highly water-permeable cuticle; reproduction is more moisture-sensitive than survival. Runtime water-pool mapping remains calibrated.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "Development and reproduction vary strongly with temperature; around 21 C is a useful response center, not a universal optimum.",
+      "parameters": {
+        "reproduction_response_center_c": {
+          "value": 21,
+          "unit": "degC",
+          "status": "DERIVED",
+          "source": "roeben2023",
+          "notes": "Approximate reproductive-response center used by the model; temperature response is broad and nonlinear.",
+          "confidence": "medium"
+        }
+      }
+    }
+  },
+  "ecology": {
+    "diet": [
+      "fungal hyphae",
+      "microbial biofilm",
+      "decaying organic matter"
+    ],
+    "prey": [],
+    "predators": [
+      "Dalotia coriaria in MVP predator-prey interactions"
+    ],
+    "habitat": [
+      "soil pores",
+      "litter",
+      "moist organic substrate"
+    ],
+    "locomotion": [
+      "substrate walking",
+      "springing escape"
+    ],
+    "activity_layer": [
+      "substrate and litter"
+    ],
+    "substrate_preference": [
+      "moist porous substrate"
+    ]
+  },
+  "simulation": {
+    "metabolism": {
+      "basal_metabolism_carbon": {
+        "value": 5e-10,
+        "unit": "mg_C/s",
+        "status": "CALIBRATED",
+        "source": "phase3_fixture",
+        "notes": "Engineering individual carbon-loss coefficient.",
+        "confidence": "low"
+      }
+    },
+    "reserve_thresholds": {
+      "reserve_target_fraction": {
+        "value": 0.25,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase3_fixture",
+        "notes": "Hunger-control parameter.",
+        "confidence": "low"
+      },
+      "reproduction_reserve_fraction": {
+        "value": 0.18,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase3_fixture",
+        "notes": "Runtime reserve gate for egg production.",
+        "confidence": "low"
+      }
+    },
+    "feeding_rates": {
+      "feeding_carbon_rate": {
+        "value": 2e-8,
+        "unit": "mg_C/s",
+        "status": "CALIBRATED",
+        "source": "phase3_fixture",
+        "notes": "Model ingestion coefficient calibrated with lifecycle/body-carbon constraints; not directly measured.",
+        "confidence": "low"
+      }
+    },
+    "assimilation": {
+      "assimilation_efficiency": {
+        "value": 0.65,
+        "unit": "dimensionless",
+        "status": "ASSUMED",
+        "source": "generic_microarthropod_proxy",
+        "notes": "Generic microarthropod proxy.",
+        "confidence": "low"
+      }
+    },
+    "critical_mass_thresholds": {
+      "maturation_carbon_fraction_of_adult": {
+        "value": 0.65,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase3_fixture",
+        "notes": "Engineering critical-mass gate.",
+        "confidence": "low"
+      }
+    },
+    "reproduction": {
+      "runtime_maturity_days": {
+        "value": 22,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase3_fixture",
+        "notes": "Placed in the measured 21-24 day first-oviposition window.",
+        "valid_range": {
+          "min": 21,
+          "max": 24
+        },
+        "confidence": "medium"
+      },
+      "runtime_reproduction_interval_days": {
+        "value": 7,
+        "unit": "day",
+        "status": "DERIVED",
+        "source": "frontiers2023",
+        "notes": "Current 7-day runtime simplification is consistent with the approximate high-food median inter-clutch interval; age/food dependence is intentionally not collapsed into a measured species constant.",
+        "confidence": "medium"
+      },
+      "runtime_clutch_size": {
+        "value": 6,
+        "unit": "count",
+        "status": "CALIBRATED",
+        "source": "phase3_fixture",
+        "notes": "Current runtime calibration. Literature reports substantially larger typical clutches under many laboratory conditions; do not silently overwrite this value.",
+        "confidence": "low"
+      }
+    },
+    "reproduction_costs": {
+      "egg_carbon_mg": {
+        "value": 0.0004,
+        "unit": "mg_C",
+        "status": "CALIBRATED",
+        "source": "phase3_fixture",
+        "notes": "Material allocation per egg; must remain jointly constrained by fecundity and adult mass.",
+        "confidence": "low"
+      }
+    },
+    "mortality_conditions": {
+      "starvation_death_days": {
+        "value": 10,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase3_fixture",
+        "notes": "Engineering starvation threshold.",
+        "confidence": "low"
+      },
+      "runtime_adult_lifespan_days": {
+        "value": 180,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase3_fixture",
+        "notes": "Provisional runtime lifespan near 20-21 C; literature shows strong temperature dependence.",
+        "confidence": "low"
+      }
+    },
+    "notes": [
+      "Highest-priority proposal: recalibrate clutch-size/reproduction dynamics against direct clutch distributions without replacing the current calibrated value until population-level regression targets are agreed."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "adult_length_mm": {
+        "value": 2,
+        "unit": "mm",
+        "status": "ASSUMED",
+        "source": "fountain2005",
+        "notes": "Order-of-magnitude adult body length used for rendering; morphology varies with age.",
+        "confidence": "medium"
+      }
+    },
+    "coloration": "White to translucent.",
+    "stage_differences": [
+      "Eggs are spherical/ovoid; juveniles are smaller, otherwise adult-like; adults increase in size through molts."
+    ],
+    "locomotion_style": "Fast substrate walking with occasional springing escape.",
+    "reference_images_asset_notes": [
+      "Use microscopy references; avoid making springing frequency an ecological rate without locomotion measurements."
+    ]
+  },
+  "sources": [
+    {
+      "id": "oecd232",
+      "category": "official_standard",
+      "citation": "OECD Test Guideline 232: Collembolan Reproduction Test in Soil.",
+      "url": "https://doi.org/10.1787/9789264076273-en",
+      "confidence": "high"
+    },
+    {
+      "id": "fountain2005",
+      "category": "peer_reviewed",
+      "citation": "Fountain & Hopkin (2005), Folsomia candida: a 'standard' soil arthropod.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/15355236/",
+      "confidence": "high"
+    },
+    {
+      "id": "life_cycle_2024",
+      "category": "peer_reviewed",
+      "citation": "Environmental Toxicology and Chemistry (2024), F. candida life-stage constraints.",
+      "url": "https://academic.oup.com/etc/article/43/5/1173/7829375",
+      "confidence": "high"
+    },
+    {
+      "id": "roeben2023",
+      "category": "peer_reviewed",
+      "citation": "Roeben et al. (2023), temperature effects on Folsomia candida life history.",
+      "url": "https://doi.org/10.1016/j.pedobi.2022.150847",
+      "confidence": "high"
+    },
+    {
+      "id": "frontiers2023",
+      "category": "peer_reviewed",
+      "citation": "Frontiers in Ecology and Evolution (2023), food- and age-dependent reproduction in Folsomia candida.",
+      "url": "https://doi.org/10.3389/fevo.2023.1112045",
+      "confidence": "high"
+    },
+    {
+      "id": "bak2025",
+      "category": "peer_reviewed",
+      "citation": "Bak et al. (2025), laboratory adult dry-mass anchor for Folsomia candida.",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12295829/",
+      "confidence": "high"
+    },
+    {
+      "id": "drought2001",
+      "category": "peer_reviewed",
+      "citation": "Holmstrup et al., water-balance physiology in Folsomia candida.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/11472765/",
+      "confidence": "high"
+    },
+    {
+      "id": "drought2011",
+      "category": "peer_reviewed",
+      "citation": "Soil Biology & Biochemistry drought/reproduction study in Folsomia candida.",
+      "url": "https://doi.org/10.1016/j.soilbio.2010.11.028",
+      "confidence": "high"
+    },
+    {
+      "id": "generic_microarthropod_proxy",
+      "category": "proxy",
+      "citation": "Generic microarthropod assimilation proxy used by Simarium.",
+      "confidence": "low"
+    },
+    {
+      "id": "phase3_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase3-folsomia.json.",
+      "confidence": "low"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0f1716;
+  color: #e9f1ef;
+}
+
+* { box-sizing: border-box; }
+html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { background: #0f1716; }
+
+.benchmark-canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+.camera-controls {
+  position: fixed;
+  z-index: 30;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(220, 240, 234, 0.16);
+  border-radius: 10px;
+  background: rgba(9, 15, 14, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.camera-controls button {
+  appearance: none;
+  border: 1px solid rgba(220, 240, 234, 0.18);
+  border-radius: 7px;
+  padding: 7px 10px;
+  color: #dce9e5;
+  background: rgba(255, 255, 255, 0.04);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.camera-controls button.active,
+.camera-controls button:hover {
+  background: rgba(150, 199, 183, 0.18);
+  border-color: rgba(176, 224, 209, 0.42);
+}
+
+.perf-hud {
+  position: fixed;
+  z-index: 30;
+  top: 16px;
+  right: 16px;
+  width: 250px;
+  padding: 14px 16px;
+  border: 1px solid rgba(220, 240, 234, 0.16);
+  border-radius: 12px;
+  background: rgba(9, 15, 14, 0.8);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.perf-hud h1 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.perf-grid {
+  display: grid;
+  gap: 5px;
+}
+
+.perf-grid > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+}
+
+.perf-grid span { color: #9db0aa; }
+.perf-grid strong { font-variant-numeric: tabular-nums; font-weight: 600; }
+.perf-note { margin: 10px 0 0; color: #71857f; font-size: 10px; }
+
+.fatal-error {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #111817;
+  color: #f3d8d4;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+}

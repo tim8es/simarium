@@ -47,6 +47,7 @@ export interface DalotiaIndividual {
   eggsLaid: number;
   eggAccumulator: number;
   attackAccumulator: number;
+  hasMated: boolean;
 }
 
 export interface DalotiaRecord {
@@ -297,6 +298,33 @@ export interface DalotiaPreyContext {
 }
 
 const DAY = 86400;
+const PREDATION_AGGREGATE_TOLERANCE = 1e-8;
+
+function reconcilePreyMaterial(
+  requested: Material,
+  available: Material
+): Material {
+  const reconciled = cloneMaterial(requested);
+  for (const key of ["carbonMg", "nitrogenMg", "phosphorusMg", "waterG"] as const) {
+    if (reconciled[key] <= available[key]) continue;
+
+    const deficit = reconciled[key] - available[key];
+    const tolerance =
+      PREDATION_AGGREGATE_TOLERANCE +
+      Math.abs(available[key]) * PREDATION_AGGREGATE_TOLERANCE;
+    if (deficit > tolerance) {
+      throw new Error(
+        `Prey material exceeds aggregate pool for ${key}: individual=${reconciled[key]} ledger=${available[key]}`
+      );
+    }
+
+    // The ledger is authoritative for conserved mass. Clamp only residuals
+    // already accepted by the prey aggregate audit; larger mismatches remain
+    // hard errors rather than becoming hidden predator food.
+    reconciled[key] = available[key];
+  }
+  return reconciled;
+}
 
 function temperatureResponse(
   temperatureC: number,
@@ -323,13 +351,15 @@ function stageWaterTarget(stage: DalotiaStage, adultBodyWaterG: number): number 
 
 export class DalotiaPredatorSystem implements SimSystem {
   readonly name = "dalotia-predator";
+  private readonly unavailableThisStep = new Set<number>();
 
   constructor(
     readonly population: DalotiaPopulation,
     readonly prey: DalotiaPreyContext,
     private readonly p: DalotiaParameters,
     private readonly spatial?: LocalEncounterIndex,
-    private readonly matingRadiusCells = 1
+    private readonly matingRadiusCells = 1,
+    private readonly preyEncounterRadiusCells = 1
   ) {
     if (
       p.captureProbability < 0 ||
@@ -348,6 +378,7 @@ export class DalotiaPredatorSystem implements SimSystem {
   }
 
   step(world: WorldState, dtSeconds: number): void {
+    this.unavailableThisStep.clear();
     const temperature = world.environment.temperatureC.mean();
     const development = temperatureResponse(
       temperature,
@@ -359,7 +390,10 @@ export class DalotiaPredatorSystem implements SimSystem {
       substrateWater /
       Math.max(1e-12, substrateWater + this.p.moistureHalfSaturationWaterG);
 
-    const current = [...this.population.living()];
+    const current = this.population.living();
+    let preyChanged = false;
+    let totalMetabolicCarbon = 0;
+    const carbonExhausted: DalotiaIndividual[] = [];
     for (const individual of current) {
       individual.ageSeconds += dtSeconds;
       individual.stageAgeSeconds += dtSeconds * development;
@@ -380,11 +414,19 @@ export class DalotiaPredatorSystem implements SimSystem {
       }
 
       this.waterBalance(world, individual, moisture, dtSeconds);
-      this.metabolize(world, individual, development, dtSeconds);
-      if (!individual.alive) continue;
+      totalMetabolicCarbon += this.metabolize(
+        individual,
+        development,
+        dtSeconds
+      );
+      if (individual.material.carbonMg <= 1e-12) {
+        this.unavailableThisStep.add(individual.id);
+        carbonExhausted.push(individual);
+        continue;
+      }
 
       if (individual.stage === "larva" || individual.stage === "adult") {
-        this.hunt(world, individual, dtSeconds);
+        preyChanged = this.hunt(world, individual, dtSeconds) || preyChanged;
       }
       if (individual.stage === "adult") {
         this.reproduce(world, individual, moisture, dtSeconds);
@@ -393,15 +435,52 @@ export class DalotiaPredatorSystem implements SimSystem {
       this.evaluateStress(world, individual, moisture, dtSeconds);
     }
 
+    if (totalMetabolicCarbon > 0) {
+      const ledgerCarbon = world.ledger.getPool(this.p.biomassPool).carbonMg;
+      const livingCarbon = this.population.totalLivingMaterial().carbonMg;
+      const reconciledMetabolicCarbon = Math.max(
+        0,
+        Math.min(ledgerCarbon, ledgerCarbon - livingCarbon)
+      );
+      const reconciliationTolerance =
+        PREDATION_AGGREGATE_TOLERANCE +
+        Math.abs(totalMetabolicCarbon) * PREDATION_AGGREGATE_TOLERANCE;
+      if (
+        reconciledMetabolicCarbon >
+        totalMetabolicCarbon + reconciliationTolerance
+      ) {
+        throw new Error(
+          `Dalotia metabolic reconciliation exceeds accumulated flux: accumulated=${totalMetabolicCarbon} reconciled=${reconciledMetabolicCarbon}`
+        );
+      }
+      if (reconciledMetabolicCarbon > 0) {
+        world.ledger.transfer(
+          this.p.biomassPool,
+          this.p.atmospherePool,
+          { ...zeroMaterial(), carbonMg: reconciledMetabolicCarbon }
+        );
+      }
+    }
+    for (const individual of carbonExhausted) {
+      this.die(world, individual, "carbon_exhaustion");
+    }
+
     this.population.assertMatchesAggregate(
       world.ledger.getPool(this.p.biomassPool)
     );
-    this.prey.bradysia.assertMatchesAggregate(
-      world.ledger.getPool(this.p.bradysiaBiomassPool)
-    );
-    this.prey.folsomia.assertMatchesAggregate(
-      world.ledger.getPool(this.p.folsomiaBiomassPool)
-    );
+    // Bradysia/Folsomia own lifecycle systems audit their aggregates every
+    // tick. Re-audit here only on ticks where Dalotia actually mutated prey.
+    // This preserves predator-transfer verification without O(prey) duplicate
+    // scans on the overwhelmingly common no-kill ticks.
+    if (preyChanged) {
+      this.prey.bradysia.assertMatchesAggregate(
+        world.ledger.getPool(this.p.bradysiaBiomassPool)
+      );
+      this.prey.folsomia.assertMatchesAggregate(
+        world.ledger.getPool(this.p.folsomiaBiomassPool),
+        1e-8
+      );
+    }
   }
 
   private advanceStage(world: WorldState, individual: DalotiaIndividual): void {
@@ -472,11 +551,10 @@ export class DalotiaPredatorSystem implements SimSystem {
   }
 
   private metabolize(
-    world: WorldState,
     individual: DalotiaIndividual,
     temperatureSuitability: number,
     dtSeconds: number
-  ): void {
+  ): number {
     const cost = Math.min(
       individual.material.carbonMg,
       this.p.basalMetabolismCarbonMgPerSecond *
@@ -486,25 +564,24 @@ export class DalotiaPredatorSystem implements SimSystem {
     );
 
     if (cost > 0) {
-      world.ledger.transfer(
-        this.p.biomassPool,
-        this.p.atmospherePool,
-        { ...zeroMaterial(), carbonMg: cost }
-      );
       individual.material.carbonMg -= cost;
-      individual.reserveCarbonMg = Math.max(0, individual.reserveCarbonMg - cost);
+      individual.reserveCarbonMg = Math.max(
+        0,
+        individual.reserveCarbonMg - cost
+      );
     }
-
-    if (individual.material.carbonMg <= 1e-12) {
-      this.die(world, individual, "carbon_exhaustion");
-    }
+    return cost;
   }
 
-  private hunt(
-    world: WorldState,
-    predator: DalotiaIndividual,
-    dtSeconds: number
-  ): void {
+  private feedingDrive(predator: DalotiaIndividual): number {
+    if (
+      !predator.alive ||
+      this.unavailableThisStep.has(predator.id) ||
+      (predator.stage !== "larva" && predator.stage !== "adult")
+    ) {
+      return 0;
+    }
+
     const reserveTarget =
       predator.material.carbonMg * this.p.reserveTargetFraction;
     const hunger =
@@ -520,20 +597,46 @@ export class DalotiaPredatorSystem implements SimSystem {
                 Math.max(1e-12, this.p.adultCarbonTargetMg)
           )
         : 0;
-    const feedingDrive = Math.max(hunger, growthNeed);
-    if (feedingDrive <= 0) return;
+    return Math.max(hunger, growthNeed);
+  }
 
-    const candidates = this.collectPrey(predator);
+  private hunt(
+    world: WorldState,
+    predator: DalotiaIndividual,
+    dtSeconds: number
+  ): boolean {
+    const feedingDrive = this.feedingDrive(predator);
+    if (feedingDrive <= 0) return false;
+
+    const nearbyRefs =
+      this.spatial === undefined
+        ? undefined
+        : this.spatial.nearbyRefs(
+            `dalotia_coriaria#${predator.id}`,
+            this.preyEncounterRadiusCells
+          );
+    const candidates = this.collectPrey(predator, nearbyRefs);
     const available = candidates.length;
-    if (available === 0) return;
+    if (available === 0) return false;
 
     const maxPerDay =
       predator.stage === "adult"
         ? this.p.maxAdultPreyPerDay
         : this.p.maxLarvalPreyPerDay;
+    // In a spatial world, nearby predators share the same local prey field.
+    // Without this denominator every predator receives the full local-density
+    // response independently, so dense offspring cohorts multiply kill rate
+    // even though they are competing for the same prey. Scale the existing
+    // half-saturation by the number of active local hunters; no new
+    // biological coefficient is introduced.
+    const localHunterCount =
+      nearbyRefs === undefined ? 1 : this.countCompetingHunters(candidates);
     const densityFactor =
       available /
-      Math.max(1e-12, available + this.p.preyHalfSaturationCount);
+      Math.max(
+        1e-12,
+        available + this.p.preyHalfSaturationCount * localHunterCount
+      );
 
     predator.attackAccumulator +=
       maxPerDay *
@@ -545,16 +648,42 @@ export class DalotiaPredatorSystem implements SimSystem {
     let attempts = Math.floor(predator.attackAccumulator);
     predator.attackAccumulator -= attempts;
 
+    let consumedAny = false;
     while (attempts > 0) {
       const liveCandidates = this.collectPrey(predator);
       if (liveCandidates.length === 0) break;
       const target = liveCandidates[world.rng.nextInt(liveCandidates.length)]!;
       this.consumePrey(world, predator, target);
+      consumedAny = true;
       attempts--;
     }
+    return consumedAny;
   }
 
-  private collectPrey(predator: DalotiaIndividual): PreyCandidate[] {
+  private countCompetingHunters(candidates: readonly PreyCandidate[]): number {
+    if (this.spatial === undefined) return 1;
+
+    const hunterIds = new Set<number>();
+    for (const target of candidates) {
+      const preyRef = `${target.species}#${target.individual.id}`;
+      for (const ref of this.spatial.nearbyRefs(
+        preyRef,
+        this.preyEncounterRadiusCells
+      )) {
+        if (!ref.startsWith("dalotia_coriaria#")) continue;
+        const id = Number(ref.slice("dalotia_coriaria#".length));
+        if (!Number.isInteger(id) || id <= 0) continue;
+        const candidate = this.population.get(id);
+        if (this.feedingDrive(candidate) > 0) hunterIds.add(id);
+      }
+    }
+    return Math.max(1, hunterIds.size);
+  }
+
+  private collectPrey(
+    predator: DalotiaIndividual,
+    nearbyRefs?: readonly string[]
+  ): PreyCandidate[] {
     if (this.spatial === undefined) {
       const bradysia: PreyCandidate[] = this.prey.bradysia
         .living()
@@ -578,7 +707,10 @@ export class DalotiaPredatorSystem implements SimSystem {
     const predatorRef = `dalotia_coriaria#${predator.id}`;
     const candidates: PreyCandidate[] = [];
 
-    for (const ref of this.spatial.nearbyRefs(predatorRef, 1)) {
+    const refs =
+      nearbyRefs ??
+      this.spatial.nearbyRefs(predatorRef, this.preyEncounterRadiusCells);
+    for (const ref of refs) {
       if (ref.startsWith("bradysia_impatiens#")) {
         const id = Number(ref.slice("bradysia_impatiens#".length));
         if (!Number.isInteger(id) || id <= 0) continue;
@@ -619,13 +751,16 @@ export class DalotiaPredatorSystem implements SimSystem {
     predator: DalotiaIndividual,
     target: PreyCandidate
   ): void {
-    const preyMaterial = cloneMaterial(target.individual.material);
-    if (preyMaterial.carbonMg <= 0) return;
-
     const sourcePool =
       target.species === "bradysia_impatiens"
         ? this.p.bradysiaBiomassPool
         : this.p.folsomiaBiomassPool;
+    const preyMaterial = reconcilePreyMaterial(
+      cloneMaterial(target.individual.material),
+      world.ledger.getPool(sourcePool)
+    );
+    if (preyMaterial.carbonMg <= 0) return;
+
     world.ledger.transfer(sourcePool, this.p.feedBufferPool, preyMaterial);
 
     const assimilated = scaleMaterial(
@@ -680,6 +815,7 @@ export class DalotiaPredatorSystem implements SimSystem {
       const candidate = this.population.get(id);
       if (
         candidate.alive &&
+        !this.unavailableThisStep.has(candidate.id) &&
         candidate.stage === "adult" &&
         candidate.sex === "male"
       ) {
@@ -699,6 +835,16 @@ export class DalotiaPredatorSystem implements SimSystem {
     if (female.adultAgeSeconds < this.p.preOvipositionDays * DAY) return;
     if (female.adultAgeSeconds > this.p.reproductivePeriodDays * DAY) return;
     if (female.eggsLaid >= this.p.lifetimeFecundity) return;
+    // A local encounter is required to establish mating, but continuous
+    // male co-location is not required for every subsequent egg-allocation
+    // step. Pair-assay evidence supports sexual reproduction but does not
+    // measure a remating interval, so mating persistence is an explicit
+    // model assumption rather than repeated endpoint mating.
+    if (!female.hasMated && this.hasMate(female)) {
+      female.hasMated = true;
+    }
+    if (!female.hasMated) return;
+
     if (moisture < this.p.reproductionMoistureThreshold) return;
 
     const reserveFraction =
@@ -707,8 +853,8 @@ export class DalotiaPredatorSystem implements SimSystem {
         : 0;
     if (reserveFraction < this.p.reproductionReserveFraction) return;
 
-    if (!this.hasMate(female)) return;
-
+    // Once mated, stored sperm is sufficient for later reserve-funded
+    // oviposition; do not require the male to remain locally co-located.
     const eggsPerDay =
       this.p.lifetimeFecundity /
       Math.max(1e-12, this.p.reproductivePeriodDays);
@@ -718,9 +864,14 @@ export class DalotiaPredatorSystem implements SimSystem {
     if (count <= 0) return;
     count = Math.min(count, this.p.lifetimeFecundity - female.eggsLaid);
 
+    const minimumReserve =
+      female.material.carbonMg * this.p.reproductionReserveFraction;
+    const reproductiveReserve = Math.max(
+      0,
+      female.reserveCarbonMg - minimumReserve
+    );
     const maxAffordable = Math.floor(
-      Math.max(0, female.material.carbonMg * 0.45) /
-        Math.max(1e-12, this.p.eggCarbonMg)
+      reproductiveReserve / Math.max(1e-12, this.p.eggCarbonMg)
     );
     count = Math.min(count, maxAffordable);
     if (count <= 0) return;
@@ -775,7 +926,8 @@ export class DalotiaPredatorSystem implements SimSystem {
           dehydrationSeconds: 0,
           eggsLaid: 0,
           eggAccumulator: 0,
-          attackAccumulator: 0
+          attackAccumulator: 0,
+          hasMated: false
         })
       );
     }
@@ -866,7 +1018,8 @@ export function seedDalotiaLarvae(input: {
       dehydrationSeconds: 0,
       eggsLaid: 0,
       eggAccumulator: 0,
-      attackAccumulator: 0
+      attackAccumulator: 0,
+      hasMated: false
     });
   }
   return population;

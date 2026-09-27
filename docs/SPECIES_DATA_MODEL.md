@@ -1,232 +1,130 @@
 # Simarium — Species data model
 
-Status: normative data specification
+Status: normative data specification  
+Data architecture: v2 catalog + v1 normalized profiles
 
 ## 1. Goal
 
-Biological rules and parameters must be data-driven and auditable.
+Biological content must be data-driven, auditable and extensible to dozens of species without embedding new constants in simulation systems.
 
-A developer must never need to invent a biological constant inside system code.
+Simulation algorithms consume species data. They do not decide whether a number is measured biology, a derivation, an assumption or an engineering calibration.
 
-## 2. Required provenance
+## 2. Files and authority
 
-Every quantitative parameter has:
+- `data/species.json` — authoritative MVP species catalog. Membership here means the taxon is approved for MVP runtime.
+- `data/species.yml` — human-readable compatibility mirror. JSON is authoritative.
+- `data/species-profiles/<id>.json` — normalized profile for each MVP taxon.
+- `data/examples/` — schema examples for real taxa that are **not** runtime members.
+- `schemas/species.schema.json` — catalog schema.
+- `schemas/species-profile.schema.json` — normalized profile and quantitative provenance schema.
+- `packages/sim-data/src/validation.ts` — runtime validation used by tests/tools.
 
-```yaml
-value:
-unit:
-status: MEASURED | DERIVED | ASSUMED | CALIBRATED | TBD
-source:
-source_locator:
-conditions:
-confidence: high | medium | low
-notes:
+A future species must not enter runtime merely because a profile file exists. It enters MVP/runtime only when explicitly added to `data/species.json`.
+
+## 3. Quantitative parameter contract
+
+Every biological or simulation number is represented as an object:
+
+```json
+{
+  "value": 10,
+  "unit": "day",
+  "status": "MEASURED",
+  "source": "paper_id",
+  "notes": "Mean at 20 C.",
+  "conditions": "Laboratory culture at 20 C.",
+  "confidence": "high",
+  "valid_range": { "min": 9, "max": 11 },
+  "uncertainty": "±0.5 d SE"
+}
 ```
 
-For a range:
+Allowed statuses:
 
-```yaml
-min:
-max:
-central:
-unit:
-...
-```
+- `MEASURED` — directly reported for the same taxon/quantity under documented conditions.
+- `DERIVED` — mathematically derived from reported evidence; derivation must be described.
+- `ASSUMED` — defensible proxy/assumption, not directly measured for this parameter.
+- `CALIBRATED` — chosen/fitted for model behavior or an engineering gate.
+- `TBD` — evidence is missing.
 
-## 3. Canonical species record
+### TBD rule
 
-```yaml
-id: folsomia_candida
-scientific_name: Folsomia candida
-common_names:
-  en: springtail
-taxonomy:
-  kingdom:
-  phylum:
-  class:
-  order:
-  family:
-  genus:
-  species:
-taxon_source:
-native_range:
-biome:
-ecological_roles: []
+Unknown values use `"status": "TBD", "value": null`.
 
-life_cycle:
-  reproduction_mode:
-  sex_system:
-  stages: []
-  transitions: {}
+A placeholder such as `0`, `1` or `100` is forbidden for an unknown quantity. Avoiding fake precision is more important than making every field immediately executable.
 
-environment:
-  temperature:
-    preferred:
-    viable:
-    lethal:
-  humidity:
-  substrate_moisture:
-  light_response:
+## 4. Source provenance
 
-body:
-  adult_mass:
-  carbon_fraction:
-  water_fraction:
-  cn_ratio:
-  cp_ratio:
+Every parameter `source` must resolve to an entry in the profile `sources` array.
 
-metabolism:
-  basal_rate:
-  temperature_response:
-  starvation_tolerance:
-  desiccation_tolerance:
+Source categories encode provenance class:
 
-diet:
-  resources: []
-  stage_specific: {}
-  assimilation_efficiency:
+1. `peer_reviewed`
+2. `official_standard`
+3. `taxonomic_database`
+4. `university_extension`
+5. `specialist_reference`
+6. `commercial_proxy`
+7. `proxy`
+8. `model_internal`
 
-behavior:
-  locomotion_modes: []
-  habitat_affordances: []
-  sensor_profile:
-  actions: []
+The last three categories are not promoted to biological evidence merely because a value survives calibration.
 
-reproduction:
-  maturity:
-  fecundity:
-  egg_mass:
-  reproductive_cost:
-  mate_required:
-  oviposition_habitat:
+## 5. Normalized SpeciesProfile
 
-mortality:
-  senescence:
-  stress_hazards:
+Every profile contains:
 
-render:
-  scale:
-  animation_set:
-  lod_group:
+- `identity`: accepted scientific name, synonyms, common names, taxonomy and taxon source;
+- `biology`: stages, development timing, lifespan, reproduction, body mass, water dependence and thermal response;
+- `ecology`: diet, prey, predators, habitat, locomotion, activity layer and substrate preference;
+- `simulation`: metabolism, reserves, feeding, assimilation, critical-mass thresholds, reproduction, costs and mortality conditions;
+- `render`: approximate dimensions, coloration, stage differences, locomotion style and asset/reference notes;
+- `sources`: explicit source registry.
 
-sources: []
-```
+Plant and microbial needs are represented through the same top-level contract. Irrelevant quantitative maps may be empty; unresolved values that matter should be represented as `TBD`.
 
-Fields irrelevant to a taxon may be null with an explanation.
+## 6. Reusable behavioral traits
 
-## 4. Plant extension
+The controlled trait vocabulary currently includes:
 
-Plants add:
+- reproduction: `sexual`, `parthenogenetic`, `clonal`;
+- lifecycle/representation: `egg_juvenile_adult`, `egg_larva_pupa_adult`, `manca_juvenile_adult`, `ramet_clonal_lifecycle`, `biomass_field`;
+- trophic: `producer`, `detritivore`, `fungivore`, `microbivore`, `predator`, `root_feeder`, `saprotroph`, `litter_source`;
+- locomotion/layer: `substrate_walker`, `flyer`, `under_litter`, `groundcover`;
+- response: `moisture_sensitive`, `temperature_response`.
 
-```yaml
-plant:
-  growth_form:
-  photosynthesis:
-    amax:
-    k_light:
-    temperature_curve:
-  allocation:
-    leaf:
-    root:
-    stem:
-    reserve:
-  leaf:
-    sla:
-    lifespan:
-    senescence:
-  roots:
-    depth:
-    uptake_capacity:
-  reproduction:
-    modes: [clonal, sexual]
-    mvp_mode:
-    clonal_cost:
-    seed_model:
-```
+Traits are capabilities/hints, not algorithms. A profile may have arbitrary named stages even when no lifecycle shorthand trait exists. The `Stratiolaelaps scimitus` example proves a five-stage mite lifecycle can be represented without adding it to runtime.
 
-## 5. Microbe extension
+## 7. Calibration boundary
 
-Microbes add:
+Finding a different literature value does **not** automatically replace a `CALIBRATED` parameter.
 
-```yaml
-microbe:
-  representation: biomass_field
-  substrate_preferences:
-  vmax:
-  half_saturation:
-  carbon_use_efficiency:
-  cn_ratio:
-  cp_ratio:
-  moisture_curve:
-  temperature_curve:
-  mineralization:
-```
+For any proposed change record:
 
-## 6. Species currently approved for MVP
+1. current runtime value and status;
+2. literature value/range;
+3. species/stage and experimental conditions;
+4. why the quantities are comparable or not comparable;
+5. target observable to recalibrate;
+6. proposed bounds/objective;
+7. regression/ecosystem tests affected.
 
-- `fittonia_albivenis`
-- `peperomia_caperata`
-- `pilea_depressa`
-- `folsomia_candida`
-- `trichorhina_tomentosa`
-- `bradysia_impatiens`
-- `dalotia_coriaria`
-- `linnemannia_elongata`
-- `bacillus_subtilis`
+Measured biology and engineering calibration can coexist in the same profile as separate named parameters.
 
-No additional species enters MVP without:
-1. source review;
-2. ecological role justification;
-3. parameter coverage check;
-4. test additions.
+## 8. Adding a new species
 
-## 7. Missing-data policy
+1. Confirm the accepted taxon with an accepted taxonomic source.
+2. Create `data/species-profiles/<id>.json`.
+3. Fill identity/ecology and evidence-backed biology.
+4. Mark missing numerical quantities `TBD`; do not invent defaults.
+5. Add reusable traits; add a new trait only when it represents a reusable capability.
+6. Run runtime provenance validation and schema contract tests.
+7. Review weak parameters and calibration needs.
+8. Only after source review, ecological-role justification and parameter-coverage review, add the taxon to `data/species.json`.
+9. Simulation support for a genuinely new behavior is a separate algorithm proposal.
 
-If literature does not provide a parameter:
+## 9. Versioning
 
-1. look for same species under comparable conditions;
-2. derive from measured quantities when mathematically justified;
-3. use a related taxon only if explicitly documented;
-4. otherwise mark ASSUMED/CALIBRATED;
-5. keep sensitivity bounds;
-6. add the parameter to uncertainty analysis.
+Species data uses its own `data_version`.
 
-Never silently copy a value from another species.
-
-## 8. Calibration policy
-
-A CALIBRATED parameter must record:
-- target observable;
-- calibration dataset/range;
-- objective function;
-- bounds;
-- date/model version.
-
-Example:
-
-```yaml
-parameter: feeding.search_radius
-status: CALIBRATED
-target: prey encounter rate under literature-density scenario
-bounds: [0.01, 0.08]
-unit: m
-```
-
-## 9. Validation
-
-CI validates:
-- schema;
-- units;
-- source presence for MEASURED/DERIVED values;
-- no runtime-critical TBD field;
-- ranges are ordered;
-- life-stage graph is acyclic except explicit adult/reproduction loops;
-- diet resource IDs exist;
-- render IDs exist.
-
-## 10. Versioning
-
-Species data has its own semantic/data version.
-
-A saved world records the exact species-data version used.
-Changing biological constants must invalidate deterministic regression hashes intentionally.
+Changes to runtime biological constants should intentionally invalidate deterministic regression hashes/snapshots that depend on them. Pure provenance/documentation additions should not alter simulation behavior.

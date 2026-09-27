@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "data_version": "0.6.0",
+  "id": "peperomia_caperata",
+  "runtime_membership": "MVP",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Peperomia caperata",
+    "synonyms": [],
+    "common_names": [
+      "emerald ripple peperomia"
+    ],
+    "taxonomy": {
+      "kingdom": "Plantae",
+      "phylum": "Tracheophyta",
+      "class": "Magnoliopsida",
+      "order": "Piperales",
+      "family": "Piperaceae",
+      "genus": "Peperomia",
+      "species": "caperata"
+    },
+    "taxon_source": "kew"
+  },
+  "traits": [
+    "clonal",
+    "ramet_clonal_lifecycle",
+    "producer",
+    "litter_source",
+    "moisture_sensitive",
+    "temperature_response"
+  ],
+  "biology": {
+    "stages": [
+      "ramet_young",
+      "ramet_adult",
+      "senescent"
+    ],
+    "development_timing": {
+      "maturity_days_species_evidence": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "ncsu",
+        "notes": "No direct species-specific maturation time is frozen."
+      }
+    },
+    "lifespan": {
+      "ramet_lifespan_days_species_evidence": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "ncsu",
+        "notes": "Leaf/ramet lifespan remains unresolved."
+      }
+    },
+    "reproduction": {
+      "mode": "clonal_mvp",
+      "mate_required": false,
+      "parameters": {
+        "clone_interval_days_species_evidence": {
+          "value": null,
+          "unit": "day",
+          "status": "TBD",
+          "source": "ncsu",
+          "notes": "Vegetative propagation is known horticulturally, but the model interval remains calibration."
+        }
+      }
+    },
+    "body_mass": {
+      "summary": "No species-specific whole-plant dry-mass anchor is frozen.",
+      "parameters": {
+        "adult_ramet_dry_mass_mg": {
+          "value": null,
+          "unit": "mg_dry",
+          "status": "TBD",
+          "source": "shin2023",
+          "notes": "Controlled growth data exist, but a transferable whole-ramet mass anchor has not been extracted."
+        }
+      }
+    },
+    "water_dependence": {
+      "summary": "Fleshy leaves buffer water, but the exact storage and stress coefficients in Simarium are calibrated.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "A controlled LED study documents 20 ± 1 C as an experimental condition; this is not a universal optimum.",
+      "parameters": {
+        "documented_growth_temperature_c": {
+          "value": 20,
+          "unit": "degC",
+          "status": "MEASURED",
+          "source": "shin2023",
+          "notes": "Controlled-study chamber temperature, not a physiological optimum.",
+          "uncertainty": "±1 C reported experimental control",
+          "conditions": "Five-week controlled LED experiment.",
+          "confidence": "high"
+        }
+      }
+    }
+  },
+  "ecology": {
+    "diet": [
+      "photoautotrophic producer"
+    ],
+    "prey": [],
+    "predators": [
+      "herbivores not explicitly modeled in MVP"
+    ],
+    "habitat": [
+      "wet tropical understory",
+      "indoor/terrarium understory proxy"
+    ],
+    "locomotion": [
+      "clonal/vegetative spread"
+    ],
+    "activity_layer": [
+      "low canopy"
+    ],
+    "substrate_preference": [
+      "moist but well-drained substrate"
+    ]
+  },
+  "simulation": {
+    "metabolism": {
+      "maintenance_respiration_rate": {
+        "value": 1.3e-8,
+        "unit": "1/s",
+        "status": "ASSUMED",
+        "source": "generic_plant_proxy",
+        "notes": "Generic plant proxy; not species-measured.",
+        "confidence": "low"
+      }
+    },
+    "reserve_thresholds": {},
+    "feeding_rates": {},
+    "assimilation": {},
+    "critical_mass_thresholds": {
+      "minimum_structural_carbon_for_clone": {
+        "value": 15,
+        "unit": "mg_C",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Engineering gate from Phase 7.",
+        "confidence": "low"
+      }
+    },
+    "reproduction": {
+      "clone_interval_days": {
+        "value": 75,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Integrated calibration value, not measured.",
+        "confidence": "low"
+      },
+      "clone_fraction": {
+        "value": 0.15,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Engineering allocation fraction.",
+        "confidence": "low"
+      }
+    },
+    "reproduction_costs": {},
+    "mortality_conditions": {
+      "senescence_rate": {
+        "value": 7.7e-8,
+        "unit": "1/s",
+        "status": "CALIBRATED",
+        "source": "phase2_fixture",
+        "notes": "Engineering senescence coefficient; extension guidance does not measure this rate.",
+        "confidence": "low"
+      },
+      "ramet_lifespan_days": {
+        "value": 420,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase7_fixture",
+        "notes": "Integrated lifecycle cap; no direct species-specific evidence.",
+        "confidence": "low"
+      }
+    },
+    "notes": [
+      "Current growth/senescence values are model calibration despite being anchored to real horticultural conditions."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "whole_plant_height_mm": {
+        "value": null,
+        "unit": "mm",
+        "status": "TBD",
+        "source": "ncsu",
+        "notes": "Render scale should be asset-calibrated from verified plant references rather than inferred from a single care-guide dimension."
+      }
+    },
+    "coloration": "Usually dark green, corrugated or rippled leaves; cultivar variation can be substantial.",
+    "stage_differences": [
+      "Young leaves are smaller and lighter; senescent leaves lose turgor/color."
+    ],
+    "locomotion_style": "Static rosette/ramet growth.",
+    "reference_images_asset_notes": [
+      "Keep cultivar-specific leaf colors in asset metadata rather than species constants."
+    ]
+  },
+  "sources": [
+    {
+      "id": "kew",
+      "category": "taxonomic_database",
+      "citation": "Royal Botanic Gardens, Kew, Plants of the World Online: Peperomia caperata.",
+      "url": "https://powo.science.kew.org/taxon/678190-1",
+      "confidence": "high"
+    },
+    {
+      "id": "ncsu",
+      "category": "university_extension",
+      "citation": "NC State Extension Plant Toolbox: Peperomia caperata.",
+      "url": "https://plants.ces.ncsu.edu/plants/peperomia-caperata/",
+      "confidence": "medium"
+    },
+    {
+      "id": "shin2023",
+      "category": "peer_reviewed",
+      "citation": "Shin, Lee & Nam (2023), controlled LED experiment on Peperomia caperata cultivars.",
+      "url": "https://doi.org/10.22698/jales.20230025",
+      "confidence": "high"
+    },
+    {
+      "id": "generic_plant_proxy",
+      "category": "proxy",
+      "citation": "Generic plant respiration proxy used by Simarium fixtures.",
+      "confidence": "low"
+    },
+    {
+      "id": "phase2_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase2-multiplant.json.",
+      "confidence": "low"
+    },
+    {
+      "id": "phase7_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase7-integrated.json.",
+      "confidence": "low"
+    }
+  ]
+}

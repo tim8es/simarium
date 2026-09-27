@@ -1,0 +1,383 @@
+{
+  "schema_version": 1,
+  "data_version": "0.6.0",
+  "id": "bradysia_impatiens",
+  "runtime_membership": "MVP",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Bradysia impatiens",
+    "synonyms": [],
+    "common_names": [
+      "dark-winged fungus gnat"
+    ],
+    "taxonomy": {
+      "kingdom": "Animalia",
+      "phylum": "Arthropoda",
+      "class": "Insecta",
+      "order": "Diptera",
+      "family": "Sciaridae",
+      "genus": "Bradysia",
+      "species": "impatiens"
+    },
+    "taxon_source": "ifas"
+  },
+  "traits": [
+    "sexual",
+    "egg_larva_pupa_adult",
+    "fungivore",
+    "root_feeder",
+    "substrate_walker",
+    "flyer",
+    "moisture_sensitive",
+    "temperature_response"
+  ],
+  "biology": {
+    "stages": [
+      "egg",
+      "larva",
+      "pupa",
+      "adult"
+    ],
+    "development_timing": {
+      "egg_development_days_24c": {
+        "value": 4,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "wilkinson1970",
+        "notes": "Mean incubation at about 24 C.",
+        "conditions": "Laboratory culture near 24 C.",
+        "confidence": "high"
+      },
+      "larval_development_days_24c": {
+        "value": 14.1,
+        "unit": "day",
+        "status": "DERIVED",
+        "source": "wilkinson1970",
+        "notes": "Sum of four reported instar means: 3.3 + 3.1 + 1.8 + 5.9 d.",
+        "conditions": "Laboratory culture near 24 C.",
+        "confidence": "high"
+      },
+      "pupal_development_days_24c": {
+        "value": 3.5,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "wilkinson1970",
+        "notes": "Mean pupal duration at about 24 C.",
+        "confidence": "high"
+      }
+    },
+    "lifespan": {
+      "adult_lifespan_days_24c": {
+        "value": 5.9,
+        "unit": "day",
+        "status": "MEASURED",
+        "source": "wilkinson1970",
+        "notes": "Mean adult longevity at about 24 C.",
+        "confidence": "high"
+      }
+    },
+    "reproduction": {
+      "mode": "sexual",
+      "mate_required": true,
+      "parameters": {
+        "fecundity_eggs_per_female": {
+          "value": 75,
+          "unit": "count",
+          "status": "MEASURED",
+          "source": "wilkinson1970",
+          "notes": "Mean fecundity; reported range 12-156 eggs/female under study conditions.",
+          "valid_range": {
+            "min": 12,
+            "max": 156
+          },
+          "conditions": "Laboratory culture near 24 C.",
+          "confidence": "high"
+        },
+        "female_probability": {
+          "value": 0.667,
+          "unit": "dimensionless",
+          "status": "MEASURED",
+          "source": "phys_time_2026",
+          "notes": "Laboratory report approximately 2:1 female:male ratio; condition-dependent.",
+          "confidence": "medium"
+        }
+      }
+    },
+    "body_mass": {
+      "summary": "Adult live body weight now has a species-specific laboratory anchor; larval stage mass/allometry remains weak.",
+      "parameters": {
+        "adult_female_wet_mass_mg": {
+          "value": 0.42,
+          "unit": "mg_wet",
+          "status": "MEASURED",
+          "source": "coenosia2021",
+          "notes": "Mean adult female body weight measured within 24 h of emergence (n=30).",
+          "uncertainty": "±0.01 mg SE",
+          "conditions": "Adults <24 h after emergence.",
+          "confidence": "high"
+        },
+        "adult_male_wet_mass_mg": {
+          "value": 0.23,
+          "unit": "mg_wet",
+          "status": "MEASURED",
+          "source": "coenosia2021",
+          "notes": "Mean adult male body weight measured within 24 h of emergence (n=30).",
+          "uncertainty": "±0.01 mg SE",
+          "conditions": "Adults <24 h after emergence.",
+          "confidence": "high"
+        },
+        "larval_wet_mass_mg": {
+          "value": null,
+          "unit": "mg_wet",
+          "status": "TBD",
+          "source": "ifas",
+          "notes": "No direct B. impatiens larval mass anchor is frozen."
+        }
+      }
+    },
+    "water_dependence": {
+      "summary": "Eggs/larvae depend on moist substrate; runtime pool-to-suitability mapping remains calibrated.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "Development was measured across a broad temperature range; 24 C is a reference condition, not a universal optimum.",
+      "parameters": {
+        "reference_temperature_c": {
+          "value": 24,
+          "unit": "degC",
+          "status": "MEASURED",
+          "source": "wilkinson1970",
+          "notes": "Approximate reference condition of the detailed life-history study.",
+          "confidence": "high"
+        }
+      }
+    }
+  },
+  "ecology": {
+    "diet": [
+      "fungi",
+      "algae",
+      "decaying organic matter",
+      "living root/stem tissue when available"
+    ],
+    "prey": [],
+    "predators": [
+      "Dalotia coriaria",
+      "other soil predators"
+    ],
+    "habitat": [
+      "moist growing media",
+      "greenhouse soils",
+      "root zone"
+    ],
+    "locomotion": [
+      "larval substrate crawling",
+      "adult flight"
+    ],
+    "activity_layer": [
+      "larvae in substrate/root zone; adults above substrate"
+    ],
+    "substrate_preference": [
+      "moist organic growing medium"
+    ]
+  },
+  "simulation": {
+    "metabolism": {
+      "basal_metabolism_carbon": {
+        "value": 8e-10,
+        "unit": "mg_C/s",
+        "status": "CALIBRATED",
+        "source": "phase5_fixture",
+        "notes": "Engineering carbon-loss coefficient.",
+        "confidence": "low"
+      }
+    },
+    "reserve_thresholds": {},
+    "feeding_rates": {
+      "larval_feeding_carbon_rate": {
+        "value": 5e-8,
+        "unit": "mg_C/s",
+        "status": "CALIBRATED",
+        "source": "phase5_fixture",
+        "notes": "Larval feeding ecology is supported, but this carbon rate is not directly measured.",
+        "confidence": "low"
+      }
+    },
+    "assimilation": {
+      "assimilation_efficiency": {
+        "value": 0.6,
+        "unit": "dimensionless",
+        "status": "ASSUMED",
+        "source": "generic_insect_proxy",
+        "notes": "Generic insect proxy.",
+        "confidence": "low"
+      },
+      "fungus_preference": {
+        "value": 0.85,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase5_fixture",
+        "notes": "Model allocation preference, not a measured choice probability.",
+        "confidence": "low"
+      }
+    },
+    "critical_mass_thresholds": {
+      "pupation_carbon_fraction_of_adult": {
+        "value": 0.65,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase5_fixture",
+        "notes": "Engineering critical-mass gate.",
+        "confidence": "low"
+      },
+      "adult_carbon_target_mg": {
+        "value": 0.03,
+        "unit": "mg_C",
+        "status": "ASSUMED",
+        "source": "phase5_fixture",
+        "notes": "Current carbon target predates the species-specific wet-mass anchor; should be revisited through an explicit wet/dry/carbon conversion proposal, not silently changed.",
+        "confidence": "low"
+      }
+    },
+    "reproduction": {
+      "preoviposition_hours": {
+        "value": 18,
+        "unit": "hour",
+        "status": "CALIBRATED",
+        "source": "phase5_fixture",
+        "notes": "Bounded implementation value inside evidence of <24 h with males present.",
+        "valid_range": {
+          "min": 0,
+          "max": 24
+        },
+        "confidence": "medium"
+      }
+    },
+    "reproduction_costs": {
+      "egg_carbon_mg": {
+        "value": 0.00012,
+        "unit": "mg_C",
+        "status": "CALIBRATED",
+        "source": "phase5_fixture",
+        "notes": "Runtime material cost per egg.",
+        "confidence": "low"
+      }
+    },
+    "mortality_conditions": {
+      "immature_survival_probability": {
+        "value": 0.464,
+        "unit": "dimensionless",
+        "status": "MEASURED",
+        "source": "phys_time_2026",
+        "notes": "Aggregate laboratory immature survival applied at emergence because stage-specific survival is unavailable.",
+        "confidence": "medium"
+      }
+    },
+    "notes": [
+      "Priority proposal: use the 0.42/0.23 mg adult wet-mass measurements to derive a defensible sex-specific carbon range; keep the existing 0.03 mg_C runtime target until conversion assumptions are reviewed.",
+      "Larval feeding rate remains a calibration parameter; no direct species-specific carbon ingestion rate was found."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "adult_female_length_mm": {
+        "value": 2.22,
+        "unit": "mm",
+        "status": "MEASURED",
+        "source": "coenosia2021",
+        "notes": "Mean female length within 24 h after emergence.",
+        "uncertainty": "±0.02 mm SE",
+        "confidence": "high"
+      },
+      "adult_male_length_mm": {
+        "value": 1.7,
+        "unit": "mm",
+        "status": "MEASURED",
+        "source": "coenosia2021",
+        "notes": "Mean male length within 24 h after emergence.",
+        "uncertainty": "±0.02 mm SE",
+        "confidence": "high"
+      },
+      "mature_larva_length_mm": {
+        "value": 6,
+        "unit": "mm",
+        "status": "ASSUMED",
+        "source": "ifas",
+        "notes": "Extension order-of-magnitude mature larval length; suitable for render scaling but lower confidence than the adult measurements.",
+        "confidence": "medium"
+      }
+    },
+    "coloration": "Adults are dark gray to black; larvae are translucent/whitish with a dark head capsule.",
+    "stage_differences": [
+      "Eggs small and pale; elongate larvae; immobile pupa; winged adult with marked sexual size difference."
+    ],
+    "locomotion_style": "Larvae crawl through substrate; adults perform short erratic flights and surface walking.",
+    "reference_images_asset_notes": [
+      "Use adult sexual dimorphism from measured length data; larval scale remains a lower-confidence render proxy."
+    ]
+  },
+  "sources": [
+    {
+      "id": "ifas",
+      "category": "university_extension",
+      "citation": "University of Florida IFAS: dark-winged fungus gnats / Bradysia impatiens biology.",
+      "url": "https://ask.ifas.ufl.edu/publication/IN372",
+      "confidence": "medium"
+    },
+    {
+      "id": "wilkinson1970",
+      "category": "peer_reviewed",
+      "citation": "Wilkinson & Daugherty (1970), life history of Bradysia impatiens.",
+      "url": "https://doi.org/10.1093/aesa/63.3.656",
+      "confidence": "high"
+    },
+    {
+      "id": "temperature1970",
+      "category": "peer_reviewed",
+      "citation": "Wilkinson & Daugherty (1970), temperature-dependent development of Bradysia impatiens.",
+      "url": "https://doi.org/10.1093/aesa/63.4.1079",
+      "confidence": "high"
+    },
+    {
+      "id": "ecotox2018",
+      "category": "peer_reviewed",
+      "citation": "Römbke et al. (2018), culture/ecotoxicology method for Bradysia impatiens.",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6182620/",
+      "confidence": "high"
+    },
+    {
+      "id": "diet2020",
+      "category": "peer_reviewed",
+      "citation": "Gou et al. (2020), diet effects on Bradysia impatiens life history.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/33080018/",
+      "confidence": "high"
+    },
+    {
+      "id": "phys_time_2026",
+      "category": "peer_reviewed",
+      "citation": "2026 physiological-time study of Bradysia impatiens.",
+      "url": "https://www.mdpi.com/2079-7737/15/19/1696",
+      "confidence": "medium",
+      "notes": "Condition-dependent fecundity, survival and sex-ratio evidence."
+    },
+    {
+      "id": "coenosia2021",
+      "category": "peer_reviewed",
+      "citation": "Zou et al. (2021), Effect of Prey Species and Prey Densities on the Performance of Adult Coenosia attenuata; Table 1 reports B. impatiens adult mass and length.",
+      "url": "https://doi.org/10.3390/insects12080669",
+      "confidence": "high"
+    },
+    {
+      "id": "generic_insect_proxy",
+      "category": "proxy",
+      "citation": "Generic insect assimilation/stoichiometry proxy used by Simarium.",
+      "confidence": "low"
+    },
+    {
+      "id": "phase5_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase5-bradysia.json.",
+      "confidence": "low"
+    }
+  ]
+}

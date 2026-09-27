@@ -3,12 +3,14 @@ import {
   assertNonNegativeMaterial,
   cloneMaterial,
   type Material,
+  type MaterialKey,
   zeroMaterial
 } from "./material.js";
 import type { MassLedger, TransferEvent } from "./ledger.js";
 
 export class MassTracer {
   private readonly tracers = new Map<string, Map<string, Material>>();
+  private readonly activeKeys = new Map<string, Set<MaterialKey>>();
   private detachObserver: (() => void) | undefined;
 
   attach(ledger: MassLedger): void {
@@ -32,6 +34,14 @@ export class MassTracer {
       }
     }
     this.getTracerPools(tracerId).set(poolName, cloneMaterial(amount));
+    let keys = this.activeKeys.get(tracerId);
+    if (!keys) {
+      keys = new Set<MaterialKey>();
+      this.activeKeys.set(tracerId, keys);
+    }
+    for (const key of MATERIAL_KEYS) {
+      if (amount[key] > 0) keys.add(key);
+    }
   }
 
   get(tracerId: string, poolName: string): Material {
@@ -47,23 +57,33 @@ export class MassTracer {
   }
 
   private onTransfer(event: TransferEvent): void {
-    for (const pools of this.tracers.values()) {
+    for (const [tracerId, pools] of this.tracers) {
       const sourceTracer = pools.get(event.from);
       if (!sourceTracer) continue;
 
-      const moved = zeroMaterial();
-      for (const key of MATERIAL_KEYS) {
-        const sourceMass = event.sourceBefore[key];
-        if (sourceMass <= 0 || event.amount[key] <= 0 || sourceTracer[key] <= 0) continue;
-        const fraction = Math.min(1, event.amount[key] / sourceMass);
-        moved[key] = sourceTracer[key] * fraction;
-        sourceTracer[key] -= moved[key];
-        if (Math.abs(sourceTracer[key]) < 1e-15) sourceTracer[key] = 0;
-      }
+      const keys = this.activeKeys.get(tracerId);
+      if (!keys || keys.size === 0) continue;
 
-      const destinationTracer = pools.get(event.to) ?? zeroMaterial();
-      for (const key of MATERIAL_KEYS) destinationTracer[key] += moved[key];
-      pools.set(event.to, destinationTracer);
+      let destinationTracer: Material | undefined;
+      for (const key of keys) {
+        const sourceMass = event.sourceBefore[key];
+        const transferMass = event.amount[key];
+        const tracedMass = sourceTracer[key];
+        if (sourceMass <= 0 || transferMass <= 0 || tracedMass <= 0) continue;
+
+        const moved = tracedMass * Math.min(1, transferMass / sourceMass);
+        sourceTracer[key] -= moved;
+        if (Math.abs(sourceTracer[key]) < 1e-15) sourceTracer[key] = 0;
+
+        if (!destinationTracer) {
+          destinationTracer = pools.get(event.to);
+          if (!destinationTracer) {
+            destinationTracer = zeroMaterial();
+            pools.set(event.to, destinationTracer);
+          }
+        }
+        destinationTracer[key] += moved;
+      }
     }
   }
 

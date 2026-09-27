@@ -159,7 +159,7 @@ Predation changes prey dynamics through real encounters; predator cannot survive
 
 ## Phase 7 — Full headless ecosystem
 
-**Status: ACTIVE.**
+**Status: ACCEPTED BASELINE COMPLETE — 100×180-day calibration and independent 100×180-day validation PASS on the accepted Phase-7 model. Current integration HEAD is pending the same full revalidation after post-acceptance ecology fixes.**
 
 Combine all approved species.
 
@@ -179,6 +179,25 @@ Run:
 
 ### Exit gate
 Pass VALIDATION.md MVP acceptance gates without rescue rules.
+
+Current Phase-7 completion evidence (2026-09-26):
+- accepted model head: `1aec050c3f0a9353c4d70e7655c8b8919ef62ce2`;
+- green PR CI: `36258570107`;
+- full Phase-7 acceptance workflow: `36258567197` — PASS;
+- calibration set: seeds `0-99`, 100 runs × 180 days;
+- independent validation set: seeds `100-199`, 100 runs × 180 days;
+- calibration persistence: all producers `100%`, at least one detritivore `100%`, Bradysia `78%`, Dalotia `100%`;
+- validation persistence: all producers `100%`, at least one detritivore `100%`, Bradysia `79%`, Dalotia `100%`;
+- Folsomia persistence: calibration `97%`, validation `98%`;
+- zero invariant failures in both 100-run batches;
+- litter-N tracer returned to living plant tissue in `200/200` accepted runs;
+- all surviving animal taxa satisfy the post-start-generation gate;
+- the unchanged `VALIDATION.md` acceptance evaluator passed both calibration and independent validation;
+- no population cap, hidden rescue, hidden food injection or hidden spawn rule was introduced.
+
+The accepted integrated Dalotia model uses a competition-aware local prey-density response. Nearby active predators share the same local prey field rather than each receiving the full density response independently. The Phase-7 local half-saturation is a documented **CALIBRATED** engineering coefficient selected only on calibration seeds; validation seeds were not used for tuning.
+
+The accepted 180-day batches show no observed unbounded numerical growth over the gate horizon: both disjoint 100-seed batches completed with finite population summaries and similar mean final abundances. This is finite-horizon engineering evidence; the preferred 365-day / >=500-seed stability evaluation in `VALIDATION.md` remains a later robustness exercise.
 
 ## Phase 8 — Rendering benchmark
 
@@ -302,8 +321,8 @@ Coding a phase is allowed only when:
 
 # Immediate next work
 
-1. Parameterize and implement *Trichorhina tomentosa* detritivore lifecycle (Phase 4).
-2. Validate litter fragmentation and decomposition acceleration without a hard-coded global decomposition bonus.
-3. Parameterize and implement *Bradysia impatiens* lifecycle (Phase 5).
-4. Add *Dalotia coriaria* predator/prey encounters (Phase 6).
-5. Combine all species in the Phase 7 headless ecosystem before detailed Three.js art.
+1. Preserve the accepted Phase-7 ecology baseline and regression tests. Before transferring the Phase-7 PASS label to the integrated main HEAD, rerun the unchanged 100-seed calibration + independent 100-seed validation gate against the post-acceptance ecology fixes.
+2. Keep simulation-to-render integration non-authoritative: rendering must not alter deterministic ecology results.
+3. Run the larger 365-day / >=500-seed stability evaluation when runtime budget permits; treat it as robustness validation, not as a reason to silently change the accepted MVP gate.
+4. Continue Phase 8+ renderer, worker bridge, observation UX and persistence work against the accepted Phase-7 model contracts.
+5. Any future ecology retuning must reopen calibration on calibration seeds first and rerun independent validation without weakening `VALIDATION.md` targets.

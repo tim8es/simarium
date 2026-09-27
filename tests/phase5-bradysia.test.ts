@@ -47,7 +47,7 @@ function createAdultPair(includeMale = true): BradysiaPopulation {
     adultAgeSeconds: 0,
     birthTimeSeconds: -22 * 86400,
     material,
-    reserveCarbonMg: material.carbonMg * 0.35,
+    reserveCarbonMg: material.carbonMg * 0.8,
     starvationSeconds: 0,
     dehydrationSeconds: 0,
     hasOviposited: false
@@ -62,7 +62,7 @@ function createAdultPair(includeMale = true): BradysiaPopulation {
       adultAgeSeconds: 0,
       birthTimeSeconds: -22 * 86400,
       material,
-      reserveCarbonMg: material.carbonMg * 0.35,
+      reserveCarbonMg: material.carbonMg * 0.8,
       starvationSeconds: 0,
       dehydrationSeconds: 0,
       hasOviposited: false
@@ -122,6 +122,7 @@ function parameters(
     fecundityEggsPerFemale: p("fecundityEggsPerFemale"),
     femaleProbability: p("femaleProbability"),
     immatureSurvivalProbability: p("immatureSurvivalProbability"),
+    reproductionReserveFraction: p("reproductionReserveFraction"),
 
     larvalFeedingCarbonMgPerSecond: p("larvalFeedingCarbonMgPerSecond"),
     assimilationEfficiency: p("assimilationEfficiency"),
@@ -198,6 +199,19 @@ describe("Phase 5 Bradysia impatiens lifecycle", () => {
     expect(dryEggs).toHaveLength(0);
   });
 
+  it("suppresses oviposition when adult energetic reserve is below the reproductive floor", () => {
+    const population = createAdultPair(true);
+    const female = population.living().find((x) => x.sex === "female")!;
+    female.reserveCarbonMg = female.material.carbonMg * 0.05;
+    const world = createWorld(population);
+
+    new FixedStepScheduler(world, [
+      new BradysiaLifecycleSystem(population, parameters())
+    ]).runFor(24 * 3600);
+
+    expect(population.all().filter((x) => x.parentId !== undefined)).toHaveLength(0);
+  });
+
   it("uses root tissue as fallback when fungal food is unavailable", () => {
     const population = createLarvalPopulation();
     const world = createWorld(population, (pools) => {
@@ -236,6 +250,34 @@ describe("Phase 5 Bradysia impatiens lifecycle", () => {
     expect(population.living()).toHaveLength(0);
     expect(world.ledger.getPool("animal_corpses").carbonMg).toBeGreaterThan(0);
     expect(world.ledger.getPool("bradysia_biomass").carbonMg).toBeCloseTo(0, 12);
+  });
+
+  it("reconciles machine-scale aggregate drift before corpse transfer", () => {
+    const population = createAdultPair(false);
+    const world = createWorld(population);
+    const invariant = new InvariantMonitor(world);
+
+    world.ledger.transfer(
+      "bradysia_biomass",
+      "animal_corpses",
+      {
+        carbonMg: 0,
+        nitrogenMg: 4e-12,
+        phosphorusMg: 0,
+        waterG: 0
+      }
+    );
+
+    new FixedStepScheduler(world, [
+      new BradysiaLifecycleSystem(
+        population,
+        parameters({ preOvipositionHours: 1000 })
+      )
+    ]).runFor(7 * 86400);
+
+    invariant.check(world);
+    expect(population.living()).toHaveLength(0);
+    expect(world.ledger.getPool("bradysia_biomass").nitrogenMg).toBe(0);
   });
 
   it("does not pupate a severely underweight larva just because thermal time elapsed", () => {

@@ -38,15 +38,21 @@ function parseShardDocument(document: string, index: number): BatchSummary {
   return value as BatchSummary;
 }
 
-export function mergeValidationShardDocuments(
+export function mergeBatchShardDocuments(
   documents: string[]
-): ValidationReport {
+): BatchSummary {
   if (documents.length === 0) {
     throw new Error("At least one validation shard JSON document is required");
   }
 
   const summaries = documents.map(parseShardDocument);
-  const summary = mergeBatchSummaries(summaries);
+  return mergeBatchSummaries(summaries);
+}
+
+export function mergeValidationShardDocuments(
+  documents: string[]
+): ValidationReport {
+  const summary = mergeBatchShardDocuments(documents);
 
   return {
     summary,

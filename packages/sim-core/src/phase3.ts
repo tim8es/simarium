@@ -15,6 +15,7 @@ export type FolsomiaDeathCause =
   | "dehydration"
   | "senescence"
   | "carbon_exhaustion"
+  | "developmental_mortality"
   | "predation";
 
 export interface FolsomiaIndividual {
@@ -172,11 +173,17 @@ export class FolsomiaPopulation {
   }
 
   totalLivingMaterial(): Material {
-    let total = zeroMaterial();
+    let carbonMg = 0;
+    let nitrogenMg = 0;
+    let phosphorusMg = 0;
+    let waterG = 0;
     for (const individual of this.livingIndividuals) {
-      total = addMaterial(total, individual.material);
+      carbonMg += individual.material.carbonMg;
+      nitrogenMg += individual.material.nitrogenMg;
+      phosphorusMg += individual.material.phosphorusMg;
+      waterG += individual.material.waterG;
     }
-    return total;
+    return { carbonMg, nitrogenMg, phosphorusMg, waterG };
   }
 
   assertMatchesAggregate(aggregate: Material, tolerance = 1e-10): void {
@@ -204,6 +211,7 @@ export interface FolsomiaParameters {
   temperatureOptimumC: number;
   temperatureSigmaC: number;
   eggDevelopmentDays: number;
+  eggHatchProbability: number;
   adultDevelopmentDays: number;
   reproductionIntervalDays: number;
   clutchSize: number;
@@ -270,6 +278,9 @@ export class FolsomiaLifecycleSystem implements SimSystem {
     if (p.assimilationEfficiency < 0 || p.assimilationEfficiency > 1) {
       throw new Error("assimilationEfficiency must be in [0,1]");
     }
+    if (p.eggHatchProbability < 0 || p.eggHatchProbability > 1) {
+      throw new Error("eggHatchProbability must be in [0,1]");
+    }
     if (
       p.reproductionMoistureThreshold < 0 ||
       p.reproductionMoistureThreshold > 1
@@ -290,7 +301,22 @@ export class FolsomiaLifecycleSystem implements SimSystem {
       substrateWater /
       Math.max(1e-12, substrateWater + this.p.moistureHalfSaturationWaterG);
 
-    const current = [...this.population.living()];
+    const metabolicTemperatureFactor = Math.max(0.2, developmentFactor);
+    const hydrationFraction =
+      1 - Math.exp(-this.p.hydrationRatePerSecond * moisture * dtSeconds);
+    const desiccationFraction =
+      1 -
+      Math.exp(
+        -this.p.desiccationRatePerSecond *
+          Math.max(0, 1 - moisture) *
+          dtSeconds
+      );
+
+    const current = this.population.living();
+    let availableSubstrateWater = substrateWater;
+    let totalWaterUptake = 0;
+    let totalWaterLoss = 0;
+
     for (const individual of current) {
       individual.ageSeconds += dtSeconds;
       individual.stageAgeSeconds += dtSeconds * developmentFactor;
@@ -306,10 +332,59 @@ export class FolsomiaLifecycleSystem implements SimSystem {
         continue;
       }
 
-      this.updateWater(world, individual, moisture, dtSeconds);
-      this.metabolize(world, individual, temp, dtSeconds);
-      if (!individual.alive) continue;
+      const waterFlux = this.updateWater(
+        individual,
+        availableSubstrateWater,
+        hydrationFraction,
+        desiccationFraction
+      );
+      availableSubstrateWater -= waterFlux.uptakeG;
+      totalWaterUptake += waterFlux.uptakeG;
+      totalWaterLoss += waterFlux.lossG;
+    }
 
+    if (totalWaterUptake > 0) {
+      world.ledger.transfer(
+        this.p.substratePool,
+        this.p.biomassPool,
+        { ...zeroMaterial(), waterG: totalWaterUptake }
+      );
+    }
+    if (totalWaterLoss > 0) {
+      world.ledger.transfer(
+        this.p.biomassPool,
+        this.p.atmospherePool,
+        { ...zeroMaterial(), waterG: totalWaterLoss }
+      );
+    }
+
+    let totalMetabolicCarbon = 0;
+    const carbonExhausted: FolsomiaIndividual[] = [];
+    for (const individual of current) {
+      if (!individual.alive) continue;
+      totalMetabolicCarbon += this.metabolize(
+        individual,
+        metabolicTemperatureFactor,
+        dtSeconds
+      );
+      if (individual.material.carbonMg <= 1e-12) {
+        carbonExhausted.push(individual);
+      }
+    }
+
+    if (totalMetabolicCarbon > 0) {
+      world.ledger.transfer(
+        this.p.biomassPool,
+        this.p.atmospherePool,
+        { ...zeroMaterial(), carbonMg: totalMetabolicCarbon }
+      );
+    }
+    for (const individual of carbonExhausted) {
+      this.die(world, individual, "carbon_exhaustion");
+    }
+
+    for (const individual of current) {
+      if (!individual.alive) continue;
       this.feed(world, individual, dtSeconds);
       this.reproduce(world, individual, moisture);
       this.evaluateMortality(world, individual, moisture, dtSeconds);
@@ -326,6 +401,10 @@ export class FolsomiaLifecycleSystem implements SimSystem {
       individual.stage === "egg" &&
       individual.stageAgeSeconds >= this.p.eggDevelopmentDays * DAY_SECONDS
     ) {
+      if (world.rng.nextFloat() >= this.p.eggHatchProbability) {
+        this.die(world, individual, "developmental_mortality");
+        return;
+      }
       this.population.transitionStage(individual, "juvenile", world.timeSeconds);
       return;
     }
@@ -341,76 +420,50 @@ export class FolsomiaLifecycleSystem implements SimSystem {
   }
 
   private updateWater(
-    world: WorldState,
     individual: FolsomiaIndividual,
-    moisture: number,
-    dtSeconds: number
-  ): void {
+    availableSubstrateWater: number,
+    hydrationFraction: number,
+    desiccationFraction: number
+  ): { uptakeG: number; lossG: number } {
     const target = stageWaterTarget(individual.stage, this.p.adultBodyWaterG);
     const deficit = Math.max(0, target - individual.material.waterG);
-    const substrateWater = world.ledger.getPool(this.p.substratePool).waterG;
-    const uptakeFraction =
-      1 - Math.exp(-this.p.hydrationRatePerSecond * moisture * dtSeconds);
-    const uptake = Math.min(substrateWater, deficit * uptakeFraction);
+    const uptake = Math.min(
+      availableSubstrateWater,
+      deficit * hydrationFraction
+    );
 
     if (uptake > 0) {
-      const material = { ...zeroMaterial(), waterG: uptake };
-      world.ledger.transfer(this.p.substratePool, this.p.biomassPool, material);
       individual.material.waterG += uptake;
     }
 
-    const lossFraction =
-      1 -
-      Math.exp(
-        -this.p.desiccationRatePerSecond *
-          Math.max(0, 1 - moisture) *
-          dtSeconds
-      );
-    const waterLoss = individual.material.waterG * lossFraction;
+    const waterLoss = individual.material.waterG * desiccationFraction;
     if (waterLoss > 0) {
-      const material = { ...zeroMaterial(), waterG: waterLoss };
-      world.ledger.transfer(this.p.biomassPool, this.p.atmospherePool, material);
       individual.material.waterG -= waterLoss;
     }
+
+    return { uptakeG: uptake, lossG: waterLoss };
   }
 
   private metabolize(
-    world: WorldState,
     individual: FolsomiaIndividual,
-    temperatureC: number,
+    temperatureFactorForStep: number,
     dtSeconds: number
-  ): void {
-    const tempFactor = Math.max(
-      0.2,
-      temperatureFactor(
-        temperatureC,
-        this.p.temperatureOptimumC,
-        this.p.temperatureSigmaC
-      )
-    );
+  ): number {
     const requested =
       this.p.basalMetabolismCarbonMgPerSecond *
       stageMetabolismFactor(individual.stage) *
-      tempFactor *
+      temperatureFactorForStep *
       dtSeconds;
     const consumed = Math.min(individual.material.carbonMg, requested);
 
     if (consumed > 0) {
-      world.ledger.transfer(
-        this.p.biomassPool,
-        this.p.atmospherePool,
-        { ...zeroMaterial(), carbonMg: consumed }
-      );
       individual.material.carbonMg -= consumed;
       individual.reserveCarbonMg = Math.max(
         0,
         individual.reserveCarbonMg - consumed
       );
     }
-
-    if (individual.material.carbonMg <= 1e-12) {
-      this.die(world, individual, "carbon_exhaustion");
-    }
+    return consumed;
   }
 
   private feed(
@@ -486,7 +539,18 @@ export class FolsomiaLifecycleSystem implements SimSystem {
     if (reserveFraction < this.p.reproductionReserveFraction) return;
 
     const eggC = this.p.eggCarbonMg;
-    const totalEggC = eggC * this.p.clutchSize;
+    const minimumReserve =
+      parent.material.carbonMg * this.p.reproductionReserveFraction;
+    const reproductiveReserve = Math.max(
+      0,
+      parent.reserveCarbonMg - minimumReserve
+    );
+    const count = Math.min(
+      this.p.clutchSize,
+      Math.floor(reproductiveReserve / Math.max(1e-12, eggC))
+    );
+    if (count <= 0) return;
+    const totalEggC = eggC * count;
     if (parent.material.carbonMg <= totalEggC * 1.25) return;
 
     const nPerC =
@@ -511,7 +575,7 @@ export class FolsomiaLifecycleSystem implements SimSystem {
         eggC * waterPerC
       )
     };
-    const clutchMaterial = scaleMaterial(eggMaterial, this.p.clutchSize);
+    const clutchMaterial = scaleMaterial(eggMaterial, count);
 
     if (
       parent.material.nitrogenMg < clutchMaterial.nitrogenMg ||
@@ -529,7 +593,7 @@ export class FolsomiaLifecycleSystem implements SimSystem {
     parent.lastReproductionSeconds = world.timeSeconds;
 
     const offspringIds: number[] = [];
-    for (let i = 0; i < this.p.clutchSize; i++) {
+    for (let i = 0; i < count; i++) {
       const id = this.population.create({
         parentId: parent.id,
         stage: "egg",

@@ -79,7 +79,8 @@ function adultPredators(pair = false): DalotiaPopulation {
     dehydrationSeconds: 0,
     eggsLaid: 0,
     eggAccumulator: 0,
-    attackAccumulator: 0
+    attackAccumulator: 0,
+    hasMated: false
   });
   if (pair) {
     population.create({
@@ -95,7 +96,8 @@ function adultPredators(pair = false): DalotiaPopulation {
       dehydrationSeconds: 0,
       eggsLaid: 0,
       eggAccumulator: 0,
-      attackAccumulator: 0
+      attackAccumulator: 0,
+      hasMated: false
     });
   }
   return population;
@@ -238,6 +240,46 @@ describe("Phase 6 Dalotia coriaria predator", () => {
     ).toBe(true);
   });
 
+  it("reconciles machine-scale prey aggregate residuals without creating material", () => {
+    const dalotia = adultPredators(false);
+    const prey = preyPopulations(1, 0);
+    const world = createWorld(dalotia, prey);
+
+    // Reproduce the long-run floating-point shape: the authoritative ledger
+    // can be a few ulps below the concrete individual's redistributed N mass.
+    world.ledger.transfer("bradysia_biomass", "animal_corpses", {
+      carbonMg: 0,
+      nitrogenMg: 2e-12,
+      phosphorusMg: 0,
+      waterG: 0
+    });
+    const invariant = new InvariantMonitor(world);
+
+    new FixedStepScheduler(world, [
+      new DalotiaPredatorSystem(
+        dalotia,
+        prey,
+        parameters({
+          maxAdultPreyPerDay: 100,
+          preyHalfSaturationCount: 0.01,
+          captureProbability: 1,
+          reserveTargetFraction: 0.95
+        })
+      )
+    ]).runFor(86400);
+
+    invariant.check(world);
+    expect(prey.bradysia.living()).toHaveLength(0);
+    expect(
+      dalotia.eventLog().some(
+        (event) =>
+          event.type === "predation" &&
+          event.preySpecies === "bradysia_impatiens"
+      )
+    ).toBe(true);
+    expect(world.ledger.getPool("bradysia_biomass").nitrogenMg).toBe(0);
+  });
+
   it("requires a male and moist substrate for egg production", () => {
     const preyA = preyPopulations();
     const pair = adultPredators(true);
@@ -365,6 +407,78 @@ describe("Phase 6 Dalotia coriaria predator", () => {
   });
 
 
+  it("shares the local prey-density response among nearby active hunters", () => {
+    const loneDalotia = adultPredators(false);
+    const lonePrey = preyPopulations(1, 0);
+    const loneWorld = createWorld(loneDalotia, lonePrey);
+    const loneHabitat = new SpatialHabitat(4, 1);
+    loneHabitat.set("dalotia_coriaria#1", {
+      x: 1,
+      z: 0,
+      layer: "substrate"
+    });
+    loneHabitat.set("bradysia_impatiens#1", {
+      x: 1,
+      z: 0,
+      layer: "substrate"
+    });
+    loneDalotia.get(1).reserveCarbonMg = 0;
+
+    const responseParameters = parameters({
+      maxAdultPreyPerDay: 20,
+      preyHalfSaturationCount: 1,
+      captureProbability: 1
+    });
+    new DalotiaPredatorSystem(
+      loneDalotia,
+      lonePrey,
+      responseParameters,
+      loneHabitat,
+      1,
+      1
+    ).step(loneWorld, 60);
+    const loneAccumulator = loneDalotia.get(1).attackAccumulator;
+
+    const sharedDalotia = adultPredators(true);
+    const sharedPrey = preyPopulations(1, 0);
+    const sharedWorld = createWorld(sharedDalotia, sharedPrey);
+    const sharedHabitat = new SpatialHabitat(4, 1);
+    sharedHabitat.set("dalotia_coriaria#1", {
+      x: 1,
+      z: 0,
+      layer: "substrate"
+    });
+    sharedHabitat.set("dalotia_coriaria#2", {
+      x: 1,
+      z: 0,
+      layer: "substrate"
+    });
+    sharedHabitat.set("bradysia_impatiens#1", {
+      x: 1,
+      z: 0,
+      layer: "substrate"
+    });
+    for (const predator of sharedDalotia.living()) {
+      predator.reserveCarbonMg = 0;
+    }
+
+    new DalotiaPredatorSystem(
+      sharedDalotia,
+      sharedPrey,
+      responseParameters,
+      sharedHabitat,
+      1,
+      1
+    ).step(sharedWorld, 60);
+
+    expect(sharedDalotia.get(1).attackAccumulator).toBeLessThan(
+      loneAccumulator
+    );
+    expect(sharedDalotia.get(2).attackAccumulator).toBeLessThan(
+      loneAccumulator
+    );
+  });
+
   it("applies documented immature survival before adult emergence", () => {
     const dalotia = seedDalotiaLarvae({
       count: 4,
@@ -398,6 +512,36 @@ describe("Phase 6 Dalotia coriaria predator", () => {
       )
     ).toBe(true);
   });
+
+  it("continues reserve-funded oviposition after one local mating encounter", () => {
+    const dalotia = adultPredators(true);
+    const prey = preyPopulations(100, 100);
+    const world = createWorld(dalotia, prey);
+    const habitat = new SpatialHabitat(12, 1);
+    habitat.set("dalotia_coriaria#1", { x: 0, z: 0, layer: "substrate" });
+    habitat.set("dalotia_coriaria#2", { x: 1, z: 0, layer: "substrate" });
+
+    const female = dalotia.get(1);
+    female.adultAgeSeconds = (p("preOvipositionDays") + 1) * 86400;
+    const system = new DalotiaPredatorSystem(
+      dalotia,
+      prey,
+      parameters(),
+      habitat,
+      1
+    );
+    const scheduler = new FixedStepScheduler(world, [system]);
+
+    scheduler.runFor(86400);
+    const afterMating = female.eggsLaid;
+    expect(female.hasMated).toBe(true);
+    expect(afterMating).toBeGreaterThan(0);
+
+    habitat.set("dalotia_coriaria#2", { x: 10, z: 0, layer: "substrate" });
+    scheduler.runFor(2 * 86400);
+
+    expect(female.eggsLaid).toBeGreaterThan(afterMating);
+  }, 30_000);
 
   it("requires a local adult male for reproduction when spatial encounters are enabled", () => {
     const dalotia = adultPredators(true);

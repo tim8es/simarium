@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "data_version": "0.6.0",
+  "id": "trichorhina_tomentosa",
+  "runtime_membership": "MVP",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Trichorhina tomentosa",
+    "synonyms": [],
+    "common_names": [
+      "dwarf white isopod"
+    ],
+    "taxonomy": {
+      "kingdom": "Animalia",
+      "phylum": "Arthropoda",
+      "class": "Malacostraca",
+      "order": "Isopoda",
+      "family": "Platyarthridae",
+      "genus": "Trichorhina",
+      "species": "tomentosa"
+    },
+    "taxon_source": "bmig"
+  },
+  "traits": [
+    "parthenogenetic",
+    "manca_juvenile_adult",
+    "detritivore",
+    "fungivore",
+    "substrate_walker",
+    "under_litter",
+    "moisture_sensitive",
+    "temperature_response"
+  ],
+  "biology": {
+    "stages": [
+      "manca",
+      "juvenile",
+      "adult"
+    ],
+    "development_timing": {
+      "manca_development_days": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "bmig",
+        "notes": "No direct species-specific manca duration was found in the evidence pass."
+      },
+      "reproductive_maturity_days": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "bmig",
+        "notes": "Species-specific quantitative maturation remains unresolved."
+      }
+    },
+    "lifespan": {
+      "adult_lifespan_days": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "bmig",
+        "notes": "No robust species-specific lifespan estimate was found."
+      }
+    },
+    "reproduction": {
+      "mode": "parthenogenetic_population_model",
+      "mate_required": false,
+      "parameters": {
+        "brood_interval_days": {
+          "value": null,
+          "unit": "day",
+          "status": "TBD",
+          "source": "bmig",
+          "notes": "No direct species-specific brood interval was found."
+        },
+        "brood_size": {
+          "value": null,
+          "unit": "count",
+          "status": "TBD",
+          "source": "bmig",
+          "notes": "No direct species-specific brood-size distribution was found."
+        }
+      }
+    },
+    "body_mass": {
+      "summary": "Body length is documented, but body mass/carbon is not; the current carbon target is an explicit assumption.",
+      "parameters": {
+        "adult_carbon_mg_species_evidence": {
+          "value": null,
+          "unit": "mg_C",
+          "status": "TBD",
+          "source": "bmig",
+          "notes": "A body-mass measurement is needed before replacing the runtime assumption."
+        }
+      }
+    },
+    "water_dependence": {
+      "summary": "Associated with damp litter, dead wood and rotting organic matter; quantitative desiccation response is unresolved.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "Tropical/greenhouse occurrence supports a warm-moist qualitative response but not an exact optimum.",
+      "parameters": {}
+    }
+  },
+  "ecology": {
+    "diet": [
+      "decaying litter",
+      "fungal biomass"
+    ],
+    "prey": [],
+    "predators": [
+      "small generalist predators not explicitly enumerated"
+    ],
+    "habitat": [
+      "damp litter",
+      "dead wood",
+      "rotting stumps",
+      "greenhouse substrate"
+    ],
+    "locomotion": [
+      "substrate walking"
+    ],
+    "activity_layer": [
+      "under litter and within substrate"
+    ],
+    "substrate_preference": [
+      "damp organic substrate"
+    ]
+  },
+  "simulation": {
+    "metabolism": {
+      "basal_metabolism_carbon": {
+        "value": 1.2e-9,
+        "unit": "mg_C/s",
+        "status": "CALIBRATED",
+        "source": "phase4_fixture",
+        "notes": "Engineering metabolic coefficient.",
+        "confidence": "low"
+      }
+    },
+    "reserve_thresholds": {
+      "reserve_target_fraction": {
+        "value": 0.2,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase4_fixture",
+        "notes": "Hunger control parameter.",
+        "confidence": "low"
+      },
+      "reproduction_reserve_fraction": {
+        "value": 0.15,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase4_fixture",
+        "notes": "Runtime brood-production gate.",
+        "confidence": "low"
+      }
+    },
+    "feeding_rates": {
+      "feeding_carbon_rate": {
+        "value": 2e-8,
+        "unit": "mg_C/s",
+        "status": "CALIBRATED",
+        "source": "phase4_fixture",
+        "notes": "Fungal grazing is documented, but this carbon ingestion rate is not measured.",
+        "confidence": "low"
+      }
+    },
+    "assimilation": {
+      "assimilation_efficiency": {
+        "value": 0.5,
+        "unit": "dimensionless",
+        "status": "ASSUMED",
+        "source": "generic_detritivore_proxy",
+        "notes": "Generic detritivore proxy.",
+        "confidence": "low"
+      }
+    },
+    "critical_mass_thresholds": {
+      "maturation_carbon_fraction_of_adult": {
+        "value": 0.5,
+        "unit": "dimensionless",
+        "status": "CALIBRATED",
+        "source": "phase4_fixture",
+        "notes": "Engineering critical-mass gate.",
+        "confidence": "low"
+      }
+    },
+    "reproduction": {
+      "runtime_manca_development_days": {
+        "value": 14,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "phase4_fixture",
+        "notes": "Model-internal value with no direct species timing source.",
+        "confidence": "low"
+      },
+      "runtime_adult_development_days": {
+        "value": 75,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "husbandry_proxy",
+        "notes": "Low-confidence 2-3 month dwarf-isopod husbandry proxy; not T. tomentosa measurement.",
+        "valid_range": {
+          "min": 60,
+          "max": 90
+        },
+        "confidence": "low"
+      },
+      "runtime_brood_interval_days": {
+        "value": 60,
+        "unit": "day",
+        "status": "CALIBRATED",
+        "source": "husbandry_proxy",
+        "notes": "Low-confidence husbandry proxy.",
+        "confidence": "low"
+      },
+      "runtime_brood_size": {
+        "value": 12,
+        "unit": "count",
+        "status": "CALIBRATED",
+        "source": "phase4_fixture",
+        "notes": "Engineering starting brood size.",
+        "confidence": "low"
+      }
+    },
+    "reproduction_costs": {
+      "manca_carbon_mg": {
+        "value": 0.002,
+        "unit": "mg_C",
+        "status": "CALIBRATED",
+        "source": "phase4_fixture",
+        "notes": "Brood material allocation.",
+        "confidence": "low"
+      }
+    },
+    "mortality_conditions": {
+      "runtime_adult_lifespan_days": {
+        "value": 365,
+        "unit": "day",
+        "status": "ASSUMED",
+        "source": "phase4_fixture",
+        "notes": "Sensitivity parameter; no robust species-specific lifespan source.",
+        "confidence": "low"
+      }
+    },
+    "notes": [
+      "Maturation, brood timing, brood size and body mass remain the weakest animal parameter set in the MVP. Commercial husbandry is retained only as an explicitly low-confidence proxy."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "adult_length_max_mm": {
+        "value": 5,
+        "unit": "mm",
+        "status": "MEASURED",
+        "source": "bmig",
+        "notes": "Specialist identification source reports a very small off-white isopod up to about 5 mm.",
+        "confidence": "medium"
+      }
+    },
+    "coloration": "Off-white to pale cream.",
+    "stage_differences": [
+      "Mancas and juveniles are smaller and less robust than adults; no dramatic metamorphosis."
+    ],
+    "locomotion_style": "Slow substrate walking and hiding beneath litter.",
+    "reference_images_asset_notes": [
+      "Use taxonomic/isopod identification images; do not scale body mass from length without a documented allometry."
+    ]
+  },
+  "sources": [
+    {
+      "id": "bmig",
+      "category": "specialist_reference",
+      "citation": "British Myriapod and Isopod Group: Trichorhina tomentosa species account.",
+      "url": "https://bmig.org.uk/species/trichorhina-tomentosa",
+      "confidence": "medium"
+    },
+    {
+      "id": "fungal_grazing_elife",
+      "category": "peer_reviewed",
+      "citation": "eLife (2021), experimental use of T. tomentosa as a fungivorous grazer.",
+      "url": "https://elifesciences.org/articles/68058",
+      "confidence": "high"
+    },
+    {
+      "id": "husbandry_proxy",
+      "category": "commercial_proxy",
+      "citation": "Dwarf-isopod husbandry timing proxy used by the existing Phase-4 fixture.",
+      "url": "https://postpods.co.uk/blogs/isopods-useful-articles/isopod-breeding-troubleshooting-why-arent-my-isopods-breeding",
+      "confidence": "low",
+      "notes": "Not species-specific peer-reviewed evidence; retained only to document current calibration provenance."
+    },
+    {
+      "id": "generic_detritivore_proxy",
+      "category": "proxy",
+      "citation": "Generic detritivore assimilation proxy used by Simarium.",
+      "confidence": "low"
+    },
+    {
+      "id": "phase4_fixture",
+      "category": "model_internal",
+      "citation": "Simarium data/experiments/phase4-trichorhina.json.",
+      "confidence": "low"
+    }
+  ]
+}

@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
-import { renderValidationReport } from "./ecosystem-validation.js";
+import {
+  mergeBatchShardDocuments,
+  renderValidationReport
+} from "./ecosystem-validation.js";
 
-const paths = process.argv.slice(2);
+const args = process.argv.slice(2);
+const summaryOnly = args[0] === "--summary-only";
+const paths = summaryOnly ? args.slice(1) : args;
 
 try {
   if (paths.length === 0) {
@@ -9,14 +14,20 @@ try {
   }
 
   const documents = paths.map((path) => readFileSync(path, "utf8"));
-  const rendered = renderValidationReport(documents);
-  process.stdout.write(rendered);
+  if (summaryOnly) {
+    process.stdout.write(
+      JSON.stringify(mergeBatchShardDocuments(documents), null, 2) + "\n"
+    );
+  } else {
+    const rendered = renderValidationReport(documents);
+    process.stdout.write(rendered);
 
-  const report = JSON.parse(rendered) as {
-    acceptance?: { pass?: boolean };
-  };
-  if (report.acceptance?.pass !== true) {
-    process.exitCode = 2;
+    const report = JSON.parse(rendered) as {
+      acceptance?: { pass?: boolean };
+    };
+    if (report.acceptance?.pass !== true) {
+      process.exitCode = 2;
+    }
   }
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);

@@ -5,17 +5,35 @@
   "description": "Browser-first autonomous terrarium simulation",
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run build:core && npm run web:build",
+    "build:core": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "headless": "npm run build --silent && node dist/tools/headless.js",
-    "ecosystem:batch": "npm run build --silent && node dist/tools/ecosystem-batch.js",
+    "test:ui": "vitest run tests/ui-observation.test.ts",
+    "test:render": "vitest run tests/render-adapter.test.ts",
+    "headless": "npm run build:core --silent && node dist/tools/headless.js",
+    "ecosystem:batch": "npm run build:core --silent && node dist/tools/ecosystem-batch.js",
     "ecosystem:smoke": "npm run ecosystem:batch -- --days 30 --seeds 0:10 --sample 5 --format json",
-    "ecosystem:merge": "npm run build --silent && node dist/tools/ecosystem-validation-report.js"
+    "ecosystem:merge": "npm run build:core --silent && node dist/tools/ecosystem-validation-report.js",
+    "runtime:benchmark": "npm run build:core --silent && node dist/tools/runtime-snapshot-benchmark.js",
+    "web:dev": "vite apps/web",
+    "web:build": "npm run typecheck:web && vite build apps/web",
+    "typecheck:web": "tsc -p apps/web/tsconfig.json --noEmit",
+    "dev:render": "npm run web:dev",
+    "build:render": "npm run web:build",
+    "preview:render": "vite preview apps/web",
+    "typecheck:render": "npm run typecheck:web"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "@types/three": "^0.180.0",
+    "ajv": "^8.17.1",
+    "fake-indexeddb": "^6.2.5",
     "typescript": "^5.9.2",
+    "vite": "^8.3.0",
     "vitest": "^3.2.4"
   }
 }
