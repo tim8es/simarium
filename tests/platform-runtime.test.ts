@@ -225,6 +225,63 @@ describe("worker protocol and renderer transport", () => {
     runtime.dispose();
   });
 
+  it("surfaces background simulation-step failures and pauses the worker", async () => {
+    vi.useFakeTimers();
+    class FailingStepAdapter implements SimulationRuntimeAdapter {
+      init(_message: Extract<UiToWorkerMessage, { type: "INIT" }>): void {}
+      loadSnapshot(_snapshot: RuntimeSnapshotV2): void {}
+      step(_ticks: number): void {
+        throw new Error("Injected background step failure");
+      }
+      applyUserAction(_action: UserActionEnvelope): void {}
+      renderSnapshot(): RenderWorldSnapshotDto { return renderSnapshot(0, 0); }
+      entityDetails(_entityId: string): JsonValue { return null; }
+      stats(): JsonValue { return null; }
+      saveSnapshot(): RuntimeSnapshotV2 {
+        return snapshotForWorld(createPhase1World({ seed: 1 }));
+      }
+    }
+
+    const emitted: WorkerToUiMessage[] = [];
+    const runtime = new SimulationWorkerRuntime(
+      new FailingStepAdapter(),
+      message => emitted.push(message),
+      { ticksPerSecondAt1x: 100, pulseIntervalMs: 10 }
+    );
+    await runtime.handle({
+      type: "INIT",
+      requestId: "background-init",
+      seed: 1,
+      simulationVersion: "0.1",
+      speciesDataVersion: "1"
+    });
+    await runtime.handle({ type: "START", requestId: "background-start" });
+    await vi.advanceTimersByTimeAsync(20);
+
+    expect(emitted).toContainEqual(
+      expect.objectContaining({
+        type: "ERROR",
+        code: "SIMULATION_STEP_FAILED",
+        message: expect.stringContaining("Injected background step failure")
+      })
+    );
+
+    await runtime.handle({
+      type: "REQUEST_STATS",
+      requestId: "background-stats"
+    });
+    const stats = emitted.find(
+      (message): message is Extract<WorkerToUiMessage, { type: "STATS" }> =>
+        message.type === "STATS" && message.requestId === "background-stats"
+    );
+    expect(stats).toBeDefined();
+    expect((stats!.stats as { runtimeProfiler: { running: boolean } }).runtimeProfiler.running)
+      .toBe(false);
+
+    runtime.dispose();
+    vi.useRealTimers();
+  });
+
   it("validates commands and rejects malformed payloads", () => {
     expect(parseUiToWorkerMessage({ type: "SET_SPEED", requestId: "r1", speed: 20 })).toEqual({ type: "SET_SPEED", requestId: "r1", speed: 20 });
     expect(() => parseUiToWorkerMessage({ type: "SET_SPEED", requestId: "r1", speed: 0 })).toThrow();
