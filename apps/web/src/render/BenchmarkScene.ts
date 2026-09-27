@@ -271,6 +271,10 @@ export class BenchmarkScene {
     return { ...this.metrics };
   }
 
+  getDynamicHardscapeCount(): number {
+    return this.dynamicHardscapeMeshes.size;
+  }
+
   setTemperatureGridOverlay(
     grid: TemperatureGridProjection | null,
     visible: boolean
