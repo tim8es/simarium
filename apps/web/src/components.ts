@@ -395,6 +395,17 @@ function renderEvents(snapshot: ObservationSnapshot): string {
           </div>
         `).join("")}
       </div>
+      <div class="event-browser" aria-label="Recent causal events">
+        <span class="eyebrow">RECENT EVENT STREAM</span>
+        ${snapshot.events.recent.slice(0, 40).map(event => `
+          <div class="event-browser-row">
+            <span>day ${(event.timeSeconds / 86400).toFixed(1)}</span>
+            <strong>${speciesById.get(event.speciesId) ?? event.speciesId}</strong>
+            <code>${event.type}</code>
+            <small>${event.label}</small>
+          </div>
+        `).join("") || '<p class="inspection-unavailable">No events recorded yet.</p>'}
+      </div>
     </div>
   `;
 }
