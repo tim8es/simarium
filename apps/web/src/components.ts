@@ -335,7 +335,7 @@ export function renderActions(state: ObservationUiState): string {
         <span class="eyebrow">USER_ACTION QUEUE</span>
         ${state.userActions.length === 0
           ? "<p>No UI-side mutations. Actions are emitted to the simulation boundary.</p>"
-          : state.userActions.slice(-4).reverse().map(action => `<div><code>${action.source}</code><span>${action.type}</span><strong>${action.status}</strong></div>`).join("")
+          : state.userActions.slice(-4).reverse().map(action => `<div data-action-type="${action.type}" ${typeof action.payload.hardscapeId === "string" ? `data-hardscape-id="${action.payload.hardscapeId}"` : ""}><code>${action.source}</code><span>${action.type}</span><strong>${action.status}</strong></div>`).join("")
         }
       </div>
     </div>
