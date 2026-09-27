@@ -11,6 +11,18 @@ export interface InvariantOptions {
   relativeTolerance?: number;
 }
 
+export interface InvariantResidual {
+  actual: number;
+  expected: number;
+  residual: number;
+  tolerance: number;
+}
+
+export type InvariantReport = Record<
+  "carbonMg" | "nitrogenMg" | "phosphorusMg" | "waterG",
+  InvariantResidual
+>;
+
 function toleranceFor(expected: number, options: Required<InvariantOptions>): number {
   return options.absoluteTolerance + Math.abs(expected) * options.relativeTolerance;
 }
@@ -29,23 +41,36 @@ export class InvariantMonitor {
     };
   }
 
-  check(world: WorldState): void {
-    world.ledger.assertValid();
-    world.environment.temperatureC.assertFinite();
-
+  report(world: WorldState): InvariantReport {
     const boundarySinceBaseline = subtractMaterial(
       world.ledger.cumulativeBoundaryFlux(),
       this.baselineBoundaryFlux
     );
     const expected = addMaterial(this.baselineTotals, boundarySinceBaseline);
     const actual = world.ledger.totals();
-
+    const report = {} as InvariantReport;
     for (const key of MATERIAL_KEYS) {
       const residual = actual[key] - expected[key];
-      const tolerance = toleranceFor(expected[key], this.options);
-      if (Math.abs(residual) > tolerance) {
+      report[key] = {
+        actual: actual[key],
+        expected: expected[key],
+        residual,
+        tolerance: toleranceFor(expected[key], this.options)
+      };
+    }
+    return report;
+  }
+
+  check(world: WorldState): void {
+    world.ledger.assertValid();
+    world.environment.temperatureC.assertFinite();
+
+    const report = this.report(world);
+    for (const key of MATERIAL_KEYS) {
+      const entry = report[key];
+      if (Math.abs(entry.residual) > entry.tolerance) {
         throw new Error(
-          `Invariant failed for ${key}: actual=${actual[key]}, expected=${expected[key]}, residual=${residual}, tolerance=${tolerance}`
+          `Invariant failed for ${key}: actual=${entry.actual}, expected=${entry.expected}, residual=${entry.residual}, tolerance=${entry.tolerance}`
         );
       }
     }
