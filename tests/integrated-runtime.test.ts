@@ -235,8 +235,13 @@ describe("integrated browser runtime", () => {
     const headless = init(7041);
 
     for (let tick = 0; tick < 32; tick++) {
-      observed.renderSnapshot();
+      const render = observed.renderSnapshot();
       observed.stats();
+      const inspectable = render.entities.find(
+        (entity) => entity.speciesId === "fittonia_albivenis"
+      );
+      if (!inspectable) throw new Error("Expected an inspectable Fittonia ramet");
+      observed.entityDetails(inspectable.entityId);
       observed.step(1);
       headless.step(1);
     }
@@ -327,6 +332,100 @@ describe("integrated browser runtime", () => {
     );
   });
 
+
+  it("replays boundary, organism and hardscape actions through save-load without drift", () => {
+    const source = init(7111);
+    const initial = source.renderSnapshot();
+    const removable = initial.entities.find(
+      (entity) => entity.speciesId === "folsomia_candida"
+    );
+    expect(removable).toBeDefined();
+
+    const actions: UserActionEnvelope[] = [
+      {
+        sequence: 0,
+        targetTick: 0,
+        action: {
+          type: "add_litter",
+          material: {
+            carbonMg: 120,
+            nitrogenMg: 2.4,
+            phosphorusMg: 0.24,
+            waterG: 0.6
+          }
+        }
+      },
+      {
+        sequence: 1,
+        targetTick: 0,
+        action: { type: "set_ventilation", ratePerSecond: 0.0002 }
+      },
+      {
+        sequence: 2,
+        targetTick: 0,
+        action: {
+          type: "introduce_organisms",
+          speciesId: "trichorhina_tomentosa",
+          count: 2
+        }
+      },
+      {
+        sequence: 3,
+        targetTick: 0,
+        action: {
+          type: "add_hardscape",
+          hardscapeId: "validation-wood",
+          kind: "wood",
+          position: { x: 0.1, y: 0.14, z: -0.05 }
+        }
+      },
+      {
+        sequence: 4,
+        targetTick: 0,
+        action: {
+          type: "remove_organisms",
+          entityIds: [removable!.entityId]
+        }
+      }
+    ];
+    actions.forEach((action) => source.applyUserAction(action));
+    source.step(4);
+
+    const saved = source.saveSnapshot();
+    const restored = new IntegratedEcosystemRuntimeAdapter();
+    restored.loadSnapshot(saved);
+
+    expect(restored.saveSnapshot().rngState).toEqual(saved.rngState);
+    expect(restored.saveSnapshot().sections.materialPools).toEqual(
+      saved.sections.materialPools
+    );
+    expect(restored.saveSnapshot().sections.organisms).toEqual(
+      saved.sections.organisms
+    );
+    expect(restored.saveSnapshot().sections.spatialState).toEqual(
+      saved.sections.spatialState
+    );
+
+    const stats = restored.stats() as unknown as {
+      controls: { ventilationRatePerSecond: number };
+      hardscape: Array<{ id: string }>;
+    };
+    expect(stats.controls.ventilationRatePerSecond).toBe(0.0002);
+    expect(stats.hardscape.some((item) => item.id === "validation-wood")).toBe(true);
+
+    source.step(8);
+    restored.step(8);
+    expect(restored.saveSnapshot().rngState).toEqual(source.saveSnapshot().rngState);
+    expect(restored.saveSnapshot().sections.materialPools).toEqual(
+      source.saveSnapshot().sections.materialPools
+    );
+    expect(restored.saveSnapshot().sections.organisms).toEqual(
+      source.saveSnapshot().sections.organisms
+    );
+    expect(restored.saveSnapshot().sections.spatialState).toEqual(
+      source.saveSnapshot().sections.spatialState
+    );
+  });
 
   it("keeps all animal species represented when render populations exceed the visual budget", () => {
     const adapter = init(7053);
