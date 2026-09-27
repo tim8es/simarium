@@ -381,6 +381,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       virtualTime: eco.world.timeSeconds,
       fixedDtSeconds: eco.world.config.fixedDtSeconds,
       environment: this.environmentSnapshot(),
+      temperatureGrid: eco.world.environment.temperatureC.snapshot(),
       species: Object.entries(SPECIES).map(([id, meta]) => ({ id, ...meta })),
       populations: {
         fittonia_albivenis: livingCount(eco.plants.fittonia),
