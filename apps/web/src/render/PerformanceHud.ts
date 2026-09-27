@@ -3,6 +3,7 @@ import type { RenderAdapterMetrics } from "@simarium/render-core";
 import type { BenchmarkSceneMetrics } from "./BenchmarkScene";
 
 const WARMUP_MS = 30_000;
+const FRAME_HISTOGRAM_MAX_MS = 1000;
 
 export interface PerformanceSnapshot {
   fps: number;
@@ -35,7 +36,8 @@ export class PerformanceHud {
   private observer: PerformanceObserver | null = null;
   private readonly warmupEndsAt = performance.now() + WARMUP_MS;
   private measuring = false;
-  private readonly measurementFrames: number[] = [];
+  private readonly frameHistogram = new Uint32Array(FRAME_HISTOGRAM_MAX_MS + 1);
+  private measuredFrames = 0;
   private measurementFrameSumMs = 0;
   private latestCounters = {
     drawCalls: 0,
@@ -107,8 +109,13 @@ export class PerformanceHud {
     this.frameCount = Math.min(this.frameCount + 1, this.frameSamples.length);
 
     if (this.measuring) {
-      this.measurementFrames.push(frameMs);
+      this.measuredFrames++;
       this.measurementFrameSumMs += frameMs;
+      const bucket = Math.min(
+        FRAME_HISTOGRAM_MAX_MS,
+        Math.max(0, Math.floor(frameMs))
+      );
+      this.frameHistogram[bucket]++;
     }
     this.latestCounters = {
       drawCalls: renderer.info.render.calls,
@@ -153,25 +160,32 @@ export class PerformanceHud {
   }
 
   getSnapshot(): PerformanceSnapshot {
-    const measuredFrames = this.measurementFrames.length;
     const averageFrameMs =
-      measuredFrames > 0 ? this.measurementFrameSumMs / measuredFrames : 0;
-    const sorted = measuredFrames > 0
-      ? [...this.measurementFrames].sort((a, b) => a - b)
-      : [];
-    const middle = Math.floor(sorted.length / 2);
-    const medianFrameMs =
-      sorted.length === 0
-        ? 0
-        : sorted.length % 2 === 1
-          ? sorted[middle]!
-          : (sorted[middle - 1]! + sorted[middle]!) / 2;
+      this.measuredFrames > 0
+        ? this.measurementFrameSumMs / this.measuredFrames
+        : 0;
+
+    let medianFrameMs = 0;
+    if (this.measuredFrames > 0) {
+      const threshold = Math.ceil(this.measuredFrames / 2);
+      let cumulative = 0;
+      for (let bucket = 0; bucket < this.frameHistogram.length; bucket++) {
+        cumulative += this.frameHistogram[bucket]!;
+        if (cumulative >= threshold) {
+          medianFrameMs =
+            bucket === FRAME_HISTOGRAM_MAX_MS
+              ? FRAME_HISTOGRAM_MAX_MS
+              : bucket + 0.5;
+          break;
+        }
+      }
+    }
 
     return {
       fps: averageFrameMs > 0 ? 1000 / averageFrameMs : 0,
       averageFrameMs,
       medianFrameMs,
-      measuredFrames,
+      measuredFrames: this.measuredFrames,
       measuredDurationMs: this.measurementFrameSumMs,
       ...this.latestCounters,
       longTaskCount: this.longTaskCount,
@@ -192,7 +206,8 @@ export class PerformanceHud {
     this.frameCount = 0;
     this.longTaskCount = 0;
     this.maxLongTaskMs = 0;
-    this.measurementFrames.splice(0, this.measurementFrames.length);
+    this.frameHistogram.fill(0);
+    this.measuredFrames = 0;
     this.measurementFrameSumMs = 0;
     this.lastDomUpdate = 0;
   }
