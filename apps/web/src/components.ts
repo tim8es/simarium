@@ -288,17 +288,80 @@ export function renderActions(state: ObservationUiState): string {
   `;
 }
 
+function renderResources(snapshot: ObservationSnapshot): string {
+  const r = snapshot.resources;
+  const ledger = snapshot.materialLedger;
+  const residualRows = Object.entries(ledger.residuals).map(([key, value]) => `
+    <div class="ledger-row">
+      <span>${key}</span>
+      <strong>${value.actual.toPrecision(6)}</strong>
+      <small>Δ ${value.residual.toExponential(2)} / tol ${value.tolerance.toExponential(2)}</small>
+    </div>
+  `).join("");
+  return `
+    <div class="bottom-content resource-content">
+      <div class="resource-grid">
+        ${metric("Available N", `${r.availableNitrogenMg.toFixed(3)} mg`)}
+        ${metric("Available P", `${r.availablePhosphorusMg.toFixed(3)} mg`)}
+        ${metric("Litter C", `${r.litterCarbonMg.toFixed(1)} mg`)}
+        ${metric("Fungal C", `${r.fungalCarbonMg.toFixed(2)} mg`)}
+        ${metric("Bacterial C", `${r.bacterialCarbonMg.toFixed(2)} mg`)}
+        ${metric("Corpse C", `${r.corpseCarbonMg.toFixed(3)} mg`)}
+      </div>
+      <div class="ledger-panel">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">MATERIAL LEDGER</span><h2>Conservation residuals</h2></div>
+        </div>
+        ${residualRows}
+        <p class="ledger-note">Boundary flux is explicit and included in each expected total.</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderEvents(snapshot: ObservationSnapshot): string {
+  const speciesById = new Map(snapshot.species.map(species => [species.id, species.commonName]));
+  const ids = [...new Set([
+    ...Object.keys(snapshot.events.births),
+    ...Object.keys(snapshot.events.deaths)
+  ])];
+  return `
+    <div class="bottom-content event-content">
+      <div class="event-summary">
+        <span class="eyebrow">CAUSAL EVENTS</span>
+        <strong>${snapshot.events.predation} predation events</strong>
+      </div>
+      <div class="event-table">
+        <div class="event-table-head"><span>Species</span><span>Born / ever</span><span>Deaths</span></div>
+        ${ids.map(id => `
+          <div class="event-table-row">
+            <span>${speciesById.get(id) ?? id}</span>
+            <strong>${snapshot.events.births[id] ?? 0}</strong>
+            <strong>${snapshot.events.deaths[id] ?? 0}</strong>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
 export function renderBottomPanel(snapshot: ObservationSnapshot, state: ObservationUiState): string {
   const content = state.bottomPanel === "graphs"
     ? renderGraphs(snapshot)
     : state.bottomPanel === "foodWeb"
       ? renderFoodWeb(snapshot)
-      : renderActions(state);
+      : state.bottomPanel === "resources"
+        ? renderResources(snapshot)
+        : state.bottomPanel === "events"
+          ? renderEvents(snapshot)
+          : renderActions(state);
   return `
     <section class="glass-panel bottom-panel">
       <div class="bottom-tabs" role="tablist">
         <button data-bottom-tab="graphs" class="${state.bottomPanel === "graphs" ? "is-active" : ""}">Graphs</button>
         <button data-bottom-tab="foodWeb" class="${state.bottomPanel === "foodWeb" ? "is-active" : ""}">Food web</button>
+        <button data-bottom-tab="resources" class="${state.bottomPanel === "resources" ? "is-active" : ""}">Resources</button>
+        <button data-bottom-tab="events" class="${state.bottomPanel === "events" ? "is-active" : ""}">Events</button>
         <button data-bottom-tab="actions" class="${state.bottomPanel === "actions" ? "is-active" : ""}">Interventions</button>
       </div>
       ${content}
