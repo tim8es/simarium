@@ -705,6 +705,162 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     return result;
   }
 
+  private eventHistory(
+    speciesId: string,
+    id: number,
+    events: readonly unknown[]
+  ): JsonValue[] {
+    const ref = entityRef(speciesId, id);
+    const history: Array<{
+      timeSeconds: number;
+      type: string;
+      label: string;
+      relatedEntityIds: string[];
+    }> = [];
+
+    for (const raw of events) {
+      if (!isRecord(raw) || typeof raw.type !== "string") continue;
+      const timeSeconds =
+        typeof raw.timeSeconds === "number" && Number.isFinite(raw.timeSeconds)
+          ? raw.timeSeconds
+          : 0;
+      const matchesId = raw.id === id;
+      const matchesParent = raw.parentId === id;
+      const matchesPredator = raw.predatorId === id;
+      const matchesPrey = raw.preyRef === ref;
+      if (!matchesId && !matchesParent && !matchesPredator && !matchesPrey) continue;
+
+      if (raw.type === "birth" && matchesId) {
+        history.push({
+          timeSeconds,
+          type: "birth",
+          label: `Born${typeof raw.stage === "string" ? ` as ${raw.stage}` : ""}`,
+          relatedEntityIds:
+            typeof raw.parentId === "number"
+              ? [entityRef(speciesId, raw.parentId)]
+              : []
+        });
+        continue;
+      }
+      if (raw.type === "stage" && matchesId) {
+        history.push({
+          timeSeconds,
+          type: "stage",
+          label: `${String(raw.from ?? "stage")} → ${String(raw.to ?? "stage")}`,
+          relatedEntityIds: []
+        });
+        continue;
+      }
+      if (raw.type === "sex" && matchesId) {
+        history.push({
+          timeSeconds,
+          type: "sex",
+          label: `Sex assigned: ${String(raw.sex ?? "unknown")}`,
+          relatedEntityIds: []
+        });
+        continue;
+      }
+      if (
+        (raw.type === "reproduction" || raw.type === "oviposition") &&
+        matchesParent
+      ) {
+        const offspringIds = Array.isArray(raw.offspringIds)
+          ? raw.offspringIds.filter(
+              (value): value is number =>
+                typeof value === "number" && Number.isInteger(value)
+            )
+          : [];
+        history.push({
+          timeSeconds,
+          type: raw.type,
+          label: `Produced ${offspringIds.length} offspring`,
+          relatedEntityIds: offspringIds.map((childId) =>
+            entityRef(speciesId, childId)
+          )
+        });
+        continue;
+      }
+      if (raw.type === "clone" && matchesParent) {
+        const childId =
+          typeof raw.offspringId === "number" ? raw.offspringId : undefined;
+        history.push({
+          timeSeconds,
+          type: "clone",
+          label: childId === undefined ? "Clonal reproduction" : `Cloned ramet #${childId}`,
+          relatedEntityIds:
+            childId === undefined ? [] : [entityRef(speciesId, childId)]
+        });
+        continue;
+      }
+      if (raw.type === "predation" && matchesPredator) {
+        const preyRef =
+          typeof raw.preyRef === "string" ? raw.preyRef : "unknown prey";
+        history.push({
+          timeSeconds,
+          type: "predation",
+          label: `Captured ${preyRef}`,
+          relatedEntityIds:
+            typeof raw.preyRef === "string" ? [raw.preyRef] : []
+        });
+        continue;
+      }
+      if (raw.type === "death" && matchesId) {
+        history.push({
+          timeSeconds,
+          type: "death",
+          label: `Died: ${String(raw.cause ?? "unknown")}`,
+          relatedEntityIds: []
+        });
+      }
+    }
+
+    return history
+      .sort((a, b) => a.timeSeconds - b.timeSeconds)
+      .slice(-40)
+      .map((event) => toJsonValue(event));
+  }
+
+  private trichorhinaRecordHistory(id: number): JsonValue[] {
+    const population = this.requireEco().animals.trichorhina;
+    const record = population.record(id);
+    const history: Array<{
+      timeSeconds: number;
+      type: string;
+      label: string;
+      relatedEntityIds: string[];
+    }> = [{
+      timeSeconds: record.birthTimeSeconds,
+      type: "birth",
+      label: "Born",
+      relatedEntityIds:
+        record.parentId === undefined
+          ? []
+          : [entityRef("trichorhina_tomentosa", record.parentId)]
+    }];
+
+    for (const childId of record.offspringIds) {
+      const child = population.record(childId);
+      history.push({
+        timeSeconds: child.birthTimeSeconds,
+        type: "brood",
+        label: `Offspring #${childId} born`,
+        relatedEntityIds: [entityRef("trichorhina_tomentosa", childId)]
+      });
+    }
+    if (record.deathTimeSeconds !== undefined) {
+      history.push({
+        timeSeconds: record.deathTimeSeconds,
+        type: "death",
+        label: `Died: ${record.deathCause ?? "unknown"}`,
+        relatedEntityIds: []
+      });
+    }
+    return history
+      .sort((a, b) => a.timeSeconds - b.timeSeconds)
+      .slice(-40)
+      .map((event) => toJsonValue(event));
+  }
+
   private folsomiaDetails(id: number): JsonValue {
     const population = this.requireEco().animals.folsomia;
     const individual = population.get(id);
@@ -712,6 +868,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     return toJsonValue({
       entity: this.baseAnimalDetails("folsomia_candida", individual, record),
       genealogy: this.genealogy("folsomia_candida", id, record, (candidateId) => population.all()[candidateId - 1]),
+      history: this.eventHistory("folsomia_candida", id, population.eventLog()),
       why: [
         { label: "RESERVE", score: clamp01(individual.reserveCarbonMg / Math.max(1e-12, individual.material.carbonMg * 0.25)) },
         { label: "STARVATION PRESSURE", score: clamp01(individual.starvationSeconds / (3 * DAY_SECONDS)) },
@@ -728,6 +885,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     return toJsonValue({
       entity: this.baseAnimalDetails("trichorhina_tomentosa", individual, record),
       genealogy: this.genealogy("trichorhina_tomentosa", id, record, (candidateId) => population.all()[candidateId - 1]),
+      history: this.trichorhinaRecordHistory(id),
       why: [
         { label: "RESERVE", score: clamp01(individual.reserveCarbonMg / Math.max(1e-12, individual.material.carbonMg * 0.25)) },
         { label: "STARVATION PRESSURE", score: clamp01(individual.starvationSeconds / (4 * DAY_SECONDS)) },
@@ -743,6 +901,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     return toJsonValue({
       entity: this.baseAnimalDetails("bradysia_impatiens", individual, record),
       genealogy: this.genealogy("bradysia_impatiens", id, record, (candidateId) => population.all()[candidateId - 1]),
+      history: this.eventHistory("bradysia_impatiens", id, population.eventLog()),
       why: [
         { label: "RESERVE", score: clamp01(individual.reserveCarbonMg / Math.max(1e-12, individual.material.carbonMg * 0.25)) },
         { label: "STARVATION PRESSURE", score: clamp01(individual.starvationSeconds / (3 * DAY_SECONDS)) },
@@ -758,6 +917,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     return toJsonValue({
       entity: this.baseAnimalDetails("dalotia_coriaria", individual, record),
       genealogy: this.genealogy("dalotia_coriaria", id, record, (candidateId) => population.all()[candidateId - 1]),
+      history: this.eventHistory("dalotia_coriaria", id, population.eventLog()),
       why: [
         { label: "PREY CAPTURES", score: clamp01(record.preyIds.length / 20) },
         { label: "RESERVE", score: clamp01(individual.reserveCarbonMg / Math.max(1e-12, individual.material.carbonMg * 0.45)) },
@@ -814,6 +974,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
         const candidate = population.all().find((item) => item.id === candidateId);
         return candidate ? { stage: "ramet", alive: candidate.alive } : undefined;
       }),
+      history: this.eventHistory(speciesId, id, population.eventLog()),
       why: [
         { label: "WATER STATUS", score: clamp01((water.waterG * ramet.share) / Math.max(1e-12, structural.carbonMg * ramet.share * 0.02)) },
         { label: "LIGHT", score: clamp01(this.lightMultiplier) },
