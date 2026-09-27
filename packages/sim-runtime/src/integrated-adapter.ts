@@ -214,9 +214,15 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       throw new Error("Snapshot is not an integrated ecosystem replay snapshot");
     }
     const applied = snapshot.coreState.appliedActions;
-    if (!Array.isArray(applied) || !applied.every(isUserActionEnvelope)) {
+    if (!Array.isArray(applied)) {
       throw new Error("Integrated snapshot appliedActions are invalid");
     }
+    const appliedEnvelopes: UserActionEnvelope[] = applied.map((value) => {
+      if (!isUserActionEnvelope(value)) {
+        throw new Error("Integrated snapshot appliedActions are invalid");
+      }
+      return structuredClone(value);
+    });
 
     this.simulationVersion = snapshot.simulationVersion;
     this.speciesDataVersion = snapshot.speciesDataVersion;
@@ -231,23 +237,23 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     let actionIndex = 0;
     for (let tick = 0; tick < snapshot.tick; tick++) {
       while (
-        actionIndex < applied.length &&
-        (applied[actionIndex] as UserActionEnvelope).targetTick <= this.requireEco().world.tick
+        actionIndex < appliedEnvelopes.length &&
+        appliedEnvelopes[actionIndex]!.targetTick <= this.requireEco().world.tick
       ) {
-        const envelope = structuredClone(applied[actionIndex] as UserActionEnvelope);
+        const envelope = structuredCloneappliedEnvelopes[actionIndex]!;
         this.applyAtBoundary(envelope);
         this.appliedActions.push(envelope);
         actionIndex++;
       }
       this.stepCore(1);
     }
-    while (actionIndex < applied.length && (applied[actionIndex] as UserActionEnvelope).targetTick <= snapshot.tick) {
-      const envelope = structuredClone(applied[actionIndex] as UserActionEnvelope);
+    while (actionIndex < appliedEnvelopes.length && appliedEnvelopes[actionIndex]!.targetTick <= snapshot.tick) {
+      const envelope = structuredCloneappliedEnvelopes[actionIndex]!;
       this.applyAtBoundary(envelope);
       this.appliedActions.push(envelope);
       actionIndex++;
     }
-    if (actionIndex !== applied.length) {
+    if (actionIndex !== appliedEnvelopes.length) {
       throw new Error("Integrated snapshot contains applied actions beyond its world tick");
     }
 
@@ -345,7 +351,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       tick: eco.world.tick,
       virtualTime: eco.world.timeSeconds,
       entities,
-      environment: toJsonValue(this.environmentSnapshot())
+      environment: this.environmentSnapshot()
     };
   }
 
