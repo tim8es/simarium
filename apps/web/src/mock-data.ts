@@ -180,7 +180,16 @@ export const mockObservationSnapshot: ObservationSnapshot = {
       trichorhina: 4,
       bradysia: 17,
       dalotia: 2
-    }
+    },
+    recent: [
+      {
+        timeSeconds: 61 * day,
+        speciesId: "dalotia",
+        type: "predation",
+        entityId: "dalotia_coriaria#2007",
+        label: "captured bradysia_impatiens#3098"
+      }
+    ]
   },
   materialLedger: {
     totals: {
