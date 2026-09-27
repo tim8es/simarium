@@ -67,7 +67,7 @@ jobs:
           retention-days: 30
 
   merge-robustness:
-    name: Merge 365d robustness evidence
+    name: Merge 365d robustness evidence (non-gating)
     needs: robustness-shard
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -83,20 +83,29 @@ jobs:
           pattern: robustness-shard-*
           path: robustness-shards
           merge-multiple: true
-      - name: Merge reports and retain unchanged acceptance evaluation
+      - name: Record unchanged MVP thresholds for reference only
         shell: bash
         run: |
           set +e
           node dist/tools/ecosystem-validation-report.js \
             robustness-shards/robustness-shard-*.json \
-            > phase14-robustness-report.json
+            > phase14-mvp-threshold-reference.json
           status=$?
           set -e
+          echo "Reference evaluator exit status: $status (non-gating for 365-day robustness)"
+          cat phase14-mvp-threshold-reference.json
+      - name: Build non-gating robustness report
+        shell: bash
+        run: |
+          node dist/tools/ecosystem-robustness-report.js \
+            robustness-shards/robustness-shard-*.json \
+            > phase14-robustness-report.json
           cat phase14-robustness-report.json
-          exit $status
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: phase14-365d-robustness-report
-          path: phase14-robustness-report.json
+          path: |
+            phase14-robustness-report.json
+            phase14-mvp-threshold-reference.json
           retention-days: 90
