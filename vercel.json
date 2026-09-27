@@ -3,5 +3,5 @@
   "framework": "vite",
   "installCommand": "npm install",
   "buildCommand": "npm run web:build",
-  "outputDirectory": "apps/web/dist"
+  "outputDirectory": "dist-render"
 }
