@@ -14,8 +14,8 @@ Updated: 2026-09-27
 - Phase 10 species assets: **TECHNICAL MVP COMPLETE** — documented procedural species/stage-specific low-poly assets and LOD are implemented; this is not final production art.
 - Phase 11 observation UX: **COMPLETE FOR MVP** — orbit/free/macro/follow, time controls, entity inspection, Why/state trace, genealogy, causal history and visual-only night observation aid are wired to the live worker.
 - Phase 12 scientific/debug UX: **COMPLETE FOR MVP** — population charts, food-web transfers, real temperature-grid heatmap, material/resource ledger, invariant residuals, bounded event browser and worker profiler are available without opening a debugger.
-- Phase 13 persistence: **ENGINEERING PASS** — IndexedDB autosave/manual save, schema migration, deterministic replay load/resume and repeated save-load-resume stress tests are implemented.
-- Phase 14 final MVP validation: **ACTIVE** — Chromium production browser validation passed on code head `c0d1300e72fa41c9180969fb9205e7c4cc37690e` (run `36326164750`); current-head full Phase-7 180-day revalidation and target-hardware GPU FPS recording remain release gates.
+- Phase 13 persistence: **COMPLETE FOR MVP** — IndexedDB autosave/manual save, portable versioned JSON export/import, schema migration, deterministic replay load/resume, SharePresetV1 links and repeated save-load-resume stress tests are implemented.
+- Phase 14 final MVP validation: **ACTIVE** — merged browser code head `666ef0bb3116aeb9ee30c1e52e38fc76b2f73d82` passed production-bundle Chromium/WebGL2 validation in run `36333741057`; the public Vercel deployment `dpl_EijSbeRJjVsN8qfcfYFEjJsfCN1i` is READY and returns HTTP 200. Current-head full Phase-7 180-day revalidation, the manual 500×365-day robustness run, and target-hardware GPU FPS recording remain release evidence gates.
 
 ## Phase 1 evidence
 
@@ -279,11 +279,16 @@ Phase 7 is therefore closed for the MVP engineering gate. The larger 365-day / >
 Working branch:
 `agent/browser-live-simulation`
 
-Live browser code head validated in Chromium:
-`c0d1300e72fa41c9180969fb9205e7c4cc37690e`
+Merged live browser code head:
+`666ef0bb3116aeb9ee30c1e52e38fc76b2f73d82`
 
 Browser Validation workflow:
-`36326164750` — **PASS**.
+`36333741057` — **PASS**.
+
+Public production deployment:
+- Vercel deployment: `dpl_EijSbeRJjVsN8qfcfYFEjJsfCN1i` — **READY**;
+- public URL: `https://simarium-vercel.vercel.app` — HTTP 200;
+- deploy mirror commit: `5615a44a384049b862f793742f846be4aa63d651`, containing the production source corresponding to merged code head `666ef0bb3116aeb9ee30c1e52e38fc76b2f73d82`.
 
 The automated production-browser run verified:
 - Vite production bundle and WebGL2 context;
@@ -293,6 +298,9 @@ The automated production-browser run verified:
 - the real temperature-grid overlay path;
 - an explicit user water-boundary action accepted through the worker protocol;
 - IndexedDB manual save and deterministic load/resume;
+- portable snapshot JSON export → import through the versioned parser/replay loader;
+- ordinary reload resumes the latest IndexedDB world when no explicit share manifest is supplied;
+- SharePresetV1/seed manifest boot;
 - visual-only night observation aid;
 - accelerated unattended browser soak with no page/console errors.
 
