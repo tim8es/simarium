@@ -65,7 +65,30 @@ export function emptyObservationSnapshot(): ObservationSnapshot {
     },
     populations: [],
     inspectionByEntity: {},
-    foodWeb: []
+    foodWeb: [],
+    resources: {
+      availableNitrogenMg: 0,
+      availablePhosphorusMg: 0,
+      litterCarbonMg: 0,
+      fungalCarbonMg: 0,
+      bacterialCarbonMg: 0,
+      corpseCarbonMg: 0
+    },
+    events: {
+      predation: 0,
+      births: {},
+      deaths: {}
+    },
+    materialLedger: {
+      totals: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
+      cumulativeBoundaryFlux: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
+      residuals: {
+        carbonMg: { actual: 0, expected: 0, residual: 0, tolerance: 0 },
+        nitrogenMg: { actual: 0, expected: 0, residual: 0, tolerance: 0 },
+        phosphorusMg: { actual: 0, expected: 0, residual: 0, tolerance: 0 },
+        waterG: { actual: 0, expected: 0, residual: 0, tolerance: 0 }
+      }
+    }
   };
 }
 
@@ -135,13 +158,71 @@ export function statsToObservation(stats: JsonValue): ObservationSnapshot {
     };
   });
 
+  const eventsRaw = record(root.events, "stats.events");
+  const birthsRaw = record(eventsRaw.births, "stats.events.births");
+  const deathsRaw = record(eventsRaw.deaths, "stats.events.deaths");
+  const materialRaw = record(root.materialLedger, "stats.materialLedger");
+  const totalsRaw = record(materialRaw.totals, "stats.materialLedger.totals");
+  const boundaryRaw = record(
+    materialRaw.cumulativeBoundaryFlux,
+    "stats.materialLedger.cumulativeBoundaryFlux"
+  );
+  const residualsRaw = record(
+    materialRaw.residuals,
+    "stats.materialLedger.residuals"
+  );
+
+  const materialValues = (value: Record<string, JsonValue>) => ({
+    carbonMg: numberValue(value.carbonMg),
+    nitrogenMg: numberValue(value.nitrogenMg),
+    phosphorusMg: numberValue(value.phosphorusMg),
+    waterG: numberValue(value.waterG)
+  });
+  const residual = (key: string) => {
+    const item = record(residualsRaw[key], `material residual ${key}`);
+    return {
+      actual: numberValue(item.actual),
+      expected: numberValue(item.expected),
+      residual: numberValue(item.residual),
+      tolerance: numberValue(item.tolerance)
+    };
+  };
+  const numericRecord = (value: Record<string, JsonValue>) =>
+    Object.fromEntries(
+      Object.entries(value)
+        .filter((entry): entry is [string, number] => typeof entry[1] === "number")
+    );
+
   return {
     species,
     entities: [],
     environment,
     populations,
     inspectionByEntity: {},
-    foodWeb
+    foodWeb,
+    resources: {
+      availableNitrogenMg: numberValue(resources.availableNitrogenMg),
+      availablePhosphorusMg: numberValue(resources.availablePhosphorusMg),
+      litterCarbonMg: numberValue(resources.litterCarbonMg),
+      fungalCarbonMg: numberValue(resources.fungalCarbonMg),
+      bacterialCarbonMg: numberValue(resources.bacterialCarbonMg),
+      corpseCarbonMg: numberValue(resources.corpseCarbonMg)
+    },
+    events: {
+      predation: numberValue(eventsRaw.predation),
+      births: numericRecord(birthsRaw),
+      deaths: numericRecord(deathsRaw)
+    },
+    materialLedger: {
+      totals: materialValues(totalsRaw),
+      cumulativeBoundaryFlux: materialValues(boundaryRaw),
+      residuals: {
+        carbonMg: residual("carbonMg"),
+        nitrogenMg: residual("nitrogenMg"),
+        phosphorusMg: residual("phosphorusMg"),
+        waterG: residual("waterG")
+      }
+    }
   };
 }
 
