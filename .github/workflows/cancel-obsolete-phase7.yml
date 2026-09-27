@@ -1,0 +1,20 @@
+name: Cancel obsolete Phase 7 run
+
+on:
+  push:
+    branches:
+      - agent/ops-cancel-obsolete-phase7
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase7-calibration-refs/pull/7/merge
+  cancel-in-progress: true
+
+jobs:
+  release-obsolete-concurrency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: echo "Obsolete Phase-7 concurrency group released."
