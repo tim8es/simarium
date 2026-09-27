@@ -302,7 +302,7 @@ try {
   }
 
   const renderBeforeIntroduce = await renderMetrics(page);
-  await applyPausedAction(page, "INTRODUCE_ORGANISM", ["folsomia_candida", "2"]);
+  await applyPausedAction(page, "INTRODUCE_ORGANISM", ["trichorhina_tomentosa", "2"]);
   const renderAfterIntroduce = await renderMetrics(page);
   if (!(renderAfterIntroduce.totalEntities >= renderBeforeIntroduce.totalEntities + 2)) {
     throw new Error(`Introduced organisms did not reach renderer projection: ${renderBeforeIntroduce.totalEntities} -> ${renderAfterIntroduce.totalEntities}`);
