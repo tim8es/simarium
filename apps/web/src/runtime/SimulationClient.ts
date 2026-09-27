@@ -251,31 +251,21 @@ export class SimulationClient {
     const saves = await this.persistence.list();
     const latest = saves[0];
     if (!latest) return null;
-    return this.load(latest.id);
-  }
-
-  async loadAutosave(): Promise<RuntimeSnapshotV2 | null> {
-    const saves = await this.persistence.list();
-    if (!saves.some((save) => save.id === "autosave")) return null;
     try {
-      return await this.load("autosave");
+      return await this.load(latest.id);
     } catch (error) {
       try {
-        const snapshot = await this.persistence.load("autosave");
+        const snapshot = await this.persistence.load(latest.id);
         await this.persistence.save(snapshot, {
-          id: `recovery-autosave-${Date.now().toString(36)}`,
-          title: "Recovery copy of failed autosave",
+          id: `recovery-${latest.id}-${Date.now().toString(36)}`,
+          title: `Recovery copy of failed save: ${latest.title ?? latest.id}`,
           compress: true
         });
       } catch {
-        // Preserve the original failure. Recovery copying is best-effort.
+        // Preserve the original load failure. Recovery copying is best-effort.
       }
       throw error;
     }
-  }
-
-  async deleteSave(id: string): Promise<void> {
-    await this.persistence.delete(id);
   }
 
   dispose(): void {

@@ -716,7 +716,7 @@ if (benchmarkOnly) {
 
   renderUi();
   const boot = !explicitLaunch
-    ? client.loadAutosave()
+    ? client.loadLatest()
         .then((loaded) => {
           if (loaded) {
             snapshot = emptyObservationSnapshot();
@@ -743,17 +743,16 @@ if (benchmarkOnly) {
             paused: false,
             speed: 1,
             runtimeStatus: "starting",
-            runtimeMessage: "Autosave could not be resumed; starting a fresh world…",
+            runtimeMessage: "Latest save could not be resumed; starting a fresh world…",
             saveMessage: `Recovery copy preserved. Resume error: ${failedMessage}`
           });
-          await client.deleteSave("autosave").catch(() => undefined);
           await client.initialize(state.seed);
           client.setSpeed(1);
           await client.save("Autosave", "autosave");
           setState({
             runtimeStatus: "running",
             runtimeMessage: "Fresh Phase 7 world started after autosave recovery",
-            saveMessage: "Failed autosave preserved as a recovery copy"
+            saveMessage: "Failed latest save preserved as a recovery copy"
           });
         })
     : client.initialize(state.seed)
