@@ -305,6 +305,12 @@ if (benchmarkOnly) {
           position: { x: 0, y: 0.14, z: 0 }
         };
       }
+      case "REMOVE_HARDSCAPE": {
+        const hardscapeId = window.prompt("Hardscape ID to remove");
+        return hardscapeId
+          ? { type: "remove_hardscape", hardscapeId }
+          : null;
+      }
       case "PLANT_RAMET": {
         const speciesId = window.prompt(
           "Plant species ID",
