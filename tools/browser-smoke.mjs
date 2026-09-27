@@ -21,7 +21,14 @@ page.on("console", message => {
 });
 
 try {
-  await page.goto(`${baseUrl}/?seed=7011`, {
+  const sharePreset = Buffer.from(JSON.stringify({
+    version: 1,
+    seed: 7011,
+    presetId: "phase7-integrated",
+    config: {}
+  })).toString("base64url");
+
+  await page.goto(`${baseUrl}/?share=${sharePreset}`, {
     waitUntil: "networkidle",
     timeout: 30_000
   });
@@ -54,8 +61,12 @@ try {
   }
 
   await page.getByText(/Initial world autosaved/).waitFor({ timeout: 30_000 });
-  if (new URL(page.url()).searchParams.has("seed")) {
-    throw new Error("Explicit seed manifest was not consumed from the browser URL");
+  const consumedUrl = new URL(page.url());
+  if (
+    consumedUrl.searchParams.has("seed") ||
+    consumedUrl.searchParams.has("share")
+  ) {
+    throw new Error("Explicit world manifest was not consumed from the browser URL");
   }
 
   await page.locator("[data-command='pause']").click();
