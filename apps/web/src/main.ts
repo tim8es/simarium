@@ -160,6 +160,10 @@ if (benchmarkOnly) {
     configurable: true,
     get: () => renderer.getRenderedEntityIds()
   });
+  Object.defineProperty(window, "__SIMARIUM_ANIMAL_PICK_TARGETS__", {
+    configurable: true,
+    get: () => renderer.getAnimalPickTargets()
+  });
 
   const client = new SimulationClient();
 
