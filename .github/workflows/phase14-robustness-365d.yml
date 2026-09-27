@@ -1,0 +1,102 @@
+name: Phase 14 365-Day Robustness
+
+on:
+  workflow_dispatch:
+    inputs:
+      seed_start:
+        description: "First robustness seed"
+        required: true
+        default: "200"
+      seeds_per_shard:
+        description: "Seeds per shard (50 shards; default total = 500)"
+        required: true
+        default: "10"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase14-robustness-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  robustness-shard:
+    name: 365d robustness shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build:core
+      - name: Run isolated 365-day robustness seeds
+        shell: bash
+        env:
+          SEED_START: ${{ inputs.seed_start }}
+          SEEDS_PER_SHARD: ${{ inputs.seeds_per_shard }}
+        run: |
+          START=$((SEED_START + ${{ matrix.shard }} * SEEDS_PER_SHARD))
+          parts=()
+          for ((OFFSET=0; OFFSET<SEEDS_PER_SHARD; OFFSET++)); do
+            SEED=$((START + OFFSET))
+            PART="robustness-seed-${SEED}.json"
+            /usr/bin/time -v node dist/tools/ecosystem-batch.js \
+              --days 365 \
+              --seeds "${SEED}:1" \
+              --sample 15 \
+              --format json \
+              > "${PART}"
+            parts+=("${PART}")
+          done
+          node dist/tools/ecosystem-validation-report.js \
+            --summary-only "${parts[@]}" \
+            > "robustness-shard-${{ matrix.shard }}.json"
+          cat "robustness-shard-${{ matrix.shard }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: robustness-shard-${{ matrix.shard }}
+          path: robustness-shard-${{ matrix.shard }}.json
+          retention-days: 30
+
+  merge-robustness:
+    name: Merge 365d robustness evidence
+    needs: robustness-shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build:core
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: robustness-shard-*
+          path: robustness-shards
+          merge-multiple: true
+      - name: Merge reports and retain unchanged acceptance evaluation
+        shell: bash
+        run: |
+          set +e
+          node dist/tools/ecosystem-validation-report.js \
+            robustness-shards/robustness-shard-*.json \
+            > phase14-robustness-report.json
+          status=$?
+          set -e
+          cat phase14-robustness-report.json
+          exit $status
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase14-365d-robustness-report
+          path: phase14-robustness-report.json
+          retention-days: 90
