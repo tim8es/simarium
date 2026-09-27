@@ -240,7 +240,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
         actionIndex < appliedEnvelopes.length &&
         appliedEnvelopes[actionIndex]!.targetTick <= this.requireEco().world.tick
       ) {
-        const envelope = structuredCloneappliedEnvelopes[actionIndex]!;
+        const envelope = structuredClone(appliedEnvelopes[actionIndex]!);
         this.applyAtBoundary(envelope);
         this.appliedActions.push(envelope);
         actionIndex++;
@@ -248,7 +248,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       this.stepCore(1);
     }
     while (actionIndex < appliedEnvelopes.length && appliedEnvelopes[actionIndex]!.targetTick <= snapshot.tick) {
-      const envelope = structuredCloneappliedEnvelopes[actionIndex]!;
+      const envelope = structuredClone(appliedEnvelopes[actionIndex]!);
       this.applyAtBoundary(envelope);
       this.appliedActions.push(envelope);
       actionIndex++;
