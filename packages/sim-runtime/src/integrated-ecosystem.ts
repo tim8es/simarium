@@ -403,7 +403,8 @@ export interface IntegratedEcosystem {
 }
 
 export function createIntegratedEcosystem(seed = integratedFixture.seed): IntegratedEcosystem {
-  const plantPools = structuredClone(plantFixture.initialPools);
+  const plantPools: Record<string, Material> =
+    structuredClone(plantFixture.initialPools) as Record<string, Material>;
   Object.assign(plantPools, {
     fine_detritus: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
     fine_decomposition_buffer: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
