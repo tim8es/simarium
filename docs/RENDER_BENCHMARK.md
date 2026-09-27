@@ -88,6 +88,35 @@ Use a physical laptop-class GPU rather than software rendering or a CI VM.
 
 Record hardware, OS, browser/version, GPU, display scale/DPR, power mode, average/median FPS, representative frame time, draw calls, triangles, Long Tasks, and any visible hitching.
 
+## One-command target-hardware recorder
+
+For the official physical-hardware pass, the repository includes:
+
+```bash
+npm run render:hardware-benchmark
+```
+
+The command:
+- builds the production renderer;
+- starts the production preview locally;
+- opens a headed Chromium window at 1920×1080;
+- runs Orbit for 120 seconds after a 30-second warm-up;
+- runs Macro and Follow for 60 seconds each after warm-up;
+- reads the same `window.__SIMARIUM_BENCHMARK_METRICS__` counters used by the benchmark HUD;
+- records user agent, DPR, WebGL vendor/renderer/version, FPS, average/median frame time, draw calls, triangles and Long Tasks;
+- writes `render-hardware-report.json`;
+- exits non-zero when the diagnostic Orbit thresholds fail.
+
+Useful options:
+
+```bash
+node tools/render-hardware-benchmark.mjs \
+  --url http://127.0.0.1:4173 \
+  --output my-laptop-report.json
+```
+
+Use `--headless` only for debugging the recorder itself. A headless/software-rendered report is **not** accepted as Phase-8 physical-GPU evidence.
+
 ## Target interpretation
 
 The Phase 8 target is approximately 60 FPS at 1920×1080 on ordinary laptop-class hardware with no recurring main-thread stalls during steady state.
