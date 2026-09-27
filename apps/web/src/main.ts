@@ -178,6 +178,8 @@ if (benchmarkOnly) {
             <button data-world-command="new">New</button>
             <button data-world-command="save">Save</button>
             <button data-world-command="load">Load latest</button>
+            <button data-world-command="export">Export save</button>
+            <button data-world-command="import">Import save</button>
             <button data-world-command="share">Share seed</button>
           </div>
           <div class="telemetry-strip">
@@ -530,6 +532,55 @@ if (benchmarkOnly) {
             runtimeStatus: "error",
             runtimeMessage: error instanceof Error ? error.message : String(error)
           }));
+      } else if (command === "export") {
+        setState({ saveMessage: "Exporting snapshot…" });
+        void client.captureSnapshot("Portable export")
+          .then(exported => {
+            const blob = new Blob(
+              [JSON.stringify(exported, null, 2)],
+              { type: "application/json" }
+            );
+            const href = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = href;
+            anchor.download = `simarium-seed-${exported.seed}-tick-${exported.tick}.json`;
+            anchor.click();
+            URL.revokeObjectURL(href);
+            setState({ saveMessage: "Portable save exported" });
+          })
+          .catch(error => setState({
+            runtimeStatus: "error",
+            runtimeMessage: error instanceof Error ? error.message : String(error)
+          }));
+      } else if (command === "import") {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json,.json";
+        input.addEventListener("change", () => {
+          const file = input.files?.[0];
+          if (!file) return;
+          setState({ saveMessage: `Importing ${file.name}…` });
+          void file.text()
+            .then(text => JSON.parse(text) as unknown)
+            .then(value => client.loadSnapshot(value, `import-${Date.now().toString(36)}`))
+            .then(loaded => {
+              selectedEntity = undefined;
+              selectedInspection = undefined;
+              setState({
+                seed: loaded.seed,
+                selectedEntityId: null,
+                paused: false,
+                runtimeStatus: "running",
+                runtimeMessage: `Imported deterministic save at day ${(loaded.virtualTime / 86400).toFixed(1)}`,
+                saveMessage: "Portable save imported"
+              });
+            })
+            .catch(error => setState({
+              runtimeStatus: "error",
+              runtimeMessage: error instanceof Error ? error.message : String(error)
+            }));
+        }, { once: true });
+        input.click();
       } else if (command === "share") {
         const url = new URL(window.location.href);
         url.search = "";
