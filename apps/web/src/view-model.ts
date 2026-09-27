@@ -40,19 +40,21 @@ export function getOverlayValue(
   environment: EnvironmentSnapshot,
   key: OverlayKey
 ): string {
+  const optional = (value: number | null, suffix: string): string =>
+    value === null ? "not modeled" : `${value.toFixed(1)} ${suffix}`;
   const values: Record<OverlayKey, string> = {
     temperature: `${environment.temperatureC.toFixed(1)} °C`,
-    humidity: `${Math.round(environment.relativeHumidity * 100)}% RH`,
+    humidity: `${Math.round(environment.relativeHumidity * 100)}% RH · proxy`,
     soilWater: `${Math.round(environment.soilWater * 100)}%`,
-    light: `${environment.lightPar.toFixed(0)} PAR`,
-    co2: `${environment.co2Ppm.toFixed(0)} ppm`,
-    o2: `${environment.o2Percent.toFixed(1)}%`,
-    nh4: `${environment.nh4MgKg.toFixed(1)} mg/kg`,
-    no3: `${environment.no3MgKg.toFixed(1)} mg/kg`,
-    availableP: `${environment.availablePMgKg.toFixed(1)} mg/kg`,
-    fungalBiomass: `${environment.fungalBiomassMg.toFixed(0)} mg`,
-    bacterialBiomass: `${environment.bacterialBiomassMg.toFixed(0)} mg`,
-    litter: `${environment.litterMg.toFixed(0)} mg`
+    light: `${environment.lightPar.toFixed(0)} PAR · proxy`,
+    co2: `${environment.co2Ppm.toFixed(0)} ppm · proxy`,
+    o2: optional(environment.o2Percent, "%"),
+    nh4: optional(environment.nh4MgKg, "mg/kg"),
+    no3: optional(environment.no3MgKg, "mg/kg"),
+    availableP: `${environment.availablePhosphorusMg.toFixed(2)} mg pool`,
+    fungalBiomass: `${environment.fungalBiomassMg.toFixed(2)} mg C`,
+    bacterialBiomass: `${environment.bacterialBiomassMg.toFixed(2)} mg C`,
+    litter: `${environment.litterMg.toFixed(1)} mg C`
   };
   return values[key];
 }
