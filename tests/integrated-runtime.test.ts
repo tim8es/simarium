@@ -97,6 +97,139 @@ describe("integrated browser runtime", () => {
     expect(ledger.cumulativeBoundaryFlux.waterG).toBeGreaterThan(1.99);
   });
 
+  it("round-trips every MVP boundary action through save/load and deterministic continuation", () => {
+    const source = init(7067);
+    const initial = source.renderSnapshot();
+    const removable = initial.entities.find(
+      (entity) => entity.speciesId === "folsomia_candida"
+    );
+    expect(removable).toBeDefined();
+
+    const actions: UserActionEnvelope[] = [
+      {
+        sequence: 0,
+        targetTick: 0,
+        action: { type: "add_water", waterG: 1.5 }
+      },
+      {
+        sequence: 1,
+        targetTick: 0,
+        action: {
+          type: "add_litter",
+          material: {
+            carbonMg: 100,
+            nitrogenMg: 2,
+            phosphorusMg: 0.2,
+            waterG: 0.5
+          }
+        }
+      },
+      {
+        sequence: 2,
+        targetTick: 0,
+        action: {
+          type: "introduce_organisms",
+          speciesId: "folsomia_candida",
+          count: 2
+        }
+      },
+      {
+        sequence: 3,
+        targetTick: 0,
+        action: { type: "set_light", intensity: 0.65 }
+      },
+      {
+        sequence: 4,
+        targetTick: 0,
+        action: { type: "set_ventilation", ratePerSecond: 0.00002 }
+      },
+      {
+        sequence: 5,
+        targetTick: 0,
+        action: {
+          type: "add_hardscape",
+          hardscapeId: "persistent-hardscape",
+          kind: "wood",
+          position: { x: 0, y: 0.14, z: 0 }
+        }
+      },
+      {
+        sequence: 6,
+        targetTick: 0,
+        action: {
+          type: "add_hardscape",
+          hardscapeId: "temporary-hardscape",
+          kind: "stone",
+          position: { x: 0.1, y: 0.1, z: 0 }
+        }
+      },
+      {
+        sequence: 7,
+        targetTick: 0,
+        action: {
+          type: "remove_hardscape",
+          hardscapeId: "temporary-hardscape"
+        }
+      },
+      {
+        sequence: 8,
+        targetTick: 0,
+        action: {
+          type: "remove_organisms",
+          entityIds: [removable!.entityId]
+        }
+      }
+    ];
+
+    for (const action of actions) {
+      source.applyUserAction(action);
+    }
+    source.step(3);
+
+    const saved = source.saveSnapshot();
+    const restored = new IntegratedEcosystemRuntimeAdapter();
+    restored.loadSnapshot(saved);
+
+    const restoredSave = restored.saveSnapshot();
+    expect(restoredSave.tick).toBe(saved.tick);
+    expect(restoredSave.virtualTime).toBe(saved.virtualTime);
+    expect(restoredSave.rngState).toEqual(saved.rngState);
+    expect(restoredSave.sections.materialPools).toEqual(
+      saved.sections.materialPools
+    );
+    expect(restoredSave.sections.organisms).toEqual(
+      saved.sections.organisms
+    );
+    expect(restoredSave.sections.plants).toEqual(saved.sections.plants);
+    expect(restoredSave.sections.spatialState).toEqual(
+      saved.sections.spatialState
+    );
+
+    const stats = restored.stats() as unknown as {
+      controls: {
+        lightMultiplier: number;
+        ventilationRatePerSecond: number;
+      };
+      hardscape: Array<{ id: string }>;
+    };
+    expect(stats.controls.lightMultiplier).toBe(0.65);
+    expect(stats.controls.ventilationRatePerSecond).toBe(0.00002);
+    expect(stats.hardscape.some((item) => item.id === "persistent-hardscape")).toBe(true);
+    expect(stats.hardscape.some((item) => item.id === "temporary-hardscape")).toBe(false);
+
+    const followOn: UserActionEnvelope = {
+      sequence: 9,
+      targetTick: saved.tick,
+      action: { type: "set_light", intensity: 0.9 }
+    };
+    source.applyUserAction(followOn);
+    restored.applyUserAction(structuredClone(followOn));
+    source.step(5);
+    restored.step(5);
+
+    expect(restored.saveSnapshot()).toEqual(source.saveSnapshot());
+  });
+
   it("keeps ecology deterministic when render and stats are observed", () => {
     const observed = init(7041);
     const headless = init(7041);
