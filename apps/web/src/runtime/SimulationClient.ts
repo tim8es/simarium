@@ -130,6 +130,14 @@ export class SimulationClient {
     ) {
       throw new Error("Unexpected pause acknowledgement");
     }
+
+    const statsMessage = await this.commandAndWait({
+      type: "REQUEST_STATS",
+      requestId: this.nextRequestId("stats")
+    });
+    if (statsMessage.type !== "STATS") {
+      throw new Error("Unexpected pause stats response");
+    }
   }
 
   setSpeed(speed: SimulationSpeed): void {
