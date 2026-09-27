@@ -1121,7 +1121,11 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       source = from === "linnemannia_biomass" ? "linnemannia_elongata" : "detritus";
       target = "trichorhina_tomentosa";
     } else if (to === "bradysia_feed_buffer") {
-      source = "linnemannia_elongata";
+      if (from === "linnemannia_biomass") source = "linnemannia_elongata";
+      else if (from === "fittonia_structural") source = "fittonia_albivenis";
+      else if (from === "peperomia_structural") source = "peperomia_caperata";
+      else if (from === "pilea_structural") source = "pilea_depressa";
+      else source = "detritus";
       target = "bradysia_impatiens";
     } else if (to === "dalotia_feed_buffer") {
       if (from === "folsomia_biomass") source = "folsomia_candida";
