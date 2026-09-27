@@ -282,3 +282,94 @@ h2 { margin: 5px 0 0; font-size: 13px; font-weight: 550; letter-spacing: -.01em;
 .benchmark-mode #render-layer {
   z-index: 1;
 }
+
+
+/* Live simulation controls */
+.live-camera-controls,
+.world-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: auto;
+}
+.live-camera-controls button,
+.world-actions button {
+  border: 1px solid var(--line);
+  background: rgba(10, 16, 14, .68);
+  color: #8f9d96;
+  border-radius: 7px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 8px;
+  letter-spacing: .04em;
+  cursor: pointer;
+}
+.live-camera-controls button:hover,
+.world-actions button:hover,
+.live-camera-controls button.is-active {
+  color: #d7e3dc;
+  border-color: rgba(162, 194, 177, .36);
+  background: rgba(31, 47, 40, .78);
+}
+
+.runtime-banner {
+  position: fixed;
+  z-index: 4;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(720px, 70vw);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 10px;
+  border: 1px solid rgba(117, 147, 133, .2);
+  border-radius: 999px;
+  background: rgba(8, 13, 11, .72);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+  font-size: 7px;
+  color: #8c9a93;
+}
+.runtime-banner strong {
+  color: #a8c0b4;
+  letter-spacing: .09em;
+  font-size: 7px;
+}
+.runtime-banner.paused strong { color: #d5c692; }
+.runtime-banner.error {
+  border-color: rgba(190, 95, 82, .45);
+  color: #d8aaa3;
+}
+.runtime-banner.error strong { color: #ed9d91; }
+.runtime-banner em {
+  color: #76867e;
+  font-style: normal;
+  border-left: 1px solid var(--line);
+  padding-left: 9px;
+}
+
+.integrated-mode #render-layer canvas {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+.integrated-mode .viewport-stack {
+  pointer-events: none;
+}
+.integrated-mode .bottom-panel {
+  pointer-events: auto;
+}
+.integrated-mode .viewport {
+  min-height: 0;
+}
+.integrated-mode .viewport-label,
+.integrated-mode .scale-marker,
+.integrated-mode .overlay-legend {
+  pointer-events: none;
+}
+
+@media (max-width: 1320px) {
+  .live-camera-controls { display: none; }
+  .world-actions button { padding: 5px 6px; }
+  .telemetry-strip { display: none; }
+}
