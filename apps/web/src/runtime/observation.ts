@@ -89,6 +89,21 @@ export function emptyObservationSnapshot(): ObservationSnapshot {
         phosphorusMg: { actual: 0, expected: 0, residual: 0, tolerance: 0 },
         waterG: { actual: 0, expected: 0, residual: 0, tolerance: 0 }
       }
+    },
+    runtimeProfiler: {
+      running: false,
+      speed: 1,
+      ticksPerSecondAt1x: 1,
+      pulseIntervalMs: 100,
+      maxTicksPerPulse: 50,
+      lastStepTicks: 0,
+      lastStepWallMs: 0,
+      emaStepWallMs: 0,
+      averageWallMsPerTick: 0,
+      totalTicksStepped: 0,
+      framesEmitted: 0,
+      backlogTicks: 0,
+      maxObservedBacklogTicks: 0
     }
   };
 }
@@ -160,6 +175,7 @@ export function statsToObservation(stats: JsonValue): ObservationSnapshot {
   });
 
   const eventsRaw = record(root.events, "stats.events");
+  const profilerRaw = record(root.runtimeProfiler, "stats.runtimeProfiler");
   const birthsRaw = record(eventsRaw.births, "stats.events.births");
   const deathsRaw = record(eventsRaw.deaths, "stats.events.deaths");
   const materialRaw = record(root.materialLedger, "stats.materialLedger");
@@ -223,6 +239,21 @@ export function statsToObservation(stats: JsonValue): ObservationSnapshot {
         phosphorusMg: residual("phosphorusMg"),
         waterG: residual("waterG")
       }
+    },
+    runtimeProfiler: {
+      running: boolValue(profilerRaw.running),
+      speed: numberValue(profilerRaw.speed, 1),
+      ticksPerSecondAt1x: numberValue(profilerRaw.ticksPerSecondAt1x, 1),
+      pulseIntervalMs: numberValue(profilerRaw.pulseIntervalMs),
+      maxTicksPerPulse: numberValue(profilerRaw.maxTicksPerPulse),
+      lastStepTicks: numberValue(profilerRaw.lastStepTicks),
+      lastStepWallMs: numberValue(profilerRaw.lastStepWallMs),
+      emaStepWallMs: numberValue(profilerRaw.emaStepWallMs),
+      averageWallMsPerTick: numberValue(profilerRaw.averageWallMsPerTick),
+      totalTicksStepped: numberValue(profilerRaw.totalTicksStepped),
+      framesEmitted: numberValue(profilerRaw.framesEmitted),
+      backlogTicks: numberValue(profilerRaw.backlogTicks),
+      maxObservedBacklogTicks: numberValue(profilerRaw.maxObservedBacklogTicks)
     }
   };
 }
