@@ -499,8 +499,8 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
       condensationPerSecond: 0.0000005
     }),
     new VentilationBoundarySystem({
-      carbonMg: plantPools.atmosphere.carbonMg,
-      waterG: plantPools.atmosphere.waterG
+      carbonMg: plantPools["atmosphere"]!.carbonMg,
+      waterG: plantPools["atmosphere"]!.waterG
     }),
 
     plantPhysiology("fittonia_albivenis", "fittonia"),
