@@ -419,7 +419,8 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
           trichorhina: eco.animals.trichorhina.all().filter((item) => !item.alive).length,
           bradysia: eco.animals.bradysia.all().filter((item) => !item.alive).length,
           dalotia: eco.animals.dalotia.all().filter((item) => !item.alive).length
-        }
+        },
+        recent: this.recentEvents()
       },
       foodWeb: [...this.foodWebCarbonMg.entries()].map(([key, carbonMg]) => {
         const [sourceSpeciesId, targetSpeciesId] = key.split("->");
@@ -1268,6 +1269,118 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     population.markDead(id, eco.world.timeSeconds);
     population.normalizeShares();
     population.assertShares();
+  }
+
+  private recentEvents(): JsonValue[] {
+    const eco = this.requireEco();
+    const candidates: Array<{ speciesId: string; event: unknown }> = [];
+    const appendTail = (
+      speciesId: string,
+      events: readonly unknown[],
+      limit = 80
+    ): void => {
+      const start = Math.max(0, events.length - limit);
+      for (let index = start; index < events.length; index++) {
+        candidates.push({ speciesId, event: events[index] });
+      }
+    };
+
+    appendTail("folsomia_candida", eco.animals.folsomia.eventLog());
+    appendTail("bradysia_impatiens", eco.animals.bradysia.eventLog());
+    appendTail("dalotia_coriaria", eco.animals.dalotia.eventLog());
+    appendTail("fittonia_albivenis", eco.plants.fittonia.eventLog());
+    appendTail("peperomia_caperata", eco.plants.peperomia.eventLog());
+    appendTail("pilea_depressa", eco.plants.pilea.eventLog());
+
+    const trichorhina = eco.animals.trichorhina.all();
+    for (
+      let index = Math.max(0, trichorhina.length - 80);
+      index < trichorhina.length;
+      index++
+    ) {
+      const individual = trichorhina[index]!;
+      const record = eco.animals.trichorhina.record(individual.id);
+      candidates.push({
+        speciesId: "trichorhina_tomentosa",
+        event: {
+          type: "birth",
+          id: individual.id,
+          timeSeconds: record.birthTimeSeconds
+        }
+      });
+      if (record.deathTimeSeconds !== undefined) {
+        candidates.push({
+          speciesId: "trichorhina_tomentosa",
+          event: {
+            type: "death",
+            id: individual.id,
+            timeSeconds: record.deathTimeSeconds,
+            cause: record.deathCause
+          }
+        });
+      }
+    }
+
+    const normalized: Array<{
+      timeSeconds: number;
+      speciesId: string;
+      type: string;
+      entityId: string | null;
+      label: string;
+    }> = [];
+
+    for (const candidate of candidates) {
+      const raw = candidate.event;
+      if (!isRecord(raw) || typeof raw.type !== "string") continue;
+      const timeSeconds =
+        typeof raw.timeSeconds === "number" && Number.isFinite(raw.timeSeconds)
+          ? raw.timeSeconds
+          : 0;
+      const numericId =
+        typeof raw.id === "number"
+          ? raw.id
+          : typeof raw.parentId === "number"
+            ? raw.parentId
+            : typeof raw.predatorId === "number"
+              ? raw.predatorId
+              : undefined;
+      const entityId =
+        numericId === undefined
+          ? null
+          : entityRef(candidate.speciesId, numericId);
+
+      let label = raw.type;
+      if (raw.type === "stage") {
+        label = `${String(raw.from ?? "stage")} → ${String(raw.to ?? "stage")}`;
+      } else if (raw.type === "death") {
+        label = `death: ${String(raw.cause ?? "unknown")}`;
+      } else if (raw.type === "predation") {
+        label = `captured ${String(raw.preyRef ?? "prey")}`;
+      } else if (raw.type === "reproduction" || raw.type === "oviposition") {
+        label = `${raw.type}: ${
+          Array.isArray(raw.offspringIds) ? raw.offspringIds.length : 0
+        } offspring`;
+      } else if (raw.type === "clone") {
+        label = `clone → #${String(raw.offspringId ?? "?")}`;
+      } else if (raw.type === "sex") {
+        label = `sex: ${String(raw.sex ?? "unknown")}`;
+      } else if (raw.type === "birth" && typeof raw.stage === "string") {
+        label = `birth as ${raw.stage}`;
+      }
+
+      normalized.push({
+        timeSeconds,
+        speciesId: candidate.speciesId,
+        type: raw.type,
+        entityId,
+        label
+      });
+    }
+
+    return normalized
+      .sort((a, b) => b.timeSeconds - a.timeSeconds)
+      .slice(0, 100)
+      .map((event) => toJsonValue(event));
   }
 
   private observeFoodWebTransfer(from: string, to: string, carbonMg: number): void {
