@@ -307,6 +307,114 @@ function poolCarbon(eco: IntegratedEcosystem, poolName: string): number {
     : 0;
 }
 
+type ValidatedAnimalState = {
+  id: number;
+  alive: boolean;
+  ageSeconds: number;
+  stageAgeSeconds: number;
+  birthTimeSeconds: number;
+  material: {
+    carbonMg: number;
+    nitrogenMg: number;
+    phosphorusMg: number;
+    waterG: number;
+  };
+  reserveCarbonMg: number;
+  starvationSeconds: number;
+  dehydrationSeconds: number;
+  adultAgeSeconds?: number;
+  parentId?: number;
+};
+
+function assertFiniteNumber(
+  value: number,
+  path: string,
+  options: { nonNegative?: boolean } = {}
+): void {
+  if (!Number.isFinite(value)) {
+    throw new Error(`Non-finite organism state at ${path}: ${value}`);
+  }
+  if (options.nonNegative && value < -1e-12) {
+    throw new Error(`Negative organism state at ${path}: ${value}`);
+  }
+}
+
+function assertUniqueIds(
+  label: string,
+  entities: readonly { id: number }[]
+): void {
+  const ids = new Set<number>();
+  for (const entity of entities) {
+    if (!Number.isInteger(entity.id) || entity.id <= 0) {
+      throw new Error(`Invalid ${label} entity id: ${entity.id}`);
+    }
+    if (ids.has(entity.id)) {
+      throw new Error(`Duplicate ${label} entity id: ${entity.id}`);
+    }
+    ids.add(entity.id);
+  }
+}
+
+function assertAnimalStates(
+  label: string,
+  individuals: readonly ValidatedAnimalState[]
+): void {
+  assertUniqueIds(label, individuals);
+  for (const individual of individuals) {
+    assertFiniteNumber(individual.ageSeconds, `${label}#${individual.id}.ageSeconds`, { nonNegative: true });
+    assertFiniteNumber(individual.stageAgeSeconds, `${label}#${individual.id}.stageAgeSeconds`, { nonNegative: true });
+    assertFiniteNumber(individual.birthTimeSeconds, `${label}#${individual.id}.birthTimeSeconds`);
+    assertFiniteNumber(individual.reserveCarbonMg, `${label}#${individual.id}.reserveCarbonMg`, { nonNegative: true });
+    assertFiniteNumber(individual.starvationSeconds, `${label}#${individual.id}.starvationSeconds`, { nonNegative: true });
+    assertFiniteNumber(individual.dehydrationSeconds, `${label}#${individual.id}.dehydrationSeconds`, { nonNegative: true });
+    if (individual.adultAgeSeconds !== undefined) {
+      assertFiniteNumber(individual.adultAgeSeconds, `${label}#${individual.id}.adultAgeSeconds`, { nonNegative: true });
+    }
+    if (
+      individual.parentId !== undefined &&
+      (!Number.isInteger(individual.parentId) || individual.parentId <= 0)
+    ) {
+      throw new Error(`Invalid ${label}#${individual.id}.parentId: ${individual.parentId}`);
+    }
+    for (const [key, value] of Object.entries(individual.material)) {
+      assertFiniteNumber(value, `${label}#${individual.id}.material.${key}`, { nonNegative: true });
+    }
+  }
+}
+
+export function assertIntegratedStateValid(eco: IntegratedEcosystem): void {
+  assertAnimalStates("folsomia", eco.animals.folsomia.all());
+  assertAnimalStates("trichorhina", eco.animals.trichorhina.all());
+  assertAnimalStates("bradysia", eco.animals.bradysia.all());
+  assertAnimalStates("dalotia", eco.animals.dalotia.all());
+
+  for (const [label, population] of [
+    ["fittonia", eco.plants.fittonia],
+    ["peperomia", eco.plants.peperomia],
+    ["pilea", eco.plants.pilea]
+  ] as const) {
+    const ramets = population.all();
+    assertUniqueIds(label, ramets);
+    for (const ramet of ramets) {
+      assertFiniteNumber(ramet.birthTimeSeconds, `${label}#${ramet.id}.birthTimeSeconds`);
+      assertFiniteNumber(ramet.ageSeconds, `${label}#${ramet.id}.ageSeconds`, { nonNegative: true });
+      assertFiniteNumber(ramet.share, `${label}#${ramet.id}.share`, { nonNegative: true });
+      if (
+        ramet.parentId !== undefined &&
+        (!Number.isInteger(ramet.parentId) || ramet.parentId <= 0)
+      ) {
+        throw new Error(`Invalid ${label}#${ramet.id}.parentId: ${ramet.parentId}`);
+      }
+      if (!Number.isInteger(ramet.offspringCount) || ramet.offspringCount < 0) {
+        throw new Error(
+          `Invalid ${label}#${ramet.id}.offspringCount: ${ramet.offspringCount}`
+        );
+      }
+    }
+    population.assertShares();
+  }
+}
+
 export function collectEcosystemSnapshot(
   eco: IntegratedEcosystem,
   day: number
@@ -476,6 +584,8 @@ export function runIntegratedEcosystem(
   }
 
   const eco = createIntegratedEcosystem(options.seed);
+  assertIntegratedStateValid(eco);
+  eco.invariants.check(eco.world);
 
   const tracer = new MassTracer();
   tracer.attach(eco.world.ledger);
@@ -511,6 +621,7 @@ export function runIntegratedEcosystem(
   for (let day = 1; day <= options.days; day++) {
     try {
       eco.scheduler.step(stepsPerDay);
+      assertIntegratedStateValid(eco);
       eco.invariants.check(eco.world);
     } catch (error) {
       invariantFailures++;
