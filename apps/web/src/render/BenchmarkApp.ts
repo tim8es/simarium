@@ -112,6 +112,10 @@ export class BenchmarkApp {
     this.benchmarkScene.setTemperatureGridOverlay(grid, visible);
   }
 
+  setBiologicalLight(lightPar: number, nightObservationAid: boolean): void {
+    this.benchmarkScene.setBiologicalLight(lightPar, nightObservationAid);
+  }
+
   applyExternalSnapshot(snapshot: RenderWorldSnapshot): void {
     if (this.source) {
       throw new Error("Cannot apply external snapshot in synthetic benchmark mode");
