@@ -108,27 +108,30 @@ async function applyPausedAction(page, type, dialogResponses = []) {
 
 async function pickVisibleEntity(page) {
   const canvas = page.locator("#render-layer canvas");
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error("Renderer canvas has no bounding box");
-
-  const xs = [0.32, 0.4, 0.48, 0.56, 0.64, 0.72];
-  const ys = [0.22, 0.3, 0.38, 0.46, 0.54, 0.62];
-  for (const y of ys) {
-    for (const x of xs) {
-      await canvas.dispatchEvent("click", {
-        clientX: box.x + box.width * x,
-        clientY: box.y + box.height * y,
-        bubbles: true
-      });
-      await page.waitForTimeout(180);
-      const card = page.locator(".entity-card[data-entity-id][data-entity-kind='animal']");
-      if (await card.count()) {
-        const id = await card.first().getAttribute("data-entity-id");
-        if (id) return id;
-      }
+  const targets = await page.evaluate(() => {
+    const value = window.__SIMARIUM_ANIMAL_PICK_TARGETS__;
+    if (!Array.isArray(value)) {
+      throw new Error("Animal pick targets are unavailable");
     }
+    return value;
+  });
+  if (targets.length === 0) {
+    throw new Error("Renderer reported no near-LOD animal pick targets");
   }
-  throw new Error("Could not pick a visible authoritative entity from the WebGL scene");
+
+  for (const target of targets.slice(0, 40)) {
+    await canvas.dispatchEvent("click", {
+      clientX: target.clientX,
+      clientY: target.clientY,
+      bubbles: true
+    });
+    await page.waitForTimeout(120);
+    const card = page.locator(
+      `.entity-card[data-entity-id="${target.entityId}"][data-entity-kind="animal"]`
+    );
+    if (await card.count()) return target.entityId;
+  }
+  throw new Error("Real canvas picking did not return the targeted authoritative animal ID");
 }
 
 async function indexedDbSaveIds(page) {
