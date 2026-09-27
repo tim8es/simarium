@@ -716,23 +716,46 @@ if (benchmarkOnly) {
 
   renderUi();
   const boot = !explicitLaunch
-    ? client.loadLatest().then((loaded) => {
-        if (loaded) {
+    ? client.loadAutosave()
+        .then((loaded) => {
+          if (loaded) {
+            snapshot = emptyObservationSnapshot();
+            setState({
+              seed: loaded.seed,
+              selectedEntityId: null,
+              paused: false,
+              runtimeStatus: "running",
+              runtimeMessage: `Resumed autosave at day ${(loaded.virtualTime / 86400).toFixed(1)}`,
+              saveMessage: "Autosave resumed"
+            });
+            return;
+          }
+          return client.initialize(state.seed).then(() => {
+            client.setSpeed(state.speed);
+          });
+        })
+        .catch(async (error) => {
+          const failedMessage =
+            error instanceof Error ? error.message : String(error);
           snapshot = emptyObservationSnapshot();
           setState({
-            seed: loaded.seed,
             selectedEntityId: null,
             paused: false,
-            runtimeStatus: "running",
-            runtimeMessage: `Resumed autosave at day ${(loaded.virtualTime / 86400).toFixed(1)}`,
-            saveMessage: "Autosave resumed"
+            speed: 1,
+            runtimeStatus: "starting",
+            runtimeMessage: "Autosave could not be resumed; starting a fresh world…",
+            saveMessage: `Recovery copy preserved. Resume error: ${failedMessage}`
           });
-          return;
-        }
-        return client.initialize(state.seed).then(() => {
-          client.setSpeed(state.speed);
-        });
-      })
+          await client.deleteSave("autosave").catch(() => undefined);
+          await client.initialize(state.seed);
+          client.setSpeed(1);
+          await client.save("Autosave", "autosave");
+          setState({
+            runtimeStatus: "running",
+            runtimeMessage: "Fresh Phase 7 world started after autosave recovery",
+            saveMessage: "Failed autosave preserved as a recovery copy"
+          });
+        })
     : client.initialize(state.seed)
         .then(() => {
           client.setSpeed(state.speed);
