@@ -94,12 +94,30 @@ try {
 
   const browser = await chromium.launch({
     headless,
-    args: ["--enable-webgl", "--ignore-gpu-blocklist"]
+    args: [
+      "--enable-webgl",
+      "--ignore-gpu-blocklist",
+      "--window-size=1920,1080"
+    ]
   });
 
   try {
+    let detectedDevicePixelRatio = 1;
+    if (!headless) {
+      const detectionContext = await browser.newContext({ viewport: null });
+      try {
+        const detectionPage = await detectionContext.newPage();
+        detectedDevicePixelRatio = await detectionPage.evaluate(
+          () => window.devicePixelRatio
+        );
+      } finally {
+        await detectionContext.close();
+      }
+    }
+
     const context = await browser.newContext({
-      viewport: { width: 1920, height: 1080 }
+      viewport: { width: 1920, height: 1080 },
+      deviceScaleFactor: detectedDevicePixelRatio
     });
     const page = await context.newPage();
 
@@ -131,6 +149,7 @@ try {
       generatedAt: new Date().toISOString(),
       sourceUrl: baseUrl,
       headed: !headless,
+      detectedDevicePixelRatio,
       configuredDurationsMs: {
         warmup: warmupMs,
         orbit: orbitMs,
