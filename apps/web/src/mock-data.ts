@@ -110,6 +110,7 @@ export const mockObservationSnapshot: ObservationSnapshot = {
         { entityId: "folsomia_candida#1321", label: "#1321", lifeStage: "juvenile", relation: "offspring", alive: true },
         { entityId: "folsomia_candida#1378", label: "#1378", lifeStage: "egg", relation: "offspring", alive: true }
       ],
+      history: [],
       why: [
         { label: "HUNGRY", score: 0.82 },
         { label: "FOOD NEARBY", score: 0.67 },
@@ -123,6 +124,7 @@ export const mockObservationSnapshot: ObservationSnapshot = {
         { entityId: "dalotia_coriaria#2007", label: "#2007", lifeStage: "adult", relation: "current", alive: true },
         { entityId: "dalotia_coriaria#2412", label: "#2412", lifeStage: "larva", relation: "offspring", alive: true }
       ],
+      history: [],
       why: [
         { label: "HUNGER", score: 0.61 },
         { label: "PREY LOCAL", score: 0.88 },
@@ -136,6 +138,7 @@ export const mockObservationSnapshot: ObservationSnapshot = {
         { entityId: "fittonia_albivenis#544", label: "#544", lifeStage: "ramet", relation: "offspring", alive: true },
         { entityId: "fittonia_albivenis#566", label: "#566", lifeStage: "ramet", relation: "offspring", alive: true }
       ],
+      history: [],
       why: [
         { label: "WATER STATUS", score: 0.88 },
         { label: "LIGHT", score: 0.73 },
