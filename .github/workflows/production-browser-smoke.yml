@@ -1,0 +1,27 @@
+name: Production Browser Smoke
+
+on:
+  push:
+    branches: ["agent/production-browser-smoke"]
+    paths:
+      - ".github/workflows/production-browser-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  production-browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Smoke public Vercel production
+        env:
+          SIMARIUM_BROWSER_URL: https://simarium-vercel.vercel.app
+          SIMARIUM_SOAK_MS: "20000"
+        run: npm run browser:smoke
