@@ -128,6 +128,41 @@ export type EntityInspection = {
   why: ReadonlyArray<BehaviorReason>;
 };
 
+export type MaterialValues = {
+  carbonMg: number;
+  nitrogenMg: number;
+  phosphorusMg: number;
+  waterG: number;
+};
+
+export type MaterialResidual = {
+  actual: number;
+  expected: number;
+  residual: number;
+  tolerance: number;
+};
+
+export type ScientificResources = {
+  availableNitrogenMg: number;
+  availablePhosphorusMg: number;
+  litterCarbonMg: number;
+  fungalCarbonMg: number;
+  bacterialCarbonMg: number;
+  corpseCarbonMg: number;
+};
+
+export type ScientificEvents = {
+  predation: number;
+  births: Readonly<Record<string, number>>;
+  deaths: Readonly<Record<string, number>>;
+};
+
+export type MaterialLedgerSnapshot = {
+  totals: MaterialValues;
+  cumulativeBoundaryFlux: MaterialValues;
+  residuals: Readonly<Record<keyof MaterialValues, MaterialResidual>>;
+};
+
 export type ObservationSnapshot = {
   species: ReadonlyArray<SpeciesSummary>;
   entities: ReadonlyArray<EntitySummary>;
@@ -135,6 +170,9 @@ export type ObservationSnapshot = {
   populations: ReadonlyArray<PopulationSeries>;
   inspectionByEntity: Readonly<Record<EntityId, EntityInspection>>;
   foodWeb: ReadonlyArray<FoodWebLink>;
+  resources: ScientificResources;
+  events: ScientificEvents;
+  materialLedger: MaterialLedgerSnapshot;
 };
 
 export type ObservationUiState = {
@@ -142,7 +180,7 @@ export type ObservationUiState = {
   speed: 1 | 5 | 20 | 100;
   selectedEntityId: EntityId | null;
   activeOverlay: OverlayKey | null;
-  bottomPanel: "graphs" | "foodWeb" | "actions";
+  bottomPanel: "graphs" | "foodWeb" | "resources" | "events" | "actions";
   userActions: ReadonlyArray<UserAction>;
   cameraMode: "orbit" | "free" | "macro" | "follow";
   seed: number;
