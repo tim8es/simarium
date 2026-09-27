@@ -343,7 +343,7 @@ if (benchmarkOnly) {
       case "PLACE_HARDSCAPE": {
         const kind = window.prompt("Hardscape kind", "wood");
         if (!kind) return null;
-        const id = `hardscape-${Date.now().toString(36)}`;
+        const id = `hardscape-${state.seed}-${client.nextUserActionSequence()}`;
         return {
           type: "add_hardscape",
           hardscapeId: id,
