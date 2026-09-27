@@ -43,6 +43,15 @@ try {
 
   const worldClock = page.locator(".viewport-label.top-right strong");
   const initialClock = await worldClock.textContent();
+  if (!initialClock || !/DAY 0\b/.test(initialClock)) {
+    throw new Error(`Normal mode did not begin at Day 0: ${initialClock}`);
+  }
+
+  const shellText = await page.locator(".observation-shell").innerText();
+  if (/synthetic snapshot|synthetic observation|day 61/i.test(shellText)) {
+    throw new Error("Normal mode exposed synthetic/mock observation content");
+  }
+
   let advancedClock = initialClock;
   const clockDeadline = Date.now() + 8000;
   while (Date.now() < clockDeadline && advancedClock === initialClock) {
