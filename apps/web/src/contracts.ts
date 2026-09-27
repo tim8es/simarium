@@ -187,10 +187,18 @@ export type MaterialLedgerSnapshot = {
   residuals: Readonly<Record<keyof MaterialValues, MaterialResidual>>;
 };
 
+export type TemperatureGridSnapshot = {
+  width: number;
+  height: number;
+  depth: number;
+  values: ReadonlyArray<number>;
+};
+
 export type ObservationSnapshot = {
   species: ReadonlyArray<SpeciesSummary>;
   entities: ReadonlyArray<EntitySummary>;
   environment: EnvironmentSnapshot;
+  temperatureGrid: TemperatureGridSnapshot | null;
   populations: ReadonlyArray<PopulationSeries>;
   inspectionByEntity: Readonly<Record<EntityId, EntityInspection>>;
   foodWeb: ReadonlyArray<FoodWebLink>;
