@@ -102,6 +102,7 @@ if (benchmarkOnly) {
   let selectedEntity: EntitySummary | undefined;
   let selectedInspection: EntityInspection | undefined;
   const runtimeActionIds = new Map<number, string>();
+  let latestStats: JsonValue = null;
 
   let state: ObservationUiState = {
     paused: false,
@@ -358,6 +359,7 @@ if (benchmarkOnly) {
     renderer.applyExternalDelta(delta);
   };
   client.hooks.onStats = (stats: JsonValue) => {
+    latestStats = stats;
     try {
       snapshot = statsToObservation(stats);
       renderer.setDynamicHardscape(hardscapeFromStats(stats));
@@ -431,6 +433,29 @@ if (benchmarkOnly) {
       runtimeMessage: "Phase 7 worker ready"
     });
   };
+
+  if (params.get("validation") === "1") {
+    Object.defineProperty(window, "__SIMARIUM_VALIDATION__", {
+      configurable: true,
+      value: {
+        getState: () => ({
+          ui: {
+            paused: state.paused,
+            speed: state.speed,
+            selectedEntityId: state.selectedEntityId,
+            runtimeStatus: state.runtimeStatus,
+            saveMessage: state.saveMessage ?? null
+          },
+          rawStats: latestStats,
+          renderedEntityIds: renderer.getRenderedEntityIds(),
+          dynamicHardscapeCount: renderer.getDynamicHardscapeCount()
+        }),
+        findPickTarget: () => renderer.findValidationPickTarget(),
+        listSaves: () => client.listSaves(),
+        probeWorkerError: () => client.probeInvalidProtocolForValidation()
+      }
+    });
+  }
 
   appRoot.addEventListener("click", (event) => {
     const target = event.target as HTMLElement;
