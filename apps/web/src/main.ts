@@ -175,6 +175,7 @@ if (benchmarkOnly) {
             <button data-world-command="new">New</button>
             <button data-world-command="save">Save</button>
             <button data-world-command="load">Load latest</button>
+            <button data-world-command="share">Share seed</button>
           </div>
           <div class="telemetry-strip">
             <span><small>TEMP</small><strong>${snapshot.environment.temperatureC.toFixed(1)}°</strong></span>
@@ -505,6 +506,13 @@ if (benchmarkOnly) {
             runtimeStatus: "error",
             runtimeMessage: error instanceof Error ? error.message : String(error)
           }));
+      } else if (command === "share") {
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.searchParams.set("seed", String(state.seed));
+        void navigator.clipboard.writeText(url.toString())
+          .then(() => setState({ saveMessage: "Seed link copied" }))
+          .catch(() => setState({ saveMessage: url.toString() }));
       } else if (command === "load") {
         setState({ saveMessage: "Loading latest save…" });
         void client.loadLatest()
