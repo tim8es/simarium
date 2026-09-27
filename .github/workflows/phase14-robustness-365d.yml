@@ -23,7 +23,7 @@ jobs:
   robustness-shard:
     name: 365d robustness shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 240
     strategy:
       fail-fast: false
       max-parallel: 10
@@ -70,7 +70,7 @@ jobs:
     name: Merge 365d robustness evidence
     needs: robustness-shard
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
