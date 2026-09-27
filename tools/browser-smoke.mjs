@@ -31,6 +31,27 @@ async function waitForClockChange(page, locator, previous, timeoutMs = 8_000) {
   return current;
 }
 
+async function waitForClockStable(page, locator, stableMs = 600, timeoutMs = 5_000) {
+  const deadline = Date.now() + timeoutMs;
+  let current = await locator.textContent();
+  if (!current) throw new Error("World clock is unavailable while waiting for pause");
+  let stableSince = Date.now();
+
+  while (Date.now() < deadline) {
+    await page.waitForTimeout(100);
+    const next = await locator.textContent();
+    if (!next) throw new Error("World clock disappeared while waiting for pause");
+    if (next !== current) {
+      current = next;
+      stableSince = Date.now();
+      continue;
+    }
+    if (Date.now() - stableSince >= stableMs) return current;
+  }
+
+  throw new Error(`World clock did not stabilize after pause: ${current}`);
+}
+
 async function withDialogs(page, responses, action) {
   const queue = [...responses];
   const handler = async (dialog) => {
@@ -233,10 +254,10 @@ try {
 
   await page.locator("[data-command='pause']").click();
   await page.waitForSelector(".runtime-banner.paused");
-  const pausedClock = await worldClock.textContent();
-  await page.waitForTimeout(1_200);
+  const pausedClock = await waitForClockStable(page, worldClock);
+  await page.waitForTimeout(800);
   if ((await worldClock.textContent()) !== pausedClock) {
-    throw new Error("Pause did not stop world time");
+    throw new Error("Pause did not keep world time stable");
   }
 
   await page.locator("[data-world-command='step']").click();
