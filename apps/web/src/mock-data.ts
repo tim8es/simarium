@@ -149,5 +149,48 @@ export const mockObservationSnapshot: ObservationSnapshot = {
     { sourceSpeciesId: "pilea", targetSpeciesId: "trichorhina", biomassTransferMg: 36 },
     { sourceSpeciesId: "folsomia", targetSpeciesId: "dalotia", biomassTransferMg: 18 },
     { sourceSpeciesId: "bradysia", targetSpeciesId: "dalotia", biomassTransferMg: 26 }
-  ]
+  ],
+  resources: {
+    availableNitrogenMg: 8.1,
+    availablePhosphorusMg: 3.7,
+    litterCarbonMg: 34800,
+    fungalCarbonMg: 944,
+    bacterialCarbonMg: 1720,
+    corpseCarbonMg: 112
+  },
+  events: {
+    predation: 44,
+    births: {
+      folsomia: 171,
+      trichorhina: 28,
+      bradysia: 55,
+      dalotia: 15
+    },
+    deaths: {
+      folsomia: 31,
+      trichorhina: 4,
+      bradysia: 17,
+      dalotia: 2
+    }
+  },
+  materialLedger: {
+    totals: {
+      carbonMg: 110791.16,
+      nitrogenMg: 1012.1,
+      phosphorusMg: 203.7,
+      waterG: 55050
+    },
+    cumulativeBoundaryFlux: {
+      carbonMg: 0,
+      nitrogenMg: 0,
+      phosphorusMg: 0,
+      waterG: 0
+    },
+    residuals: {
+      carbonMg: { actual: 110791.16, expected: 110791.16, residual: 0, tolerance: 0.0000554 },
+      nitrogenMg: { actual: 1012.1, expected: 1012.1, residual: 0, tolerance: 0.000000506 },
+      phosphorusMg: { actual: 203.7, expected: 203.7, residual: 0, tolerance: 0.000000102 },
+      waterG: { actual: 55050, expected: 55050, residual: 0, tolerance: 0.0000275 }
+    }
+  }
 };
