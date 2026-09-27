@@ -373,3 +373,35 @@ h2 { margin: 5px 0 0; font-size: 13px; font-weight: 550; letter-spacing: -.01em;
   .world-actions button { padding: 5px 6px; }
   .telemetry-strip { display: none; }
 }
+
+
+.history-list {
+  display: grid;
+  gap: 5px;
+  max-height: 150px;
+  overflow: auto;
+}
+.history-row {
+  display: grid;
+  grid-template-columns: 52px 72px 1fr;
+  gap: 7px;
+  align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(126, 151, 139, .11);
+  font-size: 7px;
+}
+.history-row > span {
+  color: #68766f;
+  font-variant-numeric: tabular-nums;
+}
+.history-row > strong {
+  color: #a8bbb1;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.history-row > small {
+  color: #829088;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
