@@ -21,7 +21,8 @@
     "typecheck:web": "tsc -p apps/web/tsconfig.json --noEmit",
     "dev:render": "npm run web:dev",
     "build:render": "npm run web:build",
-    "preview:render": "vite preview apps/web"
+    "preview:render": "vite preview apps/web",
+    "typecheck:render": "npm run typecheck:web"
   },
   "dependencies": {
     "three": "^0.180.0"
