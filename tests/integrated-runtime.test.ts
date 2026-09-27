@@ -92,6 +92,8 @@ describe("integrated browser runtime", () => {
     const ledger = saved.sections.materialPools as unknown as {
       cumulativeBoundaryFlux: { waterG: number };
     };
-    expect(ledger.cumulativeBoundaryFlux.waterG).toBeGreaterThanOrEqual(2);
+    // Removing a living organism is an explicit negative boundary flux for its
+    // body water, so net boundary water is slightly below the +2 g mist input.
+    expect(ledger.cumulativeBoundaryFlux.waterG).toBeGreaterThan(1.99);
   });
 });
