@@ -64,6 +64,7 @@ export function emptyObservationSnapshot(): ObservationSnapshot {
       bacterialBiomassMg: 0,
       litterMg: 0
     },
+    temperatureGrid: null,
     populations: [],
     inspectionByEntity: {},
     foodWeb: [],
@@ -112,6 +113,21 @@ export function statsToObservation(stats: JsonValue): ObservationSnapshot {
   const root = record(stats, "stats");
   const environmentRaw = record(root.environment, "stats.environment");
   const resources = record(root.resources, "stats.resources");
+
+  const temperatureGridRaw =
+    root.temperatureGrid === null || root.temperatureGrid === undefined
+      ? null
+      : record(root.temperatureGrid, "stats.temperatureGrid");
+  const temperatureGrid = temperatureGridRaw
+    ? {
+        width: numberValue(temperatureGridRaw.width),
+        height: numberValue(temperatureGridRaw.height),
+        depth: numberValue(temperatureGridRaw.depth),
+        values: array(temperatureGridRaw.values).map((value) =>
+          numberValue(value)
+        )
+      }
+    : null;
 
   const environment: EnvironmentSnapshot = {
     timeSeconds: numberValue(environmentRaw.timeSeconds),
@@ -214,6 +230,7 @@ export function statsToObservation(stats: JsonValue): ObservationSnapshot {
     species,
     entities: [],
     environment,
+    temperatureGrid,
     populations,
     inspectionByEntity: {},
     foodWeb,
