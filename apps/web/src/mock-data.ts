@@ -195,5 +195,20 @@ export const mockObservationSnapshot: ObservationSnapshot = {
       phosphorusMg: { actual: 203.7, expected: 203.7, residual: 0, tolerance: 0.000000102 },
       waterG: { actual: 55050, expected: 55050, residual: 0, tolerance: 0.0000275 }
     }
+  },
+  runtimeProfiler: {
+    running: true,
+    speed: 1,
+    ticksPerSecondAt1x: 1,
+    pulseIntervalMs: 100,
+    maxTicksPerPulse: 50,
+    lastStepTicks: 1,
+    lastStepWallMs: 2.4,
+    emaStepWallMs: 2.2,
+    averageWallMsPerTick: 2.1,
+    totalTicksStepped: 200,
+    framesEmitted: 200,
+    backlogTicks: 0.1,
+    maxObservedBacklogTicks: 0.4
   }
 };
