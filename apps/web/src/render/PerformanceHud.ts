@@ -18,6 +18,7 @@ export interface PerformanceSnapshot {
   animalMeshes: number;
   lod2Proxies: number;
   leafInstances: number;
+  dynamicHardscape: number;
   longTaskCount: number;
   maxLongTaskMs: number;
   measuring: boolean;
@@ -46,7 +47,8 @@ export class PerformanceHud {
     visibleEntities: 0,
     animalMeshes: 0,
     lod2Proxies: 0,
-    leafInstances: 0
+    leafInstances: 0,
+    dynamicHardscape: 0
   };
 
   constructor(parent: HTMLElement | null) {
@@ -124,7 +126,8 @@ export class PerformanceHud {
       visibleEntities: scene.visibleEntityCount,
       animalMeshes: scene.visibleAnimalMeshCount,
       lod2Proxies: scene.farAnimalProxyCount,
-      leafInstances: scene.plantLeafInstanceCount
+      leafInstances: scene.plantLeafInstanceCount,
+      dynamicHardscape: scene.dynamicHardscapeCount
     };
 
     if (nowMs - this.lastDomUpdate < 250) return;
