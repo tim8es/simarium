@@ -442,6 +442,36 @@ try {
   if (!/Avg \/ tick/i.test(profilerText) || !/Frames emitted/i.test(profilerText)) {
     throw new Error("Profiler telemetry did not render after soak");
   }
+  const profilerNumber = (pattern, label) => {
+    const match = profilerText.match(pattern);
+    const value = match ? Number(match[1]) : Number.NaN;
+    if (!Number.isFinite(value)) {
+      throw new Error(`Could not parse ${label} from worker profiler: ${profilerText}`);
+    }
+    return value;
+  };
+  const workerProfiler = {
+    speed: profilerNumber(/Speed\\s+(\\d+(?:\\.\\d+)?)×/i, "speed"),
+    lastStepWallMs: profilerNumber(/Last step\\s+([\\d.]+) ms/i, "last step"),
+    emaStepWallMs: profilerNumber(/EMA step\\s+([\\d.]+) ms/i, "EMA step"),
+    averageWallMsPerTick: profilerNumber(/Avg \\/ tick\\s+([\\d.]+) ms/i, "average per tick"),
+    backlogTicks: profilerNumber(/Backlog\\s+([\\d.]+) ticks/i, "backlog"),
+    maxObservedBacklogTicks: profilerNumber(/Max backlog\\s+([\\d.]+) ticks/i, "max backlog"),
+    framesEmitted: profilerNumber(/Frames emitted\\s+(\\d+)/i, "frames emitted")
+  };
+  if (workerProfiler.speed !== 100) {
+    throw new Error(`Profiler did not retain 100× simulation speed: ${workerProfiler.speed}`);
+  }
+  const liveMemory = await page.evaluate(() => {
+    const memory = performance.memory;
+    return memory
+      ? {
+          usedJSHeapSize: memory.usedJSHeapSize,
+          totalJSHeapSize: memory.totalJSHeapSize,
+          jsHeapSizeLimit: memory.jsHeapSizeLimit
+        }
+      : null;
+  });
 
   if (errors.length > 0) {
     throw new Error(`Browser emitted errors:\n${errors.join("\n")}`);
@@ -480,7 +510,9 @@ try {
     saveIds,
     webgl,
     newLifecycleEntityId,
-    finalRenderMetrics
+    finalRenderMetrics,
+    workerProfiler,
+    liveMemory
   }, null, 2));
 } finally {
   await browser.close();
