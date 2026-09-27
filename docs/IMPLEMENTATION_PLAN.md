@@ -282,7 +282,7 @@ A developer can diagnose extinction/resource drift without opening a debugger.
 
 ## Phase 13 — Persistence and offline-ready browser build
 
-**Status: ENGINEERING PASS — IndexedDB autosave/manual save, versioned snapshots/migration, deterministic replay load/resume and repeated save-load-resume stress coverage are implemented.**
+**Status: COMPLETE FOR MVP — IndexedDB autosave/manual save, portable versioned snapshot export/import, SharePresetV1 links, versioned snapshots/migration, deterministic replay load/resume and repeated save-load-resume stress coverage are implemented.**
 
 Implement:
 - IndexedDB;
@@ -296,7 +296,7 @@ Reloading the browser resumes the same world without mass/state discontinuity.
 
 ## Phase 14 — Final MVP validation
 
-**Status: ACTIVE — production Chromium browser smoke/accelerated soak passed (run `36326164750`); current-head 180-day ecosystem revalidation and physical target-GPU FPS are still pending release gates.**
+**Status: ACTIVE — merged head `666ef0bb3116aeb9ee30c1e52e38fc76b2f73d82` passed Chromium/WebGL2 browser smoke, portable export/import, reload/resume and accelerated soak (run `36333741057`); production Vercel deployment is READY. Current-head 180-day ecosystem revalidation, manual 500×365-day robustness evidence and physical target-GPU FPS are still pending release gates.**
 
 Run final:
 - deterministic regression suite;
@@ -336,7 +336,7 @@ Coding a phase is allowed only when:
 # Immediate next work
 
 1. Let the unchanged full Phase-7 calibration + independent validation workflow complete on the integrated code line; do not retune on validation seeds or weaken `VALIDATION.md` targets.
-2. Record the Phase-8 benchmark on physical laptop-class hardware at 1920×1080; CI/software rendering is not accepted as the FPS result.
+2. Record the Phase-8 benchmark on physical laptop-class hardware at 1920×1080 with `npm run render:hardware-benchmark`; CI/software rendering is intentionally rejected as official FPS evidence.
 3. Run the larger 365-day / >=500-seed stability evaluation when runtime budget permits; treat it as robustness validation, not as a reason to silently change the accepted MVP gate.
 4. Perform final release review for P0 invariant, persistence, browser and lifecycle failures. Renderer/art polish may continue independently because it is non-authoritative.
 5. Any future ecology retuning must reopen calibration on calibration seeds first and rerun independent validation without weakening `VALIDATION.md` targets.
