@@ -7,6 +7,7 @@ import type {
 } from "../../../../packages/sim-runtime/src/index.js";
 import {
   IndexedDbWorldPersistence,
+  parseRuntimeSnapshot,
   parseWorkerToUiMessage
 } from "../../../../packages/sim-runtime/src/index.js";
 import type {
@@ -159,7 +160,7 @@ export class SimulationClient {
     return sequence;
   }
 
-  async save(title = "Autosave", id = this.currentSaveId): Promise<string> {
+  async captureSnapshot(title = "Snapshot"): Promise<RuntimeSnapshotV2> {
     const requestId = this.nextRequestId("save");
     const message = await this.commandAndWait({
       type: "SAVE_SNAPSHOT",
@@ -169,7 +170,12 @@ export class SimulationClient {
     if (message.type !== "SAVE_RESULT") {
       throw new Error("Unexpected save response");
     }
-    const metadata = await this.persistence.save(message.snapshot, {
+    return message.snapshot;
+  }
+
+  async save(title = "Autosave", id = this.currentSaveId): Promise<string> {
+    const snapshot = await this.captureSnapshot(title);
+    const metadata = await this.persistence.save(snapshot, {
       id,
       title,
       compress: true
@@ -190,8 +196,11 @@ export class SimulationClient {
     });
   }
 
-  async load(id: string): Promise<RuntimeSnapshotV2> {
-    const snapshot = await this.persistence.load(id);
+  async loadSnapshot(
+    value: unknown,
+    saveId = "imported"
+  ): Promise<RuntimeSnapshotV2> {
+    const snapshot = parseRuntimeSnapshot(value);
     this.stopPolling();
     this.restoreActionSequence(snapshot);
     await this.commandAndWait({
@@ -199,10 +208,15 @@ export class SimulationClient {
       requestId: this.nextRequestId("load"),
       snapshot
     });
-    this.currentSaveId = id;
+    this.currentSaveId = saveId;
     this.start();
     this.startPolling();
     return snapshot;
+  }
+
+  async load(id: string): Promise<RuntimeSnapshotV2> {
+    const snapshot = await this.persistence.load(id);
+    return this.loadSnapshot(snapshot, id);
   }
 
   async loadLatest(): Promise<RuntimeSnapshotV2 | null> {
