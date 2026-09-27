@@ -266,6 +266,69 @@ describe("worker protocol and renderer transport", () => {
     runtime.dispose();
   });
 
+  it("reports worker profiler telemetry without putting it in world state", async () => {
+    class ProfileAdapter implements SimulationRuntimeAdapter {
+      tick = 0;
+      init(_message: Extract<UiToWorkerMessage, { type: "INIT" }>): void {}
+      loadSnapshot(snapshot: RuntimeSnapshotV2): void { this.tick = snapshot.tick; }
+      step(ticks: number): void { this.tick += ticks; }
+      applyUserAction(_action: UserActionEnvelope): void {}
+      renderSnapshot(): RenderWorldSnapshotDto { return renderSnapshot(this.tick, this.tick); }
+      entityDetails(_entityId: string): JsonValue { return null; }
+      stats(): JsonValue { return { tick: this.tick }; }
+      saveSnapshot(): RuntimeSnapshotV2 {
+        const world = createPhase1World({ seed: 1 });
+        world.tick = this.tick;
+        world.timeSeconds = this.tick * 60;
+        return snapshotForWorld(world);
+      }
+    }
+
+    const emitted: WorkerToUiMessage[] = [];
+    const adapter = new ProfileAdapter();
+    const runtime = new SimulationWorkerRuntime(
+      adapter,
+      message => emitted.push(message)
+    );
+    await runtime.handle({
+      type: "INIT",
+      requestId: "profile-init",
+      seed: 1,
+      simulationVersion: "0.1",
+      speciesDataVersion: "1"
+    });
+    await runtime.handle({
+      type: "STEP",
+      requestId: "profile-step",
+      ticks: 3
+    });
+    await runtime.handle({
+      type: "REQUEST_STATS",
+      requestId: "profile-stats"
+    });
+
+    const stats = emitted.find(
+      (message): message is Extract<WorkerToUiMessage, { type: "STATS" }> =>
+        message.type === "STATS" && message.requestId === "profile-stats"
+    );
+    expect(stats).toBeDefined();
+    const payload = stats!.stats as {
+      tick: number;
+      runtimeProfiler: {
+        lastStepTicks: number;
+        totalTicksStepped: number;
+        lastStepWallMs: number;
+        framesEmitted: number;
+      };
+    };
+    expect(payload.tick).toBe(3);
+    expect(payload.runtimeProfiler.lastStepTicks).toBe(3);
+    expect(payload.runtimeProfiler.totalTicksStepped).toBe(3);
+    expect(payload.runtimeProfiler.lastStepWallMs).toBeGreaterThanOrEqual(0);
+    expect(payload.runtimeProfiler.framesEmitted).toBeGreaterThanOrEqual(2);
+    runtime.dispose();
+  });
+
   it("pauses before async LOAD_WORLD and serializes following commands", async () => {
     vi.useFakeTimers();
     let releaseLoad!: () => void;
