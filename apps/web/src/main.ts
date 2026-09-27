@@ -443,6 +443,7 @@ if (benchmarkOnly) {
             paused: state.paused,
             speed: state.speed,
             selectedEntityId: state.selectedEntityId,
+            cameraMode: state.cameraMode,
             runtimeStatus: state.runtimeStatus,
             saveMessage: state.saveMessage ?? null
           },
@@ -451,6 +452,7 @@ if (benchmarkOnly) {
           dynamicHardscapeCount: renderer.getDynamicHardscapeCount()
         }),
         findPickTarget: () => renderer.findValidationPickTarget(),
+        selectEntity: (entityId: string) => selectEntity(entityId),
         listSaves: () => client.listSaves(),
         probeWorkerError: () => client.probeInvalidProtocolForValidation()
       }
