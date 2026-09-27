@@ -1,6 +1,11 @@
 import type { RenderWorldDeltaDto, RenderWorldSnapshotDto } from "./render-dto.js";
 import { isUserActionEnvelope, type UserActionEnvelope } from "./user-actions.js";
-import { parseRuntimeSnapshot, type JsonValue, type RuntimeSnapshotV2 } from "./snapshot.js";
+import {
+  assertJsonValue,
+  parseRuntimeSnapshot,
+  type JsonValue,
+  type RuntimeSnapshotV2
+} from "./snapshot.js";
 
 export const SIMULATION_SPEEDS = [1, 5, 20, 100] as const;
 export type SimulationSpeed = (typeof SIMULATION_SPEEDS)[number];
@@ -58,7 +63,10 @@ export function parseUiToWorkerMessage(value: unknown): UiToWorkerMessage {
         if (!nonEmpty(value.presetVersion)) throw new Error("INIT.presetVersion must be non-empty");
         message.presetVersion = value.presetVersion;
       }
-      if (value.config !== undefined) message.config = value.config as JsonValue;
+      if (value.config !== undefined) {
+        assertJsonValue(value.config, "INIT.config");
+        message.config = structuredClone(value.config);
+      }
       return message;
     }
     case "LOAD_WORLD":
