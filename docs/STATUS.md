@@ -8,7 +8,7 @@ Updated: 2026-09-27
 - Phase 1 deterministic conservation kernel: **PASS**.
 - Phase 2 producer + detritus loop: **PASS** — three real plant species, water-limited physiology, decomposer environment response and sensitivity tests.
 - Phase 3 *Folsomia candida* lifecycle: **PASS (engineering gate)** — individual lifecycle, multi-generation genealogy, moisture-sensitive reproduction, feeding, starvation/death and corpse transfer.
-- Phase 7 full headless ecosystem: **PASS** — accepted on a 100-seed × 180-day calibration batch plus an independent 100-seed × 180-day validation batch with unchanged `VALIDATION.md` gates.
+- Phase 7 full headless ecosystem: **ACCEPTED BASELINE PASS** — the accepted baseline passed a 100-seed × 180-day calibration batch plus an independent 100-seed × 180-day validation batch with unchanged `VALIDATION.md` gates. The current integration branch contains post-acceptance ecology fixes and must rerun the same full gate before that PASS is transferred to the integrated HEAD.
 
 ## Phase 1 evidence
 
@@ -172,7 +172,9 @@ The current predation encounter function is a headless density proxy. Spatially 
 
 ## Phase 7 completion evidence — 2026-09-26
 
-**Status: COMPLETE — engineering gate PASS.**
+**Status: ACCEPTED BASELINE COMPLETE — engineering gate PASS.**
+
+The evidence below applies to the accepted model head recorded in this section. The current integration branch contains subsequent ecology fixes (including diagnostics and local predator-competition corrections). Those changes are covered by regression/smoke tests but have not yet rerun the full 100-seed calibration + independent 100-seed validation gate. Therefore the accepted baseline remains valid evidence, while the integrated HEAD is **pending full Phase-7 revalidation**.
 
 Working branch:
 `agent/phase7-ecology`
