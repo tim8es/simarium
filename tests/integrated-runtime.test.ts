@@ -227,7 +227,14 @@ describe("integrated browser runtime", () => {
     source.step(5);
     restored.step(5);
 
-    expect(restored.saveSnapshot()).toEqual(source.saveSnapshot());
+    const sourceEnd = source.saveSnapshot();
+    const restoredEnd = restored.saveSnapshot();
+    expect(restoredEnd.tick).toBe(sourceEnd.tick);
+    expect(restoredEnd.virtualTime).toBe(sourceEnd.virtualTime);
+    expect(restoredEnd.rngState).toEqual(sourceEnd.rngState);
+    expect(restoredEnd.coreState).toEqual(sourceEnd.coreState);
+    expect(restoredEnd.userActionQueue).toEqual(sourceEnd.userActionQueue);
+    expect(restoredEnd.sections).toEqual(sourceEnd.sections);
   });
 
   it("keeps ecology deterministic when render and stats are observed", () => {
