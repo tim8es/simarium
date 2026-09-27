@@ -73,6 +73,12 @@ try {
   await page.locator("[data-user-action='MIST_WATER']").click();
   await page.getByText("accepted", { exact: true }).waitFor({ timeout: 10_000 });
 
+  const downloadPromise = page.waitForEvent("download");
+  await page.locator("[data-world-command='export']").click();
+  const download = await downloadPromise;
+  const exportedPath = await download.path();
+  if (!exportedPath) throw new Error("Portable save export did not produce a file");
+
   await page.locator("[data-world-command='save']").click();
   await page.getByText(/Saved: manual-/).waitFor({ timeout: 30_000 });
   await page.locator("[data-world-command='load']").click();
