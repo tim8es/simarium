@@ -182,7 +182,7 @@ export class SimulationClient {
     return this.persistence.list();
   }
 
-  async load(id: string): Promise<void> {
+  async load(id: string): Promise<RuntimeSnapshotV2> {
     const snapshot = await this.persistence.load(id);
     this.stopPolling();
     this.restoreActionSequence(snapshot);
@@ -194,14 +194,14 @@ export class SimulationClient {
     this.currentSaveId = id;
     this.start();
     this.startPolling();
+    return snapshot;
   }
 
-  async loadLatest(): Promise<boolean> {
+  async loadLatest(): Promise<RuntimeSnapshotV2 | null> {
     const saves = await this.persistence.list();
     const latest = saves[0];
-    if (!latest) return false;
-    await this.load(latest.id);
-    return true;
+    if (!latest) return null;
+    return this.load(latest.id);
   }
 
   dispose(): void {
