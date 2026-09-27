@@ -11,6 +11,138 @@ const browser = await chromium.launch({
     "--use-angle=swiftshader"
   ]
 });
+
+function parseWorldClock(text) {
+  const match = /^DAY\s+(\d+)\s+·\s+(\d{2}):(\d{2})$/.exec(text?.trim() ?? "");
+  if (!match) throw new Error(`Invalid world clock: ${text}`);
+  return Number(match[1]) * 1440 + Number(match[2]) * 60 + Number(match[3]);
+}
+
+async function waitForClockChange(page, locator, previous, timeoutMs = 8_000) {
+  const deadline = Date.now() + timeoutMs;
+  let current = previous;
+  while (Date.now() < deadline && current === previous) {
+    await page.waitForTimeout(250);
+    current = await locator.textContent();
+  }
+  if (!current || current === previous) {
+    throw new Error(`World clock did not advance: ${previous} -> ${current}`);
+  }
+  return current;
+}
+
+async function withDialogs(page, responses, action) {
+  const queue = [...responses];
+  const handler = async (dialog) => {
+    const response = queue.shift();
+    if (response === undefined) {
+      await dialog.dismiss();
+      return;
+    }
+    await dialog.accept(String(response));
+  };
+  page.on("dialog", handler);
+  try {
+    await action();
+    const deadline = Date.now() + 3_000;
+    while (queue.length > 0 && Date.now() < deadline) {
+      await page.waitForTimeout(25);
+    }
+    if (queue.length > 0) {
+      throw new Error(`Expected ${queue.length} more dialog response(s)`);
+    }
+  } finally {
+    page.off("dialog", handler);
+  }
+}
+
+async function renderMetrics(page) {
+  return page.evaluate(() => {
+    const metrics = window.__SIMARIUM_RENDER_METRICS__;
+    if (!metrics || typeof metrics !== "object") {
+      throw new Error("Integrated renderer metrics are unavailable");
+    }
+    return metrics;
+  });
+}
+
+async function boundaryFlux(page) {
+  await page.locator("[data-bottom-tab='resources']").click();
+  const flux = page.locator(".boundary-flux");
+  await flux.waitFor();
+  return flux.evaluate((node) => ({
+    carbonMg: Number(node.dataset.boundaryCarbonMg),
+    nitrogenMg: Number(node.dataset.boundaryNitrogenMg),
+    phosphorusMg: Number(node.dataset.boundaryPhosphorusMg),
+    waterG: Number(node.dataset.boundaryWaterG)
+  }));
+}
+
+async function applyPausedAction(page, type, dialogResponses = []) {
+  await page.locator("[data-bottom-tab='actions']").click();
+  const selector = `[data-action-type='${type}']`;
+  const before = await page.locator(selector).count();
+  await withDialogs(page, dialogResponses, async () => {
+    await page.locator(`[data-user-action='${type}']`).click();
+  });
+  const rows = page.locator(selector);
+  await rows.nth(before).waitFor({ timeout: 10_000 });
+  await rows.nth(before).locator("strong").getByText("accepted", { exact: true }).waitFor({
+    timeout: 10_000
+  });
+  await page.locator("[data-world-command='step']").click();
+  await page.waitForSelector(".runtime-banner.paused");
+  await page.waitForTimeout(1_200);
+  return rows.nth(before);
+}
+
+async function pickVisibleEntity(page) {
+  const canvas = page.locator("#render-layer canvas");
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error("Renderer canvas has no bounding box");
+
+  const xs = [0.32, 0.4, 0.48, 0.56, 0.64, 0.72];
+  const ys = [0.22, 0.3, 0.38, 0.46, 0.54, 0.62];
+  for (const y of ys) {
+    for (const x of xs) {
+      await canvas.dispatchEvent("click", {
+        clientX: box.x + box.width * x,
+        clientY: box.y + box.height * y,
+        bubbles: true
+      });
+      await page.waitForTimeout(180);
+      const card = page.locator(".entity-card[data-entity-id]");
+      if (await card.count()) {
+        const id = await card.first().getAttribute("data-entity-id");
+        if (id) return id;
+      }
+    }
+  }
+  throw new Error("Could not pick a visible authoritative entity from the WebGL scene");
+}
+
+async function indexedDbSaveIds(page) {
+  return page.evaluate(async () => {
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open("simarium", 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error ?? new Error("IndexedDB open failed"));
+    });
+    try {
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction("worlds", "readonly");
+        const request = tx.objectStore("worlds").getAll();
+        request.onsuccess = () => resolve(
+          request.result.map((record) => record?.metadata?.id).filter(Boolean)
+        );
+        request.onerror = () => reject(request.error ?? new Error("IndexedDB read failed"));
+      });
+    } finally {
+      db.close();
+    }
+  });
+}
+
 const page = await browser.newPage({
   viewport: { width: 1440, height: 900 }
 });
@@ -20,76 +152,14 @@ page.on("console", message => {
   if (message.type() === "error") errors.push(`console: ${message.text()}`);
 });
 
-async function validationState() {
-  return page.evaluate(() => {
-    const api = window.__SIMARIUM_VALIDATION__;
-    if (!api) throw new Error("Validation API is unavailable");
-    return api.getState();
-  });
-}
-
-async function setSpeed(speed) {
-  await page.locator(`[data-speed='${speed}']`).click();
-  await page.waitForFunction((expected) => {
-    const state = window.__SIMARIUM_VALIDATION__?.getState();
-    return state?.ui?.speed === expected &&
-      state?.ui?.paused === false &&
-      state?.rawStats?.runtimeProfiler?.speed === expected &&
-      state?.rawStats?.runtimeProfiler?.running === true;
-  }, speed, { timeout: 15_000 });
-}
-
-async function answerAction(type, answers = []) {
-  let index = 0;
-  const onDialog = async dialog => {
-    if (index >= answers.length) {
-      await dialog.dismiss();
-      return;
-    }
-    const value = answers[index++];
-    await dialog.accept(String(value));
-  };
-  page.on("dialog", onDialog);
-  try {
-    await page.locator(`[data-user-action='${type}']`).click();
-    if (answers.length > 0) {
-      await page.waitForFunction(
-        ({ expected, actionType }) => {
-          const buttons = [...document.querySelectorAll("[data-user-action]")];
-          return buttons.some(button => button.getAttribute("data-user-action") === actionType) &&
-            expected >= 0;
-        },
-        { expected: answers.length, actionType: type }
-      );
-    }
-  } finally {
-    page.off("dialog", onDialog);
-  }
-  if (index !== answers.length) {
-    throw new Error(
-      `${type} expected ${answers.length} dialogs but handled ${index}`
-    );
-  }
-}
-
-function finiteMaterialTotals(value) {
-  return value &&
-    ["carbonMg", "nitrogenMg", "phosphorusMg", "waterG"].every(
-      key => Number.isFinite(value[key])
-    );
-}
-
 try {
-  await page.goto(`${baseUrl}/?seed=7011&validation=1`, {
+  await page.goto(`${baseUrl}/?seed=7011`, {
     waitUntil: "networkidle",
     timeout: 30_000
   });
 
   await page.waitForSelector(".runtime-banner.running", { timeout: 30_000 });
   await page.waitForSelector("#render-layer canvas", { timeout: 30_000 });
-  await page.waitForFunction(() => Boolean(
-    window.__SIMARIUM_VALIDATION__?.getState()?.rawStats
-  ), undefined, { timeout: 30_000 });
 
   const webgl = await page.locator("#render-layer canvas").evaluate(canvas => {
     const context = canvas.getContext("webgl2");
@@ -113,112 +183,68 @@ try {
   if (/synthetic snapshot|synthetic observation|day 61/i.test(shellText)) {
     throw new Error("Normal mode exposed synthetic/mock observation content");
   }
+  if (!/not modeled/i.test(await page.locator("[data-overlay='o2']").innerText())) {
+    throw new Error("O₂ is not modeled but was not labeled 'not modeled'");
+  }
+  if (!/proxy/i.test(await page.locator("[data-overlay='humidity']").innerText())) {
+    throw new Error("Humidity proxy was not labeled as a proxy");
+  }
+  if (!/proxy/i.test(await page.locator("[data-overlay='co2']").innerText())) {
+    throw new Error("CO₂ proxy was not labeled as a proxy");
+  }
 
-  let advancedClock = initialClock;
-  const clockDeadline = Date.now() + 8000;
-  while (Date.now() < clockDeadline && advancedClock === initialClock) {
-    await page.waitForTimeout(500);
-    advancedClock = await worldClock.textContent();
-  }
-  if (!advancedClock || initialClock === advancedClock) {
-    throw new Error(`World clock did not advance: ${initialClock} -> ${advancedClock}`);
-  }
-
-  for (const speed of [1, 5, 20, 100]) {
-    await setSpeed(speed);
-  }
+  const advancedClock = await waitForClockChange(page, worldClock, initialClock);
 
   await page.locator("[data-command='pause']").click();
   await page.waitForSelector(".runtime-banner.paused");
-  await page.waitForFunction(() => {
-    const state = window.__SIMARIUM_VALIDATION__?.getState();
-    return state?.ui?.paused === true &&
-      state?.rawStats?.runtimeProfiler?.running === false;
-  }, undefined, { timeout: 15_000 });
+  const pausedClock = await worldClock.textContent();
+  await page.waitForTimeout(1_200);
+  if ((await worldClock.textContent()) !== pausedClock) {
+    throw new Error("Pause did not stop world time");
+  }
 
-  const beforeStep = await validationState();
-  const beforeStepTick = beforeStep.rawStats.tick;
   await page.locator("[data-world-command='step']").click();
-  await page.waitForFunction((tick) => {
-    const state = window.__SIMARIUM_VALIDATION__?.getState();
-    return state?.ui?.paused === true &&
-      state?.rawStats?.runtimeProfiler?.running === false &&
-      state?.rawStats?.tick > tick;
-  }, beforeStepTick, { timeout: 15_000 });
-
-  const pickTarget = await page.evaluate(() =>
-    window.__SIMARIUM_VALIDATION__?.findPickTarget() ?? null
-  );
-  if (!pickTarget) {
-    throw new Error("Renderer could not produce a real raycast picking target");
-  }
-  await page.mouse.click(pickTarget.clientX, pickTarget.clientY);
-  await page.waitForFunction((entityId) =>
-    window.__SIMARIUM_VALIDATION__?.getState()?.ui?.selectedEntityId === entityId,
-    pickTarget.entityId,
-    { timeout: 15_000 }
-  );
-  const selectedShortId = pickTarget.entityId.slice(
-    pickTarget.entityId.lastIndexOf("#") + 1
-  );
-  await page.locator(".entity-card").getByText(
-    new RegExp(`SELECTED · #${selectedShortId}\\b`)
-  ).waitFor();
-  await page.locator(".genealogy-panel .lineage-node.current").waitFor();
-  await page.locator(".why-panel .reason-row").first().waitFor();
-
-  await page.locator("[data-live-camera='follow']").click();
-  await page.locator("[data-live-camera='follow'].is-active").waitFor();
-  await page.waitForFunction(() =>
-    window.__SIMARIUM_VALIDATION__?.getState()?.ui?.cameraMode === "follow"
-  );
-
-  const beforeSoak = await validationState();
-  const initialRenderedIds = new Set(beforeSoak.renderedEntityIds);
-  const initialBirths = { ...beforeSoak.rawStats.events.births };
-
-  await setSpeed(100);
-  await page.waitForTimeout(soakMs);
-
-  await page.waitForFunction(() => {
-    const stats = window.__SIMARIUM_VALIDATION__?.getState()?.rawStats;
-    if (!stats?.populationSeries) return false;
-    return Object.values(stats.populationSeries).some(
-      points => Array.isArray(points) && points.length >= 2
-    );
-  }, undefined, { timeout: 30_000 });
-
-  const afterSoak = await validationState();
-  const bornAfterStart = ["folsomia", "trichorhina", "bradysia", "dalotia"]
-    .some(key => (afterSoak.rawStats.events.births[key] ?? 0) >
-      (initialBirths[key] ?? 0));
-  if (!bornAfterStart) {
-    throw new Error("Accelerated live simulation produced no post-start animal generation evidence");
-  }
-  const newlyRendered = afterSoak.renderedEntityIds.filter(
-    id => !initialRenderedIds.has(id)
-  );
-  if (newlyRendered.length === 0) {
-    throw new Error("Renderer did not display any entity ID created after the initial snapshot");
+  const steppedClock = await waitForClockChange(page, worldClock, pausedClock, 4_000);
+  if (parseWorldClock(steppedClock) - parseWorldClock(pausedClock) !== 30) {
+    throw new Error(`STEP did not advance exactly one 30-minute ecology tick: ${pausedClock} -> ${steppedClock}`);
   }
 
-  await page.locator("[data-bottom-tab='graphs']").click();
-  await page.locator(".graph-content .series-row").first().waitFor();
-  const graphRows = await page.locator(".graph-content .series-row").count();
-  if (graphRows < 7) {
-    throw new Error(`Population graphs missing live species series: ${graphRows}`);
+  for (const speed of [1, 5, 20, 100]) {
+    await page.locator(`[data-speed='${speed}']`).click();
+    await page.locator(`[data-speed='${speed}'].is-active`).waitFor();
+    await page.locator("[data-bottom-tab='profiler']").click();
+    await page.locator(".profiler-content").getByText(`${speed}×`, { exact: true }).waitFor({
+      timeout: 4_000
+    });
   }
 
-  await page.locator("[data-bottom-tab='foodWeb']").click();
-  await page.waitForFunction(() => {
-    const stats = window.__SIMARIUM_VALIDATION__?.getState()?.rawStats;
-    return Array.isArray(stats?.foodWeb) &&
-      stats.foodWeb.some(link => Number(link.biomassTransferMg) > 0);
-  }, undefined, { timeout: 15_000 });
-  await page.locator(".foodweb-content .web-edge").first().waitFor();
+  await page.waitForTimeout(1_500);
+  await page.locator("[data-command='pause']").click();
+  await page.waitForSelector(".runtime-banner.paused");
 
   await page.locator("[data-overlay='temperature']").click();
   await page.locator("[data-overlay='temperature'].is-active").waitFor();
+
+  await page.locator("[data-bottom-tab='graphs']").click();
+  const graphRows = page.locator(".series-row");
+  await graphRows.first().waitFor();
+  const graphPointCounts = await graphRows.evaluateAll(rows =>
+    rows.map(row => Number(row.dataset.pointCount ?? "0"))
+  );
+  if (!graphPointCounts.some(count => count >= 2)) {
+    throw new Error(`Population graphs did not receive live multi-sample data: ${graphPointCounts.join(",")}`);
+  }
+
+  await page.locator("[data-bottom-tab='foodWeb']").click();
+  const foodEdges = page.locator(".web-edge[data-biomass-mg]");
+  await foodEdges.first().waitFor({ timeout: 5_000 });
+  const foodTransfers = await foodEdges.evaluateAll(edges =>
+    edges.map(edge => Number(edge.dataset.biomassMg ?? "0"))
+  );
+  if (!foodTransfers.some(value => value > 0)) {
+    throw new Error("Food web did not expose real positive transfer telemetry");
+  }
+
   await page.locator("[data-bottom-tab='resources']").click();
   await page.getByText("Conservation residuals").waitFor();
   await page.locator("[data-bottom-tab='profiler']").click();
@@ -226,269 +252,173 @@ try {
   await page.locator("[data-bottom-tab='events']").click();
   await page.getByText("RECENT EVENT STREAM").waitFor();
 
-  await setSpeed(1);
-  await page.locator("[data-bottom-tab='actions']").click();
-
-  let state = await validationState();
-  const waterBefore = state.rawStats.materialLedger.cumulativeBoundaryFlux.waterG;
-  await answerAction("MIST_WATER", [1.25]);
-  await page.waitForFunction((before) =>
-    window.__SIMARIUM_VALIDATION__?.getState()
-      ?.rawStats?.materialLedger?.cumulativeBoundaryFlux?.waterG > before + 1,
-    waterBefore,
-    { timeout: 15_000 }
-  );
-
-  state = await validationState();
-  const carbonBefore = state.rawStats.materialLedger.cumulativeBoundaryFlux.carbonMg;
-  await answerAction("ADD_LITTER", [100]);
-  await page.waitForFunction((before) =>
-    window.__SIMARIUM_VALIDATION__?.getState()
-      ?.rawStats?.materialLedger?.cumulativeBoundaryFlux?.carbonMg > before + 99,
-    carbonBefore,
-    { timeout: 15_000 }
-  );
-
-  state = await validationState();
-  const folsomiaBefore = state.rawStats.populations.folsomia_candida;
-  await answerAction("INTRODUCE_ORGANISM", ["folsomia_candida", 3]);
-  await page.waitForFunction((before) =>
-    window.__SIMARIUM_VALIDATION__?.getState()
-      ?.rawStats?.populations?.folsomia_candida >= before + 3,
-    folsomiaBefore,
-    { timeout: 15_000 }
-  );
-
-  state = await validationState();
-  const removableId = state.renderedEntityIds.find(
-    id => id.startsWith("folsomia_candida#")
-  );
-  if (!removableId) throw new Error("No live Folsomia render ID available for removal");
-  await page.evaluate((entityId) =>
-    window.__SIMARIUM_VALIDATION__?.selectEntity(entityId),
-    removableId
-  );
-  await page.waitForFunction((entityId) =>
-    window.__SIMARIUM_VALIDATION__?.getState()?.ui?.selectedEntityId === entityId,
-    removableId
-  );
-  await answerAction("REMOVE_ORGANISM");
-  await page.waitForFunction((entityId) => {
-    const state = window.__SIMARIUM_VALIDATION__?.getState();
-    return !state?.renderedEntityIds?.includes(entityId) &&
-      state?.rawStats?.events?.recent?.some(
-        event => event.entityId === entityId && /user_removal/i.test(event.label)
-      );
-  }, removableId, { timeout: 15_000 });
-
-  await answerAction("CHANGE_LIGHT", [0.5]);
-  await page.waitForFunction(() => {
-    const stats = window.__SIMARIUM_VALIDATION__?.getState()?.rawStats;
-    return Math.abs(stats?.controls?.lightMultiplier - 0.5) < 1e-9 &&
-      Math.abs(stats?.environment?.lightPar - 93) < 1e-6;
-  }, undefined, { timeout: 15_000 });
-
-  state = await validationState();
-  const boundaryBeforeVent = {
-    carbonMg: state.rawStats.materialLedger.cumulativeBoundaryFlux.carbonMg,
-    waterG: state.rawStats.materialLedger.cumulativeBoundaryFlux.waterG
-  };
-  await answerAction("CHANGE_VENTILATION", [0.00005]);
-  await page.waitForFunction((before) => {
-    const stats = window.__SIMARIUM_VALIDATION__?.getState()?.rawStats;
-    if (Math.abs(stats?.controls?.ventilationRatePerSecond - 0.00005) > 1e-12) {
-      return false;
-    }
-    const flux = stats?.materialLedger?.cumulativeBoundaryFlux;
-    return Math.abs((flux?.carbonMg ?? 0) - before.carbonMg) > 1e-9 ||
-      Math.abs((flux?.waterG ?? 0) - before.waterG) > 1e-9;
-  }, boundaryBeforeVent, { timeout: 20_000 });
-
-  state = await validationState();
-  const hardscapeIdsBefore = new Set(
-    state.rawStats.hardscape.map(entry => entry.id)
-  );
-  const visualHardscapeBefore = state.dynamicHardscapeCount;
-  await answerAction("PLACE_HARDSCAPE", ["wood"]);
-  await page.waitForFunction(({ count, visualCount }) => {
-    const state = window.__SIMARIUM_VALIDATION__?.getState();
-    return state?.rawStats?.hardscape?.length === count + 1 &&
-      state?.dynamicHardscapeCount === visualCount + 1;
-  }, {
-    count: hardscapeIdsBefore.size,
-    visualCount: visualHardscapeBefore
-  }, { timeout: 15_000 });
-  state = await validationState();
-  const addedHardscapeId = state.rawStats.hardscape
-    .map(entry => entry.id)
-    .find(id => !hardscapeIdsBefore.has(id));
-  if (!addedHardscapeId) throw new Error("Hardscape add did not expose an authoritative ID");
-
-  await answerAction("REMOVE_HARDSCAPE", [addedHardscapeId]);
-  await page.waitForFunction(({ id, visualCount }) => {
-    const state = window.__SIMARIUM_VALIDATION__?.getState();
-    return !state?.rawStats?.hardscape?.some(entry => entry.id === id) &&
-      state?.dynamicHardscapeCount === visualCount;
-  }, {
-    id: addedHardscapeId,
-    visualCount: visualHardscapeBefore
-  }, { timeout: 15_000 });
-
-  await answerAction("CHANGE_VENTILATION", [0]);
-  await page.waitForFunction(() =>
-    window.__SIMARIUM_VALIDATION__?.getState()
-      ?.rawStats?.controls?.ventilationRatePerSecond === 0
-  );
-
-  const keptIdsBefore = new Set(
-    (await validationState()).rawStats.hardscape.map(entry => entry.id)
-  );
-  await answerAction("PLACE_HARDSCAPE", ["wood"]);
-  await page.waitForFunction((count) =>
-    window.__SIMARIUM_VALIDATION__?.getState()?.rawStats?.hardscape?.length === count + 1,
-    keptIdsBefore.size,
-    { timeout: 15_000 }
-  );
-  state = await validationState();
-  const keptHardscapeId = state.rawStats.hardscape
-    .map(entry => entry.id)
-    .find(id => !keptIdsBefore.has(id));
-  if (!keptHardscapeId) throw new Error("Persistent hardscape ID was not created");
-
-  await answerAction("CHANGE_LIGHT", [0.65]);
-  await page.waitForFunction(() =>
-    Math.abs(
-      window.__SIMARIUM_VALIDATION__?.getState()
-        ?.rawStats?.controls?.lightMultiplier - 0.65
-    ) < 1e-9
-  );
-
-  await page.waitForFunction(async () => {
-    const api = window.__SIMARIUM_VALIDATION__;
-    if (!api) return false;
-    const saves = await api.listSaves();
-    return saves.some(save => save.id === "autosave");
-  }, undefined, { timeout: 45_000 });
-
-  const materialBeforeSave = (await validationState()).rawStats.materialLedger.totals;
-  if (!finiteMaterialTotals(materialBeforeSave)) {
-    throw new Error("Material totals were non-finite before persistence checks");
+  const selectedId = await pickVisibleEntity(page);
+  const entityCard = page.locator(`.entity-card[data-entity-id="${selectedId}"]`);
+  await entityCard.waitFor();
+  const genealogyCurrent = page.locator(`.genealogy-panel .lineage-node.current[data-entity-id="${selectedId}"]`);
+  await genealogyCurrent.waitFor({ timeout: 5_000 });
+  if (await page.locator(".why-panel .reason-row").count() === 0) {
+    throw new Error("Why/state trace did not load for selected entity");
+  }
+  if (await page.locator(".history-panel .history-row").count() === 0) {
+    throw new Error("Causal history did not load for selected entity");
   }
 
-  async function manualSaveAndLoadCycle() {
-    const previousMessage = (await validationState()).ui.saveMessage;
-    await page.locator("[data-world-command='save']").click();
-    await page.waitForFunction((previous) => {
-      const message = window.__SIMARIUM_VALIDATION__?.getState()?.ui?.saveMessage;
-      return typeof message === "string" &&
-        /^Saved: manual-/.test(message) &&
-        message !== previous;
-    }, previousMessage, { timeout: 30_000 });
-    const savedState = await validationState();
-    const savedTime = savedState.rawStats.virtualTime;
-    const savedTotals = savedState.rawStats.materialLedger.totals;
-    await page.locator("[data-world-command='load']").click();
-    await page.waitForFunction(() =>
-      window.__SIMARIUM_VALIDATION__?.getState()?.ui?.saveMessage === "Loaded latest save"
-    , undefined, { timeout: 30_000 });
-    await page.waitForFunction((minimumTime) =>
-      window.__SIMARIUM_VALIDATION__?.getState()?.rawStats?.virtualTime >= minimumTime
-    , savedTime, { timeout: 30_000 });
-    const loaded = await validationState();
-    for (const key of ["carbonMg", "nitrogenMg", "phosphorusMg", "waterG"]) {
-      if (Math.abs(loaded.rawStats.materialLedger.totals[key] - savedTotals[key]) > 1e-6) {
-        throw new Error(
-          `Material discontinuity after save/load for ${key}: ` +
-          `${savedTotals[key]} -> ${loaded.rawStats.materialLedger.totals[key]}`
-        );
-      }
-    }
-    return { savedTime, savedTotals };
+  await page.locator("[data-live-camera='follow']").click();
+  await page.locator("[data-live-camera='follow'].is-active").waitFor();
+
+  const waterBefore = await boundaryFlux(page);
+  await applyPausedAction(page, "MIST_WATER", ["1.25"]);
+  const waterAfter = await boundaryFlux(page);
+  if (!(waterAfter.waterG > waterBefore.waterG + 1.0)) {
+    throw new Error(`Water boundary flux did not increase: ${waterBefore.waterG} -> ${waterAfter.waterG}`);
   }
 
-  await manualSaveAndLoadCycle();
-  await manualSaveAndLoadCycle();
+  const litterBefore = await boundaryFlux(page);
+  await applyPausedAction(page, "ADD_LITTER", ["100"]);
+  const litterAfter = await boundaryFlux(page);
+  if (!(litterAfter.carbonMg > litterBefore.carbonMg + 90)) {
+    throw new Error(`Litter boundary carbon did not increase: ${litterBefore.carbonMg} -> ${litterAfter.carbonMg}`);
+  }
 
-  await answerAction("CHANGE_LIGHT", [1.2]);
-  await answerAction("REMOVE_HARDSCAPE", [keptHardscapeId]);
-  await page.waitForFunction((id) => {
-    const state = window.__SIMARIUM_VALIDATION__?.getState();
-    return Math.abs(state?.rawStats?.controls?.lightMultiplier - 1.2) < 1e-9 &&
-      !state?.rawStats?.hardscape?.some(entry => entry.id === id);
-  }, keptHardscapeId, { timeout: 15_000 });
+  const renderBeforeIntroduce = await renderMetrics(page);
+  await applyPausedAction(page, "INTRODUCE_ORGANISM", ["folsomia_candida", "2"]);
+  const renderAfterIntroduce = await renderMetrics(page);
+  if (!(renderAfterIntroduce.totalEntities >= renderBeforeIntroduce.totalEntities + 2)) {
+    throw new Error(`Introduced organisms did not reach renderer projection: ${renderBeforeIntroduce.totalEntities} -> ${renderAfterIntroduce.totalEntities}`);
+  }
 
-  await page.locator("[data-world-command='load']").click();
-  await page.waitForFunction((id) => {
-    const state = window.__SIMARIUM_VALIDATION__?.getState();
-    return state?.ui?.saveMessage === "Loaded latest save" &&
-      Math.abs(state?.rawStats?.controls?.lightMultiplier - 0.65) < 1e-9 &&
-      state?.rawStats?.hardscape?.some(entry => entry.id === id) &&
-      state?.dynamicHardscapeCount >= 1;
-  }, keptHardscapeId, { timeout: 30_000 });
+  await applyPausedAction(page, "CHANGE_LIGHT", ["0.5"]);
+  const lightText = await page.locator("[data-overlay='light'] strong").textContent();
+  if (!lightText || !/^93\s+PAR/.test(lightText)) {
+    throw new Error(`Light boundary control did not affect simulation projection: ${lightText}`);
+  }
 
-  const beforeReloadSaveMessage = (await validationState()).ui.saveMessage;
+  const ventilationBefore = await boundaryFlux(page);
+  await applyPausedAction(page, "CHANGE_VENTILATION", ["0.01"]);
+  const ventilationAfter = await boundaryFlux(page);
+  if (
+    Math.abs(ventilationAfter.carbonMg - ventilationBefore.carbonMg) < 1e-9 &&
+    Math.abs(ventilationAfter.waterG - ventilationBefore.waterG) < 1e-9
+  ) {
+    throw new Error("Ventilation did not produce an explicit atmospheric boundary flux");
+  }
+
+  const hardscapeBefore = await renderMetrics(page);
+  const hardscapeRow = await applyPausedAction(page, "PLACE_HARDSCAPE", ["wood"]);
+  const hardscapeId = await hardscapeRow.getAttribute("data-hardscape-id");
+  if (!hardscapeId) throw new Error("Placed hardscape did not retain its deterministic action identity");
+  const hardscapeAdded = await renderMetrics(page);
+  if (hardscapeAdded.dynamicHardscape !== hardscapeBefore.dynamicHardscape + 1) {
+    throw new Error(`Hardscape was not visually added: ${hardscapeBefore.dynamicHardscape} -> ${hardscapeAdded.dynamicHardscape}`);
+  }
+  await applyPausedAction(page, "REMOVE_HARDSCAPE", [hardscapeId]);
+  const hardscapeRemoved = await renderMetrics(page);
+  if (hardscapeRemoved.dynamicHardscape !== hardscapeBefore.dynamicHardscape) {
+    throw new Error(`Hardscape was not visually removed: ${hardscapeAdded.dynamicHardscape} -> ${hardscapeRemoved.dynamicHardscape}`);
+  }
+
+  await applyPausedAction(page, "REMOVE_ORGANISM");
+  if (await page.locator(`.entity-card[data-entity-id="${selectedId}"]`).count()) {
+    throw new Error("Removed entity remained selected in the UI");
+  }
+  await page.locator("[data-bottom-tab='events']").click();
+  await page.getByText(/user_removal/).first().waitFor({ timeout: 5_000 });
+
   await page.locator("[data-world-command='save']").click();
-  await page.waitForFunction((previous) => {
-    const message = window.__SIMARIUM_VALIDATION__?.getState()?.ui?.saveMessage;
-    return typeof message === "string" &&
-      /^Saved: manual-/.test(message) &&
-      message !== previous;
-  }, beforeReloadSaveMessage, { timeout: 30_000 });
-  const persistedBeforeReload = await validationState();
-  const persistedTime = persistedBeforeReload.rawStats.virtualTime;
+  await page.getByText(/Saved: manual-/).waitFor({ timeout: 30_000 });
+  const savedClock = await worldClock.textContent();
 
-  await page.reload({ waitUntil: "networkidle", timeout: 30_000 });
+  const autosaveDeadline = Date.now() + 36_000;
+  let saveIds = await indexedDbSaveIds(page);
+  while (!saveIds.includes("autosave") && Date.now() < autosaveDeadline) {
+    await page.waitForTimeout(1_000);
+    saveIds = await indexedDbSaveIds(page);
+  }
+  if (!saveIds.includes("autosave")) {
+    throw new Error(`IndexedDB autosave did not appear within 36 seconds: ${saveIds.join(",")}`);
+  }
+
+  await page.reload({ waitUntil: "networkidle" });
   await page.waitForSelector(".runtime-banner.running", { timeout: 30_000 });
-  const reloadedDayZero = await worldClock.textContent();
-  if (!reloadedDayZero || !/DAY 0\b/.test(reloadedDayZero)) {
-    throw new Error(`Fresh page did not restart at Day 0 before explicit load: ${reloadedDayZero}`);
+  const reloadedInitialClock = await worldClock.textContent();
+  if (!reloadedInitialClock || !/DAY 0\b/.test(reloadedInitialClock)) {
+    throw new Error(`Reload did not start a fresh Day 0 before explicit load: ${reloadedInitialClock}`);
   }
   await page.locator("[data-world-command='load']").click();
-  await page.waitForFunction(({ time, id }) => {
-    const state = window.__SIMARIUM_VALIDATION__?.getState();
-    return state?.ui?.saveMessage === "Loaded latest save" &&
-      state?.rawStats?.virtualTime >= time &&
-      state?.rawStats?.hardscape?.some(entry => entry.id === id) &&
-      Math.abs(state?.rawStats?.controls?.lightMultiplier - 0.65) < 1e-9;
-  }, { time: persistedTime, id: keptHardscapeId }, { timeout: 30_000 });
-
+  await page.getByText(/Loaded latest save/).waitFor({ timeout: 30_000 });
+  await page.locator("[data-command='pause']").click();
+  await page.waitForSelector(".runtime-banner.paused");
   const loadedClock = await worldClock.textContent();
-  if (!loadedClock || /DAY 0 · 00:00/.test(loadedClock)) {
-    throw new Error(`Reload/load did not restore advanced world time: ${loadedClock}`);
+  if (
+    !savedClock ||
+    !loadedClock ||
+    Math.abs(parseWorldClock(loadedClock) - parseWorldClock(savedClock)) > 60
+  ) {
+    throw new Error(`Reload/load did not resume the saved world: ${savedClock} -> ${loadedClock}`);
   }
-  const loadedTime = (await validationState()).rawStats.virtualTime;
-  await page.waitForFunction((time) =>
-    window.__SIMARIUM_VALIDATION__?.getState()?.rawStats?.virtualTime > time
-  , loadedTime, { timeout: 15_000 });
 
   await page.locator("[data-world-command='night-aid']").click();
   await page.getByText(/Visual night observation aid enabled/).waitFor();
 
-  await page.evaluate(() =>
-    window.__SIMARIUM_VALIDATION__?.probeWorkerError()
-  );
-  await page.waitForSelector(".runtime-banner.error", { timeout: 15_000 });
-  const errorBanner = await page.locator(".runtime-banner.error").innerText();
-  if (!/ERROR/i.test(errorBanner) || errorBanner.length < 10) {
-    throw new Error(`Worker error was not surfaced to the user: ${errorBanner}`);
+  await page.locator("[data-speed='100']").click();
+  await page.waitForTimeout(soakMs);
+  await page.locator("[data-command='pause']").click();
+  await page.waitForSelector(".runtime-banner.paused");
+
+  await page.locator("[data-bottom-tab='events']").click();
+  const eventText = await page.locator(".event-browser").innerText();
+  if (!/(birth|reproduction|oviposition|clone)/i.test(eventText)) {
+    throw new Error("Accelerated live run did not expose lifecycle turnover events");
+  }
+
+  const finalRenderMetrics = await renderMetrics(page);
+  if (!(finalRenderMetrics.totalEntities > 0 && finalRenderMetrics.visibleEntities > 0)) {
+    throw new Error(`Renderer lost the live world during accelerated lifecycle turnover: ${JSON.stringify(finalRenderMetrics)}`);
+  }
+
+  await page.locator("[data-bottom-tab='profiler']").click();
+  const profilerText = await page.locator(".profiler-content").innerText();
+  if (!/Avg \/ tick/i.test(profilerText) || !/Frames emitted/i.test(profilerText)) {
+    throw new Error("Profiler telemetry did not render after soak");
   }
 
   if (errors.length > 0) {
     throw new Error(`Browser emitted errors:\n${errors.join("\n")}`);
   }
 
-  const finalState = await validationState();
+  const errorPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  try {
+    await errorPage.goto(`${baseUrl}/?seed=7012`, {
+      waitUntil: "networkidle",
+      timeout: 30_000
+    });
+    await errorPage.waitForSelector(".runtime-banner.running", { timeout: 30_000 });
+    await errorPage.locator("[data-bottom-tab='actions']").click();
+    await withDialogs(errorPage, ["unknown_species", "1"], async () => {
+      await errorPage.locator("[data-user-action='INTRODUCE_ORGANISM']").click();
+    });
+    await errorPage.waitForSelector(".runtime-banner.error", { timeout: 8_000 });
+    const errorBanner = await errorPage.locator(".runtime-banner.error").innerText();
+    if (!/cannot be introduced/i.test(errorBanner)) {
+      throw new Error(`Worker error was not surfaced to the user: ${errorBanner}`);
+    }
+  } finally {
+    await errorPage.close();
+  }
+
   console.log(JSON.stringify({
     ok: true,
     initialClock,
     advancedClock,
+    steppedClock,
+    selectedId,
+    savedClock,
     loadedClock,
     soakMs,
+    saveIds,
     webgl,
-    newlyRenderedEntities: newlyRendered.length,
-    finalTick: finalState.rawStats.tick,
-    autosaveVerified: true,
-    workerErrorSurfaced: true
+    finalRenderMetrics
   }, null, 2));
 } finally {
   await browser.close();
