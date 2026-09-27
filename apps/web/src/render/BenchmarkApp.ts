@@ -157,7 +157,10 @@ export class BenchmarkApp {
     }
 
     this.cameraController.update(dtSeconds);
-    const sceneMetrics = this.benchmarkScene.update(this.cameraController.camera);
+    const sceneMetrics = this.benchmarkScene.update(
+      this.cameraController.camera,
+      dtSeconds
+    );
     this.renderer.render(this.benchmarkScene.scene, this.cameraController.camera);
     this.hud.update(rawFrameMs, this.renderer, this.adapter.getMetrics(), sceneMetrics, nowMs);
 
