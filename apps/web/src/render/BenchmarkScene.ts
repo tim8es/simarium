@@ -82,6 +82,7 @@ export interface BenchmarkSceneMetrics {
 type VisibleAnimal = {
   entity: Readonly<RenderEntity>;
   distanceSq: number;
+  position: Vector3;
 };
 
 const plantStyle = {
@@ -172,6 +173,8 @@ export class BenchmarkScene {
   private readonly frustum = new Frustum();
   private readonly projectionView = new Matrix4();
   private readonly visibleAnimals: VisibleAnimal[] = [];
+  private readonly smoothedAnimalPositions = new Map<string, Vector3>();
+  private readonly seenAnimalIds = new Set<string>();
   private readonly raycaster = new Raycaster();
   private readonly pointer = new Vector2();
   private plantSignature = "";
@@ -200,7 +203,7 @@ export class BenchmarkScene {
     this.refreshPlantInstances(true);
   }
 
-  update(camera: PerspectiveCamera): BenchmarkSceneMetrics {
+  update(camera: PerspectiveCamera, dtSeconds: number): BenchmarkSceneMetrics {
     this.refreshPlantInstances(false);
     camera.updateMatrixWorld();
     this.projectionView.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
@@ -209,6 +212,8 @@ export class BenchmarkScene {
     const animals = this.visibleAnimals;
     let animalCount = 0;
     let visiblePlants = 0;
+    this.seenAnimalIds.clear();
+    const blend = 1 - Math.exp(-8 * Math.max(0, dtSeconds));
 
     this.adapter.forEachRenderableEntity((entity) => {
       this.position.set(...entity.position);
@@ -216,18 +221,36 @@ export class BenchmarkScene {
         if (this.frustum.containsPoint(this.position)) visiblePlants++;
         return;
       }
-      if (!this.frustum.containsPoint(this.position)) return;
 
-      const distanceSq = camera.position.distanceToSquared(this.position);
+      this.seenAnimalIds.add(entity.id);
+      let visualPosition = this.smoothedAnimalPositions.get(entity.id);
+      if (!visualPosition) {
+        visualPosition = new Vector3(...entity.position);
+        this.smoothedAnimalPositions.set(entity.id, visualPosition);
+      } else {
+        visualPosition.lerp(this.position, blend);
+      }
+      if (!this.frustum.containsPoint(visualPosition)) return;
+
+      const distanceSq = camera.position.distanceToSquared(visualPosition);
       const record = animals[animalCount];
       if (record) {
         record.entity = entity;
         record.distanceSq = distanceSq;
+        record.position.copy(visualPosition);
       } else {
-        animals.push({ entity, distanceSq });
+        animals.push({
+          entity,
+          distanceSq,
+          position: visualPosition.clone()
+        });
       }
       animalCount++;
     });
+
+    for (const id of this.smoothedAnimalPositions.keys()) {
+      if (!this.seenAnimalIds.has(id)) this.smoothedAnimalPositions.delete(id);
+    }
 
     animals.length = animalCount;
     animals.sort((a, b) => a.distanceSq - b.distanceSq);
@@ -707,7 +730,7 @@ export class BenchmarkScene {
       const index = counts.get(key)!;
       const style = animalStyle[key];
 
-      this.position.set(...entity.position);
+      this.position.copy(animals[i]!.position);
       this.quaternion.set(...entity.orientation);
       this.scale.set(style.length * entity.scale, style.height * entity.scale, style.width * entity.scale);
       this.dummy.position.copy(this.position);
@@ -738,9 +761,10 @@ export class BenchmarkScene {
       const key = animalKey(entity);
       const style = key ? animalStyle[key] : animalStyle["folsomia-candida:adult"];
       const offset = i * 3;
-      this.farPositions[offset] = entity.position[0];
-      this.farPositions[offset + 1] = entity.position[1];
-      this.farPositions[offset + 2] = entity.position[2];
+      const visualPosition = animals[nearCount + i]!.position;
+      this.farPositions[offset] = visualPosition.x;
+      this.farPositions[offset + 1] = visualPosition.y;
+      this.farPositions[offset + 2] = visualPosition.z;
       color.setHex(style.color);
       this.farColors[offset] = color.r;
       this.farColors[offset + 1] = color.g;
