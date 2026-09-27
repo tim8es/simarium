@@ -10,7 +10,8 @@ import {
 } from "@simarium/render-core";
 import {
   BenchmarkScene,
-  type DynamicHardscapeEntry
+  type DynamicHardscapeEntry,
+  type TemperatureGridProjection
 } from "./BenchmarkScene";
 import { CameraController, type CameraMode } from "./CameraController";
 import { PerformanceHud } from "./PerformanceHud";
@@ -102,6 +103,13 @@ export class BenchmarkApp {
 
   setDynamicHardscape(entries: readonly DynamicHardscapeEntry[]): void {
     this.benchmarkScene.setDynamicHardscape(entries);
+  }
+
+  setTemperatureGridOverlay(
+    grid: TemperatureGridProjection | null,
+    visible: boolean
+  ): void {
+    this.benchmarkScene.setTemperatureGridOverlay(grid, visible);
   }
 
   applyExternalSnapshot(snapshot: RenderWorldSnapshot): void {
