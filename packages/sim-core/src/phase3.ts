@@ -16,7 +16,8 @@ export type FolsomiaDeathCause =
   | "senescence"
   | "carbon_exhaustion"
   | "developmental_mortality"
-  | "predation";
+  | "predation"
+  | "user_removal";
 
 export interface FolsomiaIndividual {
   id: number;
