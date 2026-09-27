@@ -1,6 +1,7 @@
 import type { JsonValue } from "../../../../packages/sim-runtime/src/index.js";
 import type {
   BehaviorReason,
+  CausalHistoryEvent,
   EntityInspection,
   EntitySummary,
   EnvironmentSnapshot,
@@ -299,10 +300,19 @@ export function entityDetailsToUi(details: JsonValue): {
       score: numberValue(reason.score)
     };
   });
+  const history: CausalHistoryEvent[] = array(root.history).map((entry) => {
+    const event = record(entry, "history event");
+    return {
+      timeSeconds: numberValue(event.timeSeconds),
+      type: stringValue(event.type),
+      label: stringValue(event.label),
+      relatedEntityIds: stringArray(event.relatedEntityIds)
+    };
+  });
 
   return {
     entity: summary,
-    inspection: { genealogy, why }
+    inspection: { genealogy, why, history }
   };
 }
 
