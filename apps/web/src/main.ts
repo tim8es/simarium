@@ -113,7 +113,8 @@ if (benchmarkOnly) {
     cameraMode: initialCameraMode,
     seed: Number.isInteger(defaultSeed) ? defaultSeed : 7001,
     runtimeStatus: "starting",
-    runtimeMessage: "Creating deterministic Phase 7 world…"
+    runtimeMessage: "Creating deterministic Phase 7 world…",
+    nightObservationAid: false
   };
 
   const renderer = new BenchmarkApp(renderRoot, {
@@ -172,6 +173,7 @@ if (benchmarkOnly) {
             `).join("")}
           </div>
           <div class="world-actions">
+            <button data-world-command="night-aid" class="${state.nightObservationAid ? "is-active" : ""}">Night aid</button>
             <button data-world-command="step">+1 tick</button>
             <button data-world-command="new">New</button>
             <button data-world-command="save">Save</button>
@@ -359,6 +361,10 @@ if (benchmarkOnly) {
     try {
       snapshot = statsToObservation(stats);
       renderer.setDynamicHardscape(hardscapeFromStats(stats));
+      renderer.setBiologicalLight(
+        snapshot.environment.lightPar,
+        state.nightObservationAid
+      );
       renderer.setTemperatureGridOverlay(
         snapshot.temperatureGrid,
         state.activeOverlay === "temperature"
@@ -473,7 +479,19 @@ if (benchmarkOnly) {
     const worldButton = target.closest<HTMLElement>("[data-world-command]");
     if (worldButton?.dataset.worldCommand) {
       const command = worldButton.dataset.worldCommand;
-      if (command === "step") {
+      if (command === "night-aid") {
+        const nightObservationAid = !state.nightObservationAid;
+        renderer.setBiologicalLight(
+          snapshot.environment.lightPar,
+          nightObservationAid
+        );
+        setState({
+          nightObservationAid,
+          runtimeMessage: nightObservationAid
+            ? "Visual night observation aid enabled (no biological light added)"
+            : "Visual night observation aid disabled"
+        });
+      } else if (command === "step") {
         client.step(1);
         setState({
           paused: true,
