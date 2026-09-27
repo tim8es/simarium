@@ -146,6 +146,10 @@ export class SimulationClient {
     });
   }
 
+  nextUserActionSequence(): number {
+    return this.actionSequence;
+  }
+
   userAction(action: UserAction): number {
     const sequence = this.actionSequence++;
     this.post({
