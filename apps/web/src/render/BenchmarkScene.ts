@@ -160,6 +160,8 @@ export class BenchmarkScene {
   private readonly stemEntityIds: string[] = [];
   private readonly dynamicHardscapeMeshes = new Map<string, Mesh>();
   private readonly temperatureOverlay: InstancedMesh;
+  private readonly hemisphereLight: HemisphereLight;
+  private readonly keyLight: DirectionalLight;
   private readonly farPoints: Points;
   private readonly farPositions = new Float32Array(MAX_ANIMALS * 3);
   private readonly farColors = new Float32Array(MAX_ANIMALS * 3);
@@ -183,7 +185,9 @@ export class BenchmarkScene {
   constructor(adapter: RenderAdapter) {
     this.adapter = adapter;
     this.scene.background = new Color(0x0f1716);
-    this.addLighting();
+    const lighting = this.addLighting();
+    this.hemisphereLight = lighting.hemisphere;
+    this.keyLight = lighting.key;
     this.addTerrarium();
     this.addHardscape();
     this.temperatureOverlay = this.createTemperatureOverlay();
@@ -387,8 +391,24 @@ export class BenchmarkScene {
     return null;
   }
 
-  private addLighting(): void {
-    this.scene.add(new HemisphereLight(0xbad8cf, 0x2c2119, 1.9));
+  setBiologicalLight(lightPar: number, nightObservationAid: boolean): void {
+    const normalized = Math.max(0, lightPar / 186);
+    const dayScale = Math.min(2.5, normalized);
+    const visualAid = nightObservationAid ? 0.16 : 0;
+    this.keyLight.intensity = 3.2 * dayScale;
+    this.hemisphereLight.intensity =
+      Math.max(visualAid, 1.9 * Math.min(1.5, Math.sqrt(dayScale)));
+    this.scene.background = new Color(
+      dayScale > 0.05 ? 0x0f1716 : nightObservationAid ? 0x07100f : 0x020303
+    );
+  }
+
+  private addLighting(): {
+    hemisphere: HemisphereLight;
+    key: DirectionalLight;
+  } {
+    const hemisphere = new HemisphereLight(0xbad8cf, 0x2c2119, 1.9);
+    this.scene.add(hemisphere);
 
     const key = new DirectionalLight(0xfff1cf, 3.2);
     key.position.set(0.55, 1.2, 0.35);
@@ -402,6 +422,7 @@ export class BenchmarkScene {
     key.shadow.camera.far = 2.2;
     key.shadow.bias = -0.0003;
     this.scene.add(key);
+    return { hemisphere, key };
   }
 
   private addTerrarium(): void {
