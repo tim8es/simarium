@@ -1,4 +1,4 @@
-export type EntityId = number;
+export type EntityId = string;
 export type SpeciesId = string;
 
 export type SpeciesSummary = {
@@ -53,10 +53,12 @@ export type EnvironmentSnapshot = {
   soilWater: number;
   lightPar: number;
   co2Ppm: number;
-  o2Percent: number;
-  nh4MgKg: number;
-  no3MgKg: number;
-  availablePMgKg: number;
+  o2Percent: number | null;
+  nh4MgKg: number | null;
+  no3MgKg: number | null;
+  availablePMgKg: number | null;
+  availableNitrogenMg: number;
+  availablePhosphorusMg: number;
   fungalBiomassMg: number;
   bacterialBiomassMg: number;
   litterMg: number;
@@ -110,7 +112,7 @@ export type UserAction = {
   source: "USER_ACTION";
   type: UserActionType;
   createdAtUiMs: number;
-  status: "queued";
+  status: "queued" | "accepted" | "error";
   payload: Readonly<Record<string, string | number | boolean>>;
 };
 
@@ -141,4 +143,9 @@ export type ObservationUiState = {
   activeOverlay: OverlayKey | null;
   bottomPanel: "graphs" | "foodWeb" | "actions";
   userActions: ReadonlyArray<UserAction>;
+  cameraMode: "orbit" | "free" | "macro" | "follow";
+  seed: number;
+  runtimeStatus: "starting" | "running" | "paused" | "error";
+  runtimeMessage?: string;
+  saveMessage?: string;
 };
