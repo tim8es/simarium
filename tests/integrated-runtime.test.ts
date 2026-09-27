@@ -96,4 +96,35 @@ describe("integrated browser runtime", () => {
     // body water, so net boundary water is slightly below the +2 g mist input.
     expect(ledger.cumulativeBoundaryFlux.waterG).toBeGreaterThan(1.99);
   });
+
+  it("keeps ecology deterministic when render and stats are observed", () => {
+    const observed = init(7041);
+    const headless = init(7041);
+
+    for (let tick = 0; tick < 32; tick++) {
+      observed.renderSnapshot();
+      observed.stats();
+      observed.step(1);
+      headless.step(1);
+    }
+
+    const observedSave = observed.saveSnapshot();
+    const headlessSave = headless.saveSnapshot();
+    expect(observedSave.tick).toBe(headlessSave.tick);
+    expect(observedSave.virtualTime).toBe(headlessSave.virtualTime);
+    expect(observedSave.rngState).toEqual(headlessSave.rngState);
+    expect(observedSave.sections.materialPools).toEqual(
+      headlessSave.sections.materialPools
+    );
+    expect(observedSave.sections.organisms).toEqual(
+      headlessSave.sections.organisms
+    );
+    expect(observedSave.sections.plants).toEqual(
+      headlessSave.sections.plants
+    );
+    expect(observedSave.sections.spatialState).toEqual(
+      headlessSave.sections.spatialState
+    );
+  });
+
 });
