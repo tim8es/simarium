@@ -66,6 +66,16 @@ async function renderMetrics(page) {
   });
 }
 
+async function renderedEntityIds(page) {
+  return page.evaluate(() => {
+    const ids = window.__SIMARIUM_RENDER_ENTITY_IDS__;
+    if (!Array.isArray(ids)) {
+      throw new Error("Integrated renderer entity identities are unavailable");
+    }
+    return ids;
+  });
+}
+
 async function boundaryFlux(page) {
   await page.locator("[data-bottom-tab='resources']").click();
   const flux = page.locator(".boundary-flux");
@@ -396,8 +406,20 @@ try {
   await page.locator("[data-world-command='night-aid']").click();
   await page.getByText(/Visual night observation aid enabled/).waitFor();
 
+  const preLifecycleIds = new Set(await renderedEntityIds(page));
   await page.locator("[data-speed='100']").click();
-  await page.waitForTimeout(soakMs);
+  const soakStartedAt = Date.now();
+  let newLifecycleEntityId = null;
+  while (Date.now() - soakStartedAt < soakMs && newLifecycleEntityId === null) {
+    await page.waitForTimeout(500);
+    const ids = await renderedEntityIds(page);
+    newLifecycleEntityId =
+      ids.find((id) => !preLifecycleIds.has(id)) ?? null;
+  }
+  const remainingSoakMs = soakMs - (Date.now() - soakStartedAt);
+  if (remainingSoakMs > 0) {
+    await page.waitForTimeout(remainingSoakMs);
+  }
   await page.locator("[data-command='pause']").click();
   await page.waitForSelector(".runtime-banner.paused");
 
@@ -405,6 +427,9 @@ try {
   const eventText = await page.locator(".event-browser").innerText();
   if (!/(birth|reproduction|oviposition|clone)/i.test(eventText)) {
     throw new Error("Accelerated live run did not expose lifecycle turnover events");
+  }
+  if (newLifecycleEntityId === null) {
+    throw new Error("Lifecycle turnover occurred but no new entity ID reached the renderer");
   }
 
   const finalRenderMetrics = await renderMetrics(page);
@@ -454,6 +479,7 @@ try {
     soakMs,
     saveIds,
     webgl,
+    newLifecycleEntityId,
     finalRenderMetrics
   }, null, 2));
 } finally {
