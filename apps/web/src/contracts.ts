@@ -229,4 +229,5 @@ export type ObservationUiState = {
   runtimeStatus: "starting" | "running" | "paused" | "error";
   runtimeMessage?: string;
   saveMessage?: string;
+  nightObservationAid: boolean;
 };
