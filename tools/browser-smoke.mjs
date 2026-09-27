@@ -134,18 +134,20 @@ async function pickVisibleEntity(page) {
     if (!Array.isArray(value)) {
       throw new Error("Animal pick targets are unavailable");
     }
-    return value;
+    const canvas = document.querySelector("#render-layer canvas");
+    if (!(canvas instanceof HTMLCanvasElement)) {
+      throw new Error("Renderer canvas is unavailable");
+    }
+    return value.filter((target) =>
+      document.elementFromPoint(target.clientX, target.clientY) === canvas
+    );
   });
   if (targets.length === 0) {
     throw new Error("Renderer reported no near-LOD animal pick targets");
   }
 
   for (const target of targets.slice(0, 40)) {
-    await canvas.dispatchEvent("click", {
-      clientX: target.clientX,
-      clientY: target.clientY,
-      bubbles: true
-    });
+    await page.mouse.click(target.clientX, target.clientY);
     await page.waitForTimeout(120);
     const card = page.locator(
       `.entity-card[data-entity-id="${target.entityId}"][data-entity-kind="animal"]`

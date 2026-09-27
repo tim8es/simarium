@@ -461,10 +461,17 @@ export class BenchmarkScene {
         ) {
           continue;
         }
+        const clientX =
+          rect.left + ((projected.x + 1) * 0.5) * rect.width;
+        const clientY =
+          rect.top + ((1 - projected.y) * 0.5) * rect.height;
+        if (this.pick(clientX, clientY, camera, domElement) !== entityId) {
+          continue;
+        }
         targets.push({
           entityId,
-          clientX: rect.left + ((projected.x + 1) * 0.5) * rect.width,
-          clientY: rect.top + ((1 - projected.y) * 0.5) * rect.height
+          clientX,
+          clientY
         });
       }
     }
