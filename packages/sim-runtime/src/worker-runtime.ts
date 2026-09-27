@@ -32,6 +32,13 @@ export class SimulationWorkerRuntime {
   private lastRender: RenderWorldSnapshotDto | undefined;
   private lastFullSnapshotTick = -1;
   private commandChain: Promise<void> = Promise.resolve();
+  private lastStepWallMs = 0;
+  private emaStepWallMs = 0;
+  private totalStepWallMs = 0;
+  private totalTicksStepped = 0;
+  private framesEmitted = 0;
+  private lastStepTicks = 0;
+  private maxObservedBacklogTicks = 0;
   private readonly ticksPerSecondAt1x: number;
   private readonly pulseIntervalMs: number;
   private readonly fullSnapshotEveryTicks: number;
@@ -75,12 +82,14 @@ export class SimulationWorkerRuntime {
       switch (message.type) {
         case "INIT":
           this.resetRenderStream();
+          this.resetTelemetry();
           await this.adapter.init(message);
           this.emit({ type: "READY", requestId: message.requestId });
           this.emitFrame(true);
           break;
         case "LOAD_WORLD":
           this.resetRenderStream();
+          this.resetTelemetry();
           await this.adapter.loadSnapshot(message.snapshot);
           this.emit({ type: "READY", requestId: message.requestId });
           this.emitFrame(true);
@@ -99,7 +108,7 @@ export class SimulationWorkerRuntime {
           break;
         case "STEP":
           this.pause();
-          this.adapter.step(message.ticks);
+          this.stepAdapter(message.ticks);
           this.emitFrame(false);
           break;
         case "USER_ACTION":
@@ -110,7 +119,11 @@ export class SimulationWorkerRuntime {
           this.emit({ type: "ENTITY_DETAILS", requestId: message.requestId, entityId: message.entityId, details: this.adapter.entityDetails(message.entityId) });
           break;
         case "REQUEST_STATS":
-          this.emit({ type: "STATS", requestId: message.requestId, stats: this.adapter.stats() });
+          this.emit({
+            type: "STATS",
+            requestId: message.requestId,
+            stats: this.statsWithRuntimeProfile(this.adapter.stats())
+          });
           break;
         case "SAVE_SNAPSHOT": {
           const result: Extract<WorkerToUiMessage, { type: "SAVE_RESULT" }> = {
@@ -159,8 +172,12 @@ export class SimulationWorkerRuntime {
     if (requested <= 0) return;
     const ticks = Math.min(requested, this.maxTicksPerPulse);
     this.tickAccumulator -= ticks;
+    this.maxObservedBacklogTicks = Math.max(
+      this.maxObservedBacklogTicks,
+      this.tickAccumulator
+    );
     try {
-      this.adapter.step(ticks);
+      this.stepAdapter(ticks);
       this.emitFrame(false);
     } catch (error) {
       this.pause();
@@ -178,6 +195,67 @@ export class SimulationWorkerRuntime {
       this.emit({ type: "WORLD_DELTA", delta: diffRenderSnapshots(this.lastRender!, next) });
     }
     this.lastRender = structuredClone(next);
+    this.framesEmitted += 1;
+  }
+
+  private stepAdapter(ticks: number): void {
+    const started = this.now();
+    this.adapter.step(ticks);
+    const wallMs = Math.max(0, this.now() - started);
+    this.lastStepWallMs = wallMs;
+    this.lastStepTicks = ticks;
+    this.totalStepWallMs += wallMs;
+    this.totalTicksStepped += ticks;
+    this.emaStepWallMs =
+      this.totalTicksStepped === ticks
+        ? wallMs
+        : this.emaStepWallMs * 0.85 + wallMs * 0.15;
+  }
+
+  private statsWithRuntimeProfile(stats: JsonValue): JsonValue {
+    const runtimeProfiler = {
+      running: this.running,
+      speed: this.speed,
+      ticksPerSecondAt1x: this.ticksPerSecondAt1x,
+      pulseIntervalMs: this.pulseIntervalMs,
+      maxTicksPerPulse: this.maxTicksPerPulse,
+      lastStepTicks: this.lastStepTicks,
+      lastStepWallMs: this.lastStepWallMs,
+      emaStepWallMs: this.emaStepWallMs,
+      averageWallMsPerTick:
+        this.totalTicksStepped > 0
+          ? this.totalStepWallMs / this.totalTicksStepped
+          : 0,
+      totalTicksStepped: this.totalTicksStepped,
+      framesEmitted: this.framesEmitted,
+      backlogTicks: this.tickAccumulator,
+      maxObservedBacklogTicks: this.maxObservedBacklogTicks
+    };
+
+    if (
+      typeof stats === "object" &&
+      stats !== null &&
+      !Array.isArray(stats)
+    ) {
+      return {
+        ...stats,
+        runtimeProfiler
+      };
+    }
+    return {
+      adapterStats: stats,
+      runtimeProfiler
+    };
+  }
+
+  private resetTelemetry(): void {
+    this.lastStepWallMs = 0;
+    this.emaStepWallMs = 0;
+    this.totalStepWallMs = 0;
+    this.totalTicksStepped = 0;
+    this.framesEmitted = 0;
+    this.lastStepTicks = 0;
+    this.maxObservedBacklogTicks = 0;
   }
 
   private resetRenderStream(): void {
