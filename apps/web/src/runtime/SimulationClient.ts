@@ -145,16 +145,18 @@ export class SimulationClient {
     });
   }
 
-  userAction(action: UserAction): void {
+  userAction(action: UserAction): number {
+    const sequence = this.actionSequence++;
     this.post({
       type: "USER_ACTION",
       requestId: this.nextRequestId("action"),
       action: {
-        sequence: this.actionSequence++,
+        sequence,
         targetTick: this.currentTick,
         action
       }
     });
+    return sequence;
   }
 
   async save(title = "Autosave", id = this.currentSaveId): Promise<string> {
