@@ -39,6 +39,7 @@ const PLANT_SPECIES = new Set(["fittonia-albivenis", "peperomia-caperata", "pile
 const LEAVES_PER_PLANT = 24;
 const MAX_NEAR_ANIMALS = 260;
 const MAX_ANIMALS = 1200;
+const ANIMAL_PICK_RADIUS_PX = 10;
 
 const ANIMAL_VISUAL_KEYS = [
   "folsomia-candida:egg",
@@ -397,6 +398,15 @@ export class BenchmarkScene {
   ): string | null {
     const rect = domElement.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return null;
+
+    const screenSpaceAnimal = this.pickAnimalScreenSpace(
+      clientX,
+      clientY,
+      camera,
+      domElement
+    );
+    if (screenSpaceAnimal) return screenSpaceAnimal;
+
     this.pointer.set(
       ((clientX - rect.left) / rect.width) * 2 - 1,
       -((clientY - rect.top) / rect.height) * 2 + 1
@@ -425,6 +435,71 @@ export class BenchmarkScene {
       }
     }
     return null;
+  }
+
+  private pickAnimalScreenSpace(
+    clientX: number,
+    clientY: number,
+    camera: PerspectiveCamera,
+    domElement: HTMLElement
+  ): string | null {
+    const rect = domElement.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+
+    camera.updateMatrixWorld();
+    const instanceMatrix = new Matrix4();
+    const worldPosition = new Vector3();
+    const projected = new Vector3();
+    const maxDistanceSq = ANIMAL_PICK_RADIUS_PX * ANIMAL_PICK_RADIUS_PX;
+    let bestId: string | null = null;
+    let bestDistanceSq = maxDistanceSq;
+    let bestProjectedZ = Number.POSITIVE_INFINITY;
+
+    for (const [key, mesh] of this.animalMeshes) {
+      mesh.updateMatrixWorld(true);
+      const ids = this.animalInstanceIds.get(key) ?? [];
+      for (let index = 0; index < mesh.count; index++) {
+        const entityId = ids[index];
+        if (!entityId) continue;
+
+        mesh.getMatrixAt(index, instanceMatrix);
+        worldPosition
+          .setFromMatrixPosition(instanceMatrix)
+          .applyMatrix4(mesh.matrixWorld);
+        projected.copy(worldPosition).project(camera);
+        if (
+          projected.z < -1 ||
+          projected.z > 1 ||
+          projected.x < -1 ||
+          projected.x > 1 ||
+          projected.y < -1 ||
+          projected.y > 1
+        ) {
+          continue;
+        }
+
+        const screenX =
+          rect.left + ((projected.x + 1) * 0.5) * rect.width;
+        const screenY =
+          rect.top + ((1 - projected.y) * 0.5) * rect.height;
+        const dx = screenX - clientX;
+        const dy = screenY - clientY;
+        const distanceSq = dx * dx + dy * dy;
+        if (distanceSq > bestDistanceSq) continue;
+
+        if (
+          bestId === null ||
+          distanceSq < bestDistanceSq ||
+          (distanceSq === bestDistanceSq && projected.z < bestProjectedZ)
+        ) {
+          bestId = entityId;
+          bestDistanceSq = distanceSq;
+          bestProjectedZ = projected.z;
+        }
+      }
+    }
+
+    return bestId;
   }
 
   getAnimalPickTargets(
