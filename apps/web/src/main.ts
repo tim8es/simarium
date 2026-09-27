@@ -22,6 +22,7 @@ import type {
 import {
   renderBottomPanel,
   renderEntityCard,
+  renderEntityHistory,
   renderGenealogy,
   renderOverlayPanel,
   renderTimeControls,
@@ -203,6 +204,7 @@ if (benchmarkOnly) {
           <aside class="right-rail">
             ${renderEntityCard(selectedEntity)}
             ${renderWhyPanel(selectedInspection?.why ?? [], currentAction)}
+            ${renderEntityHistory(selectedInspection?.history ?? [])}
             ${renderGenealogy(selectedInspection?.genealogy ?? [])}
           </aside>
         </div>
