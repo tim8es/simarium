@@ -78,6 +78,13 @@ try {
   const download = await downloadPromise;
   const exportedPath = await download.path();
   if (!exportedPath) throw new Error("Portable save export did not produce a file");
+  await page.getByText(/Portable save exported/).waitFor({ timeout: 30_000 });
+
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.locator("[data-world-command='import']").click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles(exportedPath);
+  await page.getByText(/Portable save imported/).waitFor({ timeout: 30_000 });
 
   await page.locator("[data-world-command='save']").click();
   await page.getByText(/Saved: manual-/).waitFor({ timeout: 30_000 });
