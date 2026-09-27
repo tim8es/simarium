@@ -2,9 +2,10 @@ name: Phase 7 Dalotia Calibration Verification
 # calibration-only sweep for competition-aware local prey density response
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - agent/phase7-ecology
+      - main
     paths:
       - ".github/workflows/phase7-dalotia-check.yml"
 
@@ -43,7 +44,7 @@ jobs:
             Number(process.env.HALF_SAT);
           fs.writeFileSync(path, JSON.stringify(data, null, 2) + "\n");
           NODE
-      - run: npm run build
+      - run: npm run build:core
       - name: Run 180-day calibration seed
         shell: bash
         run: |
