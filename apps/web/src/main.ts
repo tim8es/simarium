@@ -346,7 +346,10 @@ if (benchmarkOnly) {
     if (!runtimeAction) return;
     const uiAction = createUserAction(type, {
       live: true,
-      seed: state.seed
+      seed: state.seed,
+      ...(runtimeAction.type === "add_hardscape"
+        ? { hardscapeId: runtimeAction.hardscapeId }
+        : {})
     });
     const sequence = client.userAction(runtimeAction);
     runtimeActionIds.set(sequence, uiAction.id);
