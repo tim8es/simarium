@@ -77,6 +77,7 @@ export interface BenchmarkSceneMetrics {
   visibleAnimalMeshCount: number;
   farAnimalProxyCount: number;
   plantLeafInstanceCount: number;
+  dynamicHardscapeCount: number;
 }
 
 type VisibleAnimal = {
@@ -182,7 +183,8 @@ export class BenchmarkScene {
     visibleEntityCount: 0,
     visibleAnimalMeshCount: 0,
     farAnimalProxyCount: 0,
-    plantLeafInstanceCount: 0
+    plantLeafInstanceCount: 0,
+    dynamicHardscapeCount: 0
   };
 
   constructor(adapter: RenderAdapter) {
@@ -262,13 +264,18 @@ export class BenchmarkScene {
       visibleEntityCount: visiblePlants + animals.length,
       visibleAnimalMeshCount: nearCount,
       farAnimalProxyCount: Math.max(0, animals.length - nearCount),
-      plantLeafInstanceCount: this.metrics.plantLeafInstanceCount
+      plantLeafInstanceCount: this.metrics.plantLeafInstanceCount,
+      dynamicHardscapeCount: this.dynamicHardscapeMeshes.size
     };
     return this.metrics;
   }
 
   getMetrics(): BenchmarkSceneMetrics {
     return { ...this.metrics };
+  }
+
+  getDynamicHardscapeCount(): number {
+    return this.dynamicHardscapeMeshes.size;
   }
 
   setTemperatureGridOverlay(
