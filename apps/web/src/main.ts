@@ -1,6 +1,12 @@
 import "./style.css";
 import "./styles.css";
-import type { JsonValue, SimulationSpeed, UserAction as RuntimeUserAction } from "../../../packages/sim-runtime/src/index.js";
+import {
+  decodeSharePreset,
+  encodeSharePreset,
+  type JsonValue,
+  type SimulationSpeed,
+  type UserAction as RuntimeUserAction
+} from "../../../packages/sim-runtime/src/index.js";
 import { BenchmarkApp } from "./render/BenchmarkApp.js";
 import type { CameraMode } from "./render/CameraController.js";
 import { SimulationClient } from "./runtime/SimulationClient.js";
@@ -97,7 +103,24 @@ if (benchmarkOnly) {
   document.body.classList.add("integrated-mode");
   cameraControls.hidden = true;
 
-  const defaultSeed = Number(params.get("seed") ?? 7001);
+  const explicitSeedParam = params.get("seed");
+  const sharePayload = params.get("share");
+  let sharedSeed: number | undefined;
+  let shareManifestError: string | undefined;
+  if (sharePayload !== null) {
+    try {
+      const manifest = decodeSharePreset(sharePayload);
+      if (manifest.presetId !== "phase7-integrated") {
+        throw new Error(`Unsupported preset: ${manifest.presetId}`);
+      }
+      sharedSeed = manifest.seed;
+    } catch (error) {
+      shareManifestError =
+        error instanceof Error ? error.message : String(error);
+    }
+  }
+  const explicitLaunch = explicitSeedParam !== null || sharePayload !== null;
+  const defaultSeed = Number(sharedSeed ?? explicitSeedParam ?? 7001);
   let snapshot: ObservationSnapshot = emptyObservationSnapshot();
   let selectedEntity: EntitySummary | undefined;
   let selectedInspection: EntityInspection | undefined;
@@ -114,7 +137,9 @@ if (benchmarkOnly) {
     cameraMode: initialCameraMode,
     seed: Number.isInteger(defaultSeed) ? defaultSeed : 7001,
     runtimeStatus: "starting",
-    runtimeMessage: "Creating deterministic Phase 7 world…",
+    runtimeMessage: shareManifestError
+      ? `Invalid share manifest: ${shareManifestError}`
+      : "Creating deterministic Phase 7 world…",
     nightObservationAid: false
   };
 
@@ -184,7 +209,9 @@ if (benchmarkOnly) {
             <button data-world-command="new">New</button>
             <button data-world-command="save">Save</button>
             <button data-world-command="load">Load latest</button>
-            <button data-world-command="share">Share seed</button>
+            <button data-world-command="export">Export save</button>
+            <button data-world-command="import">Import save</button>
+            <button data-world-command="share">Share preset</button>
           </div>
           <div class="telemetry-strip">
             <span><small>TEMP</small><strong>${snapshot.environment.temperatureC.toFixed(1)}°</strong></span>
@@ -570,12 +597,67 @@ if (benchmarkOnly) {
             runtimeStatus: "error",
             runtimeMessage: error instanceof Error ? error.message : String(error)
           }));
+      } else if (command === "export") {
+        setState({ saveMessage: "Exporting snapshot…" });
+        void client.captureSnapshot("Portable export")
+          .then(exported => {
+            const blob = new Blob(
+              [JSON.stringify(exported, null, 2)],
+              { type: "application/json" }
+            );
+            const href = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = href;
+            anchor.download = `simarium-seed-${exported.seed}-tick-${exported.tick}.json`;
+            anchor.click();
+            URL.revokeObjectURL(href);
+            setState({ saveMessage: "Portable save exported" });
+          })
+          .catch(error => setState({
+            runtimeStatus: "error",
+            runtimeMessage: error instanceof Error ? error.message : String(error)
+          }));
+      } else if (command === "import") {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json,.json";
+        input.addEventListener("change", () => {
+          const file = input.files?.[0];
+          if (!file) return;
+          setState({ saveMessage: `Importing ${file.name}…` });
+          void file.text()
+            .then(text => JSON.parse(text) as unknown)
+            .then(value => client.loadSnapshot(value, `import-${Date.now().toString(36)}`))
+            .then(loaded => {
+              selectedEntity = undefined;
+              selectedInspection = undefined;
+              setState({
+                seed: loaded.seed,
+                selectedEntityId: null,
+                paused: false,
+                runtimeStatus: "running",
+                runtimeMessage: `Imported deterministic save at day ${(loaded.virtualTime / 86400).toFixed(1)}`,
+                saveMessage: "Portable save imported"
+              });
+            })
+            .catch(error => setState({
+              runtimeStatus: "error",
+              runtimeMessage: error instanceof Error ? error.message : String(error)
+            }));
+        }, { once: true });
+        input.click();
       } else if (command === "share") {
+        const payload = encodeSharePreset({
+          version: 1,
+          seed: state.seed,
+          presetId: "phase7-integrated",
+          config: {}
+        });
         const url = new URL(window.location.href);
         url.search = "";
-        url.searchParams.set("seed", String(state.seed));
+        url.searchParams.set("share", payload);
         void navigator.clipboard.writeText(url.toString())
-          .then(() => setState({ saveMessage: "Seed link copied" }))
+          .then(() => setState({ saveMessage: "Versioned preset link copied" }))
           .catch(() => setState({ saveMessage: url.toString() }));
       } else if (command === "load") {
         setState({ saveMessage: "Loading latest save…" });
@@ -634,14 +716,45 @@ if (benchmarkOnly) {
   });
 
   renderUi();
-  void client.initialize(state.seed)
-    .then(() => client.setSpeed(state.speed))
-    .catch((error) => {
-      setState({
-        runtimeStatus: "error",
-        runtimeMessage: error instanceof Error ? error.message : String(error)
-      });
+  const boot = !explicitLaunch
+    ? client.loadLatest().then((loaded) => {
+        if (loaded) {
+          snapshot = emptyObservationSnapshot();
+          setState({
+            seed: loaded.seed,
+            selectedEntityId: null,
+            paused: false,
+            runtimeStatus: "running",
+            runtimeMessage: `Resumed autosave at day ${(loaded.virtualTime / 86400).toFixed(1)}`,
+            saveMessage: "Autosave resumed"
+          });
+          return;
+        }
+        return client.initialize(state.seed).then(() => {
+          client.setSpeed(state.speed);
+        });
+      })
+    : client.initialize(state.seed)
+        .then(() => {
+          client.setSpeed(state.speed);
+          return client.save("Autosave", "autosave");
+        })
+        .then(() => {
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete("seed");
+          cleanUrl.searchParams.delete("share");
+          window.history.replaceState(null, "", cleanUrl);
+          setState({
+            saveMessage: "Initial world autosaved; reload will resume it"
+          });
+        });
+
+  void boot.catch((error) => {
+    setState({
+      runtimeStatus: "error",
+      runtimeMessage: error instanceof Error ? error.message : String(error)
     });
+  });
 
   window.addEventListener(
     "beforeunload",
