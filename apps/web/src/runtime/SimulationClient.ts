@@ -115,6 +115,23 @@ export class SimulationClient {
     });
   }
 
+  async pauseAndWait(): Promise<void> {
+    const requestId = this.nextRequestId("pause");
+    const message = await this.commandAndWait({
+      type: "PAUSE",
+      requestId
+    });
+    if (
+      message.type !== "EVENT" ||
+      !message.event ||
+      typeof message.event !== "object" ||
+      Array.isArray(message.event) ||
+      message.event.type !== "runtime_paused"
+    ) {
+      throw new Error("Unexpected pause acknowledgement");
+    }
+  }
+
   setSpeed(speed: SimulationSpeed): void {
     this.post({
       type: "SET_SPEED",
@@ -239,7 +256,16 @@ export class SimulationClient {
       return;
     }
 
-    const requestId = "requestId" in message ? message.requestId : undefined;
+    const eventRequestId =
+      message.type === "EVENT" &&
+      message.event &&
+      typeof message.event === "object" &&
+      !Array.isArray(message.event) &&
+      typeof message.event.requestId === "string"
+        ? message.event.requestId
+        : undefined;
+    const requestId =
+      "requestId" in message ? message.requestId : eventRequestId;
     if (requestId) {
       const resolve = this.pending.get(requestId);
       if (resolve) {

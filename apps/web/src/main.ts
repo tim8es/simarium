@@ -125,6 +125,7 @@ if (benchmarkOnly) {
   let selectedEntity: EntitySummary | undefined;
   let selectedInspection: EntityInspection | undefined;
   const runtimeActionIds = new Map<number, string>();
+  let pauseTransitionPending = false;
 
   let state: ObservationUiState = {
     paused: false,
@@ -484,6 +485,7 @@ if (benchmarkOnly) {
     const target = event.target as HTMLElement;
 
     if (target.closest<HTMLElement>("[data-command='pause']")) {
+      if (pauseTransitionPending) return;
       if (state.paused) {
         client.start();
         setState({
@@ -492,12 +494,28 @@ if (benchmarkOnly) {
           runtimeMessage: "Simulation running"
         });
       } else {
-        client.pause();
+        pauseTransitionPending = true;
         setState({
-          paused: true,
-          runtimeStatus: "paused",
-          runtimeMessage: "Simulation paused"
+          runtimeStatus: "starting",
+          runtimeMessage: "Pausing simulation…"
         });
+        void client.pauseAndWait()
+          .then(() => {
+            pauseTransitionPending = false;
+            setState({
+              paused: true,
+              runtimeStatus: "paused",
+              runtimeMessage: "Simulation paused"
+            });
+          })
+          .catch((error) => {
+            pauseTransitionPending = false;
+            setState({
+              runtimeStatus: "error",
+              runtimeMessage:
+                error instanceof Error ? error.message : String(error)
+            });
+          });
       }
       return;
     }
