@@ -128,6 +128,11 @@ if (benchmarkOnly) {
   });
   renderer.start();
 
+  Object.defineProperty(window, "__SIMARIUM_RENDER_METRICS__", {
+    configurable: true,
+    get: () => renderer.getPerformanceSnapshot()
+  });
+
   const client = new SimulationClient();
 
   const setState = (
@@ -345,8 +350,13 @@ if (benchmarkOnly) {
     });
     const sequence = client.userAction(runtimeAction);
     runtimeActionIds.set(sequence, uiAction.id);
+    if (type === "REMOVE_ORGANISM") {
+      selectedEntity = undefined;
+      selectedInspection = undefined;
+    }
     setState({
       userActions: [...state.userActions, uiAction],
+      ...(type === "REMOVE_ORGANISM" ? { selectedEntityId: null } : {}),
       runtimeStatus: state.paused ? "paused" : "running",
       runtimeMessage: `Queued ${type} at current simulation tick`
     });
