@@ -79,7 +79,8 @@ export function emptyObservationSnapshot(): ObservationSnapshot {
     events: {
       predation: 0,
       births: {},
-      deaths: {}
+      deaths: {},
+      recent: []
     },
     materialLedger: {
       totals: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
@@ -245,7 +246,18 @@ export function statsToObservation(stats: JsonValue): ObservationSnapshot {
     events: {
       predation: numberValue(eventsRaw.predation),
       births: numericRecord(birthsRaw),
-      deaths: numericRecord(deathsRaw)
+      deaths: numericRecord(deathsRaw),
+      recent: array(eventsRaw.recent).map((entry) => {
+        const event = record(entry, "recent event");
+        return {
+          timeSeconds: numberValue(event.timeSeconds),
+          speciesId: stringValue(event.speciesId),
+          type: stringValue(event.type),
+          entityId:
+            typeof event.entityId === "string" ? event.entityId : null,
+          label: stringValue(event.label)
+        };
+      })
     },
     materialLedger: {
       totals: materialValues(totalsRaw),
