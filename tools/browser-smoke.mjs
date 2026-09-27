@@ -52,6 +52,17 @@ async function waitForClockStable(page, locator, stableMs = 600, timeoutMs = 5_0
   throw new Error(`World clock did not stabilize after pause: ${current}`);
 }
 
+async function clickControl(page, selector) {
+  await page.waitForSelector(selector, { state: "attached", timeout: 30_000 });
+  await page.evaluate((targetSelector) => {
+    const element = document.querySelector(targetSelector);
+    if (!(element instanceof HTMLElement)) {
+      throw new Error(`Missing live control: ${targetSelector}`);
+    }
+    element.click();
+  }, selector);
+}
+
 async function withDialogs(page, responses, action) {
   const queue = [...responses];
   const handler = async (dialog) => {
@@ -254,7 +265,7 @@ try {
 
   const advancedClock = await waitForClockChange(page, worldClock, initialClock);
 
-  await page.locator("[data-command='pause']").click();
+  await clickControl(page, "[data-command='pause']");
   await page.waitForSelector(".runtime-banner.paused");
   const pausedClock = await waitForClockStable(page, worldClock);
   await page.waitForTimeout(800);
@@ -278,7 +289,7 @@ try {
   }
 
   await page.waitForTimeout(1_500);
-  await page.locator("[data-command='pause']").click();
+  await clickControl(page, "[data-command='pause']");
   await page.waitForSelector(".runtime-banner.paused");
 
   await page.locator("[data-overlay='temperature']").click();
@@ -396,7 +407,7 @@ try {
   const fileChooser = await fileChooserPromise;
   await fileChooser.setFiles(exportedPath);
   await page.getByText(/Portable save imported/).waitFor({ timeout: 30_000 });
-  await page.locator("[data-command='pause']").click();
+  await clickControl(page, "[data-command='pause']");
   await page.waitForSelector(".runtime-banner.paused");
 
   await page.locator("[data-world-command='save']").click();
@@ -405,7 +416,7 @@ try {
 
   await page.locator("[data-world-command='load']").click();
   await page.getByText(/Loaded latest save/).waitFor({ timeout: 30_000 });
-  await page.locator("[data-command='pause']").click();
+  await clickControl(page, "[data-command='pause']");
   await page.waitForSelector(".runtime-banner.paused");
   const loadedClock = await worldClock.textContent();
   if (
@@ -449,7 +460,7 @@ try {
   if (remainingSoakMs > 0) {
     await page.waitForTimeout(remainingSoakMs);
   }
-  await page.locator("[data-command='pause']").click();
+  await clickControl(page, "[data-command='pause']");
   await page.waitForSelector(".runtime-banner.paused");
 
   await page.locator("[data-bottom-tab='events']").click();
