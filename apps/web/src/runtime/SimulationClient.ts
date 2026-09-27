@@ -182,6 +182,14 @@ export class SimulationClient {
     return this.persistence.list();
   }
 
+  probeInvalidProtocolForValidation(): void {
+    this.post({
+      type: "SET_SPEED",
+      requestId: this.nextRequestId("validation-error"),
+      speed: 0
+    });
+  }
+
   async load(id: string): Promise<RuntimeSnapshotV2> {
     const snapshot = await this.persistence.load(id);
     this.stopPolling();
