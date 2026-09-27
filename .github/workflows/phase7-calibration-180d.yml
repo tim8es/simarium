@@ -3,9 +3,15 @@ name: Phase 7 180-Day Calibration
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/phase7-calibration-180d.yml"
+      - "packages/sim-core/src/**"
+      - "tools/ecosystem-*.ts"
+      - "data/experiments/phase*.json"
   push:
     branches:
-      - agent/phase7-ecology
+      - main
     paths:
       - ".github/workflows/phase7-calibration-180d.yml"
       - "packages/sim-core/src/**"
@@ -36,7 +42,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - run: npm run build
+      - run: npm run build:core
       - name: Run 5 isolated 180-day calibration seeds
         shell: bash
         run: |
@@ -75,7 +81,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - run: npm run build
+      - run: npm run build:core
       - uses: actions/download-artifact@v4
         with:
           pattern: calibration-shard-*
@@ -116,7 +122,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - run: npm run build
+      - run: npm run build:core
       - name: Run 5 isolated 180-day validation seeds
         shell: bash
         run: |
@@ -155,7 +161,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - run: npm run build
+      - run: npm run build:core
       - uses: actions/download-artifact@v4
         with:
           pattern: validation-shard-*
