@@ -123,9 +123,17 @@ export type FoodWebLink = {
   biomassTransferMg: number;
 };
 
+export type CausalHistoryEvent = {
+  timeSeconds: number;
+  type: string;
+  label: string;
+  relatedEntityIds: ReadonlyArray<EntityId>;
+};
+
 export type EntityInspection = {
   genealogy: ReadonlyArray<GenealogyNode>;
   why: ReadonlyArray<BehaviorReason>;
+  history: ReadonlyArray<CausalHistoryEvent>;
 };
 
 export type MaterialValues = {
