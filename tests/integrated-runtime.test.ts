@@ -127,4 +127,26 @@ describe("integrated browser runtime", () => {
     );
   });
 
+
+  it("exposes lifecycle-backed causal history for selected entities", () => {
+    const adapter = init(7055);
+    adapter.step(1);
+    const snapshot = adapter.renderSnapshot();
+    const selected = snapshot.entities.find(
+      (entity) => entity.speciesId === "folsomia_candida"
+    );
+    expect(selected).toBeDefined();
+
+    const details = adapter.entityDetails(selected!.entityId) as unknown as {
+      history: Array<{
+        timeSeconds: number;
+        type: string;
+        label: string;
+      }>;
+    };
+    expect(details.history.length).toBeGreaterThan(0);
+    expect(details.history.some((event) => event.type === "birth")).toBe(true);
+    expect(details.history.every((event) => Number.isFinite(event.timeSeconds))).toBe(true);
+  });
+
 });
