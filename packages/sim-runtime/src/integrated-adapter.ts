@@ -400,6 +400,11 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
         bacterialCarbonMg: bacterial.carbonMg,
         corpseCarbonMg: eco.world.ledger.getPool("animal_corpses").carbonMg
       },
+      materialLedger: {
+        totals: eco.world.ledger.totals(),
+        cumulativeBoundaryFlux: eco.world.ledger.cumulativeBoundaryFlux(),
+        residuals: eco.invariants.report(eco.world)
+      },
       events: {
         predation: eco.animals.dalotia.eventLog().filter((event) => event.type === "predation").length,
         births: {
