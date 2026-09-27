@@ -2,9 +2,10 @@ name: Phase 7 Folsomia Calibration Verification
 # lifespan evidence rerun
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - agent/phase7-ecology
+      - main
     paths:
       - ".github/workflows/phase7-folsomia-check.yml"
       - "data/experiments/phase3-folsomia.json"
@@ -31,7 +32,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - run: npm run build
+      - run: npm run build:core
       - name: Run calibrated checkpoint
         shell: bash
         run: |
