@@ -18,6 +18,7 @@ import {
   LineSegments,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   Object3D,
@@ -57,6 +58,13 @@ const ANIMAL_VISUAL_KEYS = [
 ] as const;
 
 type AnimalVisualKey = typeof ANIMAL_VISUAL_KEYS[number];
+
+export interface TemperatureGridProjection {
+  width: number;
+  height: number;
+  depth: number;
+  values: readonly number[];
+}
 
 export interface DynamicHardscapeEntry {
   id: string;
@@ -151,6 +159,7 @@ export class BenchmarkScene {
   private readonly stemMesh: InstancedMesh;
   private readonly stemEntityIds: string[] = [];
   private readonly dynamicHardscapeMeshes = new Map<string, Mesh>();
+  private readonly temperatureOverlay: InstancedMesh;
   private readonly farPoints: Points;
   private readonly farPositions = new Float32Array(MAX_ANIMALS * 3);
   private readonly farColors = new Float32Array(MAX_ANIMALS * 3);
@@ -177,6 +186,7 @@ export class BenchmarkScene {
     this.addLighting();
     this.addTerrarium();
     this.addHardscape();
+    this.temperatureOverlay = this.createTemperatureOverlay();
     this.stemMesh = this.createStemMesh();
     this.farPoints = this.createFarPoints();
     this.createAnimalMeshes();
@@ -232,6 +242,74 @@ export class BenchmarkScene {
 
   getMetrics(): BenchmarkSceneMetrics {
     return { ...this.metrics };
+  }
+
+  setTemperatureGridOverlay(
+    grid: TemperatureGridProjection | null,
+    visible: boolean
+  ): void {
+    if (
+      !visible ||
+      !grid ||
+      grid.width <= 0 ||
+      grid.height <= 0 ||
+      grid.depth <= 0 ||
+      grid.values.length !== grid.width * grid.height * grid.depth
+    ) {
+      this.temperatureOverlay.visible = false;
+      this.temperatureOverlay.count = 0;
+      return;
+    }
+
+    const cellValues: number[] = [];
+    for (let z = 0; z < grid.depth; z++) {
+      for (let x = 0; x < grid.width; x++) {
+        let sum = 0;
+        for (let y = 0; y < grid.height; y++) {
+          const index = x + grid.width * (y + grid.height * z);
+          sum += grid.values[index] ?? 0;
+        }
+        cellValues.push(sum / grid.height);
+      }
+    }
+
+    const min = Math.min(...cellValues);
+    const max = Math.max(...cellValues);
+    const span = Math.max(1e-9, max - min);
+    const color = new Color();
+    let instance = 0;
+    const maxInstances = Math.min(256, grid.width * grid.depth);
+
+    for (let z = 0; z < grid.depth && instance < maxInstances; z++) {
+      for (let x = 0; x < grid.width && instance < maxInstances; x++) {
+        const value = cellValues[x + grid.width * z] ?? min;
+        const normalized = (value - min) / span;
+        color.setHSL((1 - normalized) * 0.64, 0.72, 0.52);
+
+        this.dummy.position.set(
+          -0.58 + ((x + 0.5) / grid.width) * 1.16,
+          0.137,
+          -0.28 + ((z + 0.5) / grid.depth) * 0.56
+        );
+        this.dummy.rotation.set(-Math.PI / 2, 0, 0);
+        this.dummy.scale.set(
+          (1.16 / grid.width) * 0.96,
+          (0.56 / grid.depth) * 0.96,
+          1
+        );
+        this.dummy.updateMatrix();
+        this.temperatureOverlay.setMatrixAt(instance, this.dummy.matrix);
+        this.temperatureOverlay.setColorAt(instance, color);
+        instance++;
+      }
+    }
+
+    this.temperatureOverlay.count = instance;
+    this.temperatureOverlay.visible = true;
+    this.temperatureOverlay.instanceMatrix.needsUpdate = true;
+    if (this.temperatureOverlay.instanceColor) {
+      this.temperatureOverlay.instanceColor.needsUpdate = true;
+    }
   }
 
   setDynamicHardscape(entries: readonly DynamicHardscapeEntry[]): void {
@@ -405,6 +483,27 @@ export class BenchmarkScene {
     wood.castShadow = true;
     wood.receiveShadow = true;
     this.scene.add(wood);
+  }
+
+  private createTemperatureOverlay(): InstancedMesh {
+    const mesh = new InstancedMesh(
+      new PlaneGeometry(1, 1),
+      new MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.34,
+        vertexColors: true,
+        side: DoubleSide,
+        depthWrite: false
+      }),
+      256
+    );
+    mesh.count = 0;
+    mesh.visible = false;
+    mesh.frustumCulled = false;
+    mesh.renderOrder = 12;
+    this.scene.add(mesh);
+    return mesh;
   }
 
   private createStemMesh(): InstancedMesh {
