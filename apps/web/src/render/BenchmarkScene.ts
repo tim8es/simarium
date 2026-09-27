@@ -55,6 +55,12 @@ const ANIMAL_VISUAL_KEYS = [
 
 type AnimalVisualKey = typeof ANIMAL_VISUAL_KEYS[number];
 
+export interface DynamicHardscapeEntry {
+  id: string;
+  kind: string;
+  position: { x: number; y: number; z: number };
+}
+
 export interface BenchmarkSceneMetrics {
   visibleEntityCount: number;
   visibleAnimalMeshCount: number;
@@ -114,6 +120,7 @@ export class BenchmarkScene {
   private readonly animalInstanceIds = new Map<AnimalVisualKey, string[]>();
   private readonly stemMesh: InstancedMesh;
   private readonly stemEntityIds: string[] = [];
+  private readonly dynamicHardscapeMeshes = new Map<string, Mesh>();
   private readonly farPoints: Points;
   private readonly farPositions = new Float32Array(MAX_ANIMALS * 3);
   private readonly farColors = new Float32Array(MAX_ANIMALS * 3);
@@ -195,6 +202,43 @@ export class BenchmarkScene {
 
   getMetrics(): BenchmarkSceneMetrics {
     return { ...this.metrics };
+  }
+
+  setDynamicHardscape(entries: readonly DynamicHardscapeEntry[]): void {
+    const desired = new Set(entries.map((entry) => entry.id));
+    for (const [id, mesh] of this.dynamicHardscapeMeshes) {
+      if (desired.has(id)) continue;
+      this.scene.remove(mesh);
+      mesh.geometry.dispose();
+      if (Array.isArray(mesh.material)) {
+        for (const material of mesh.material) material.dispose();
+      } else {
+        mesh.material.dispose();
+      }
+      this.dynamicHardscapeMeshes.delete(id);
+    }
+
+    for (const entry of entries) {
+      let mesh = this.dynamicHardscapeMeshes.get(entry.id);
+      if (!mesh) {
+        const wood = entry.kind.toLowerCase().includes("wood");
+        mesh = new Mesh(
+          wood
+            ? new CylinderGeometry(0.025, 0.035, 0.28, 7)
+            : new DodecahedronGeometry(0.045, 0),
+          new MeshStandardMaterial({
+            color: wood ? 0x65412a : 0x62635e,
+            roughness: 0.95
+          })
+        );
+        if (wood) mesh.rotation.z = Math.PI / 2;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        this.dynamicHardscapeMeshes.set(entry.id, mesh);
+        this.scene.add(mesh);
+      }
+      mesh.position.set(entry.position.x, entry.position.y, entry.position.z);
+    }
   }
 
   pick(
