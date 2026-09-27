@@ -1,6 +1,12 @@
 import "./style.css";
 import "./styles.css";
-import type { JsonValue, SimulationSpeed, UserAction as RuntimeUserAction } from "../../../packages/sim-runtime/src/index.js";
+import {
+  decodeSharePreset,
+  encodeSharePreset,
+  type JsonValue,
+  type SimulationSpeed,
+  type UserAction as RuntimeUserAction
+} from "../../../packages/sim-runtime/src/index.js";
 import { BenchmarkApp } from "./render/BenchmarkApp.js";
 import type { CameraMode } from "./render/CameraController.js";
 import { SimulationClient } from "./runtime/SimulationClient.js";
@@ -98,7 +104,23 @@ if (benchmarkOnly) {
   cameraControls.hidden = true;
 
   const explicitSeedParam = params.get("seed");
-  const defaultSeed = Number(explicitSeedParam ?? 7001);
+  const sharePayload = params.get("share");
+  let sharedSeed: number | undefined;
+  let shareManifestError: string | undefined;
+  if (sharePayload !== null) {
+    try {
+      const manifest = decodeSharePreset(sharePayload);
+      if (manifest.presetId !== "phase7-integrated") {
+        throw new Error(`Unsupported preset: ${manifest.presetId}`);
+      }
+      sharedSeed = manifest.seed;
+    } catch (error) {
+      shareManifestError =
+        error instanceof Error ? error.message : String(error);
+    }
+  }
+  const explicitLaunch = explicitSeedParam !== null || sharePayload !== null;
+  const defaultSeed = Number(sharedSeed ?? explicitSeedParam ?? 7001);
   let snapshot: ObservationSnapshot = emptyObservationSnapshot();
   let selectedEntity: EntitySummary | undefined;
   let selectedInspection: EntityInspection | undefined;
@@ -114,7 +136,9 @@ if (benchmarkOnly) {
     cameraMode: initialCameraMode,
     seed: Number.isInteger(defaultSeed) ? defaultSeed : 7001,
     runtimeStatus: "starting",
-    runtimeMessage: "Creating deterministic Phase 7 world…",
+    runtimeMessage: shareManifestError
+      ? `Invalid share manifest: ${shareManifestError}`
+      : "Creating deterministic Phase 7 world…",
     nightObservationAid: false
   };
 
@@ -181,7 +205,7 @@ if (benchmarkOnly) {
             <button data-world-command="load">Load latest</button>
             <button data-world-command="export">Export save</button>
             <button data-world-command="import">Import save</button>
-            <button data-world-command="share">Share seed</button>
+            <button data-world-command="share">Share preset</button>
           </div>
           <div class="telemetry-strip">
             <span><small>TEMP</small><strong>${snapshot.environment.temperatureC.toFixed(1)}°</strong></span>
@@ -583,11 +607,17 @@ if (benchmarkOnly) {
         }, { once: true });
         input.click();
       } else if (command === "share") {
+        const payload = encodeSharePreset({
+          version: 1,
+          seed: state.seed,
+          presetId: "phase7-integrated",
+          config: {}
+        });
         const url = new URL(window.location.href);
         url.search = "";
-        url.searchParams.set("seed", String(state.seed));
+        url.searchParams.set("share", payload);
         void navigator.clipboard.writeText(url.toString())
-          .then(() => setState({ saveMessage: "Seed link copied" }))
+          .then(() => setState({ saveMessage: "Versioned preset link copied" }))
           .catch(() => setState({ saveMessage: url.toString() }));
       } else if (command === "load") {
         setState({ saveMessage: "Loading latest save…" });
@@ -646,7 +676,7 @@ if (benchmarkOnly) {
   });
 
   renderUi();
-  const boot = explicitSeedParam === null
+  const boot = !explicitLaunch
     ? client.loadLatest().then((loaded) => {
         if (loaded) {
           snapshot = emptyObservationSnapshot();
@@ -672,6 +702,7 @@ if (benchmarkOnly) {
         .then(() => {
           const cleanUrl = new URL(window.location.href);
           cleanUrl.searchParams.delete("seed");
+          cleanUrl.searchParams.delete("share");
           window.history.replaceState(null, "", cleanUrl);
           setState({
             saveMessage: "Initial world autosaved; reload will resume it"
