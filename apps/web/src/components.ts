@@ -292,6 +292,33 @@ export function renderFoodWeb(snapshot: ObservationSnapshot): string {
   `;
 }
 
+
+function renderProfiler(snapshot: ObservationSnapshot): string {
+  const p = snapshot.runtimeProfiler;
+  return `
+    <div class="bottom-content profiler-content">
+      <div class="resource-grid">
+        ${metric("Worker", p.running ? "running" : "paused")}
+        ${metric("Speed", `${p.speed}×`)}
+        ${metric("Last step", `${p.lastStepWallMs.toFixed(2)} ms / ${p.lastStepTicks} ticks`)}
+        ${metric("EMA step", `${p.emaStepWallMs.toFixed(2)} ms`)}
+        ${metric("Avg / tick", `${p.averageWallMsPerTick.toFixed(3)} ms`)}
+        ${metric("Backlog", `${p.backlogTicks.toFixed(2)} ticks`)}
+        ${metric("Max backlog", `${p.maxObservedBacklogTicks.toFixed(2)} ticks`)}
+        ${metric("Frames emitted", String(p.framesEmitted))}
+      </div>
+      <div class="ledger-panel">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">WORKER PROFILER</span><h2>Simulation runtime</h2></div>
+        </div>
+        <p class="ledger-note">
+          Wall-clock telemetry is diagnostic only. It is not serialized into the deterministic world and cannot change ecology results.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
 export function renderActions(state: ObservationUiState): string {
   return `
     <div class="bottom-content actions-content">
@@ -381,7 +408,9 @@ export function renderBottomPanel(snapshot: ObservationSnapshot, state: Observat
         ? renderResources(snapshot)
         : state.bottomPanel === "events"
           ? renderEvents(snapshot)
-          : renderActions(state);
+          : state.bottomPanel === "profiler"
+            ? renderProfiler(snapshot)
+            : renderActions(state);
   return `
     <section class="glass-panel bottom-panel">
       <div class="bottom-tabs" role="tablist">
@@ -389,6 +418,7 @@ export function renderBottomPanel(snapshot: ObservationSnapshot, state: Observat
         <button data-bottom-tab="foodWeb" class="${state.bottomPanel === "foodWeb" ? "is-active" : ""}">Food web</button>
         <button data-bottom-tab="resources" class="${state.bottomPanel === "resources" ? "is-active" : ""}">Resources</button>
         <button data-bottom-tab="events" class="${state.bottomPanel === "events" ? "is-active" : ""}">Events</button>
+        <button data-bottom-tab="profiler" class="${state.bottomPanel === "profiler" ? "is-active" : ""}">Profiler</button>
         <button data-bottom-tab="actions" class="${state.bottomPanel === "actions" ? "is-active" : ""}">Interventions</button>
       </div>
       ${content}
