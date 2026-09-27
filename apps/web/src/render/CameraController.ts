@@ -13,6 +13,7 @@ export class CameraController {
   private mode: CameraMode = "orbit";
   private followTargetId: string | null = null;
   private readonly target = new Vector3();
+  private readonly desiredTarget = new Vector3();
   private readonly desiredCamera = new Vector3();
 
   constructor(domElement: HTMLElement, adapter: RenderAdapter) {
@@ -78,9 +79,12 @@ export class CameraController {
     if (this.mode === "follow" && this.followTargetId) {
       const entity = this.adapter.getEntity(this.followTargetId);
       if (entity) {
-        this.target.set(...entity.position);
-        this.desiredCamera.copy(this.target).add(new Vector3(0.035, 0.022, 0.045));
+        this.desiredTarget.set(...entity.position);
         const blend = 1 - Math.exp(-6 * dtSeconds);
+        this.target.lerp(this.desiredTarget, blend);
+        this.desiredCamera
+          .copy(this.target)
+          .add(new Vector3(0.035, 0.022, 0.045));
         this.camera.position.lerp(this.desiredCamera, blend);
         this.camera.lookAt(this.target);
       }
@@ -90,9 +94,11 @@ export class CameraController {
     if (this.mode === "macro" && this.followTargetId) {
       const entity = this.adapter.getEntity(this.followTargetId);
       if (entity) {
-        this.desiredCamera.set(...entity.position).sub(this.target);
-        this.target.add(this.desiredCamera);
-        this.camera.position.add(this.desiredCamera);
+        this.desiredTarget.set(...entity.position);
+        const blend = 1 - Math.exp(-8 * dtSeconds);
+        this.desiredCamera.copy(this.target);
+        this.target.lerp(this.desiredTarget, blend);
+        this.camera.position.add(this.target.clone().sub(this.desiredCamera));
         this.orbit.target.copy(this.target);
       }
       this.orbit.update();
