@@ -180,6 +180,51 @@ describe("worker protocol and renderer transport", () => {
     );
   });
 
+  it("surfaces adapter entity failures as correlated worker errors", async () => {
+    class FailingInspectionAdapter implements SimulationRuntimeAdapter {
+      init(_message: Extract<UiToWorkerMessage, { type: "INIT" }>): void {}
+      loadSnapshot(_snapshot: RuntimeSnapshotV2): void {}
+      step(_ticks: number): void {}
+      applyUserAction(_action: UserActionEnvelope): void {}
+      renderSnapshot(): RenderWorldSnapshotDto { return renderSnapshot(0, 0); }
+      entityDetails(entityId: string): JsonValue {
+        throw new Error(`Unknown inspectable entity: ${entityId}`);
+      }
+      stats(): JsonValue { return null; }
+      saveSnapshot(): RuntimeSnapshotV2 {
+        return snapshotForWorld(createPhase1World({ seed: 1 }));
+      }
+    }
+
+    const emitted: WorkerToUiMessage[] = [];
+    const runtime = new SimulationWorkerRuntime(
+      new FailingInspectionAdapter(),
+      message => emitted.push(message)
+    );
+    await runtime.handle({
+      type: "INIT",
+      requestId: "inspection-init",
+      seed: 1,
+      simulationVersion: "0.1",
+      speciesDataVersion: "1"
+    });
+    await runtime.handle({
+      type: "REQUEST_ENTITY",
+      requestId: "inspection-missing",
+      entityId: "folsomia_candida#999999"
+    });
+
+    expect(emitted).toContainEqual(
+      expect.objectContaining({
+        type: "ERROR",
+        requestId: "inspection-missing",
+        code: "RUNTIME_ERROR",
+        message: expect.stringContaining("Unknown inspectable entity")
+      })
+    );
+    runtime.dispose();
+  });
+
   it("validates commands and rejects malformed payloads", () => {
     expect(parseUiToWorkerMessage({ type: "SET_SPEED", requestId: "r1", speed: 20 })).toEqual({ type: "SET_SPEED", requestId: "r1", speed: 20 });
     expect(() => parseUiToWorkerMessage({ type: "SET_SPEED", requestId: "r1", speed: 0 })).toThrow();
