@@ -99,7 +99,7 @@ npm run render:hardware-benchmark
 The command:
 - builds the production renderer;
 - starts the production preview locally;
-- opens a headed Chromium window at 1920×1080;
+- detects the host browser's device pixel ratio in headed mode, then records at a 1920×1080 CSS viewport using that DPR;
 - runs Orbit for 120 seconds after a 30-second warm-up;
 - runs Macro and Follow for 60 seconds each after warm-up;
 - reads the same `window.__SIMARIUM_BENCHMARK_METRICS__` counters used by the benchmark HUD;
