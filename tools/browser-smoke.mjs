@@ -121,7 +121,7 @@ async function pickVisibleEntity(page) {
         bubbles: true
       });
       await page.waitForTimeout(180);
-      const card = page.locator(".entity-card[data-entity-id]");
+      const card = page.locator(".entity-card[data-entity-id][data-entity-kind='animal']");
       if (await card.count()) {
         const id = await card.first().getAttribute("data-entity-id");
         if (id) return id;
