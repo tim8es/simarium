@@ -109,3 +109,16 @@ CI can verify:
 - Vite production bundle.
 
 CI cannot establish laptop GPU FPS. Therefore Phase 8 must not be marked fully passed until a target-hardware run is recorded using the procedure above.
+
+
+## Automated production-browser validation
+
+A separate browser-integration workflow complements this synthetic performance benchmark:
+- workflow: `.github/workflows/browser-validation.yml`;
+- harness: `tools/browser-smoke.mjs`;
+- verified code head: `c0d1300e72fa41c9180969fb9205e7c4cc37690e`;
+- GitHub Actions run: `36326164750` — **PASS**.
+
+That run built the production Vite app, launched it in headless Chromium with WebGL2, exercised the real Phase-7 Web Worker, pause/speed controls, scientific panels, a USER_ACTION boundary input, IndexedDB save/load, visual-only night observation aid, and a 100× accelerated soak with no page/console errors.
+
+This is a functional browser/runtime gate. Chromium in CI uses software/virtualized graphics and therefore **does not satisfy** the target-hardware FPS exit gate above.
