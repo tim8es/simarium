@@ -359,6 +359,10 @@ if (benchmarkOnly) {
     try {
       snapshot = statsToObservation(stats);
       renderer.setDynamicHardscape(hardscapeFromStats(stats));
+      renderer.setTemperatureGridOverlay(
+        snapshot.temperatureGrid,
+        state.activeOverlay === "temperature"
+      );
       if (state.selectedEntityId) {
         client.requestEntity(state.selectedEntityId);
       }
@@ -545,9 +549,12 @@ if (benchmarkOnly) {
     const overlayButton = target.closest<HTMLElement>("[data-overlay]");
     if (overlayButton?.dataset.overlay) {
       const overlay = overlayButton.dataset.overlay as OverlayKey;
-      setState({
-        activeOverlay: state.activeOverlay === overlay ? null : overlay
-      });
+      const activeOverlay = state.activeOverlay === overlay ? null : overlay;
+      renderer.setTemperatureGridOverlay(
+        snapshot.temperatureGrid,
+        activeOverlay === "temperature"
+      );
+      setState({ activeOverlay });
       return;
     }
 
