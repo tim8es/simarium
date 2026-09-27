@@ -115,7 +115,7 @@ export class PerformanceHud {
         FRAME_HISTOGRAM_MAX_MS,
         Math.max(0, Math.floor(frameMs))
       );
-      this.frameHistogram[bucket]++;
+      this.frameHistogram[bucket] = (this.frameHistogram[bucket] ?? 0) + 1;
     }
     this.latestCounters = {
       drawCalls: renderer.info.render.calls,
