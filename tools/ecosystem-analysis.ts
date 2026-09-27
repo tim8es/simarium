@@ -382,18 +382,33 @@ function assertAnimalStates(
   }
 }
 
-export function assertIntegratedStateValid(eco: IntegratedEcosystem): void {
-  assertAnimalStates("folsomia", eco.animals.folsomia.all());
-  assertAnimalStates("trichorhina", eco.animals.trichorhina.all());
-  assertAnimalStates("bradysia", eco.animals.bradysia.all());
-  assertAnimalStates("dalotia", eco.animals.dalotia.all());
+export function assertIntegratedStateValid(
+  eco: IntegratedEcosystem,
+  includeHistorical = false
+): void {
+  assertAnimalStates(
+    "folsomia",
+    includeHistorical ? eco.animals.folsomia.all() : eco.animals.folsomia.living()
+  );
+  assertAnimalStates(
+    "trichorhina",
+    includeHistorical ? eco.animals.trichorhina.all() : eco.animals.trichorhina.living()
+  );
+  assertAnimalStates(
+    "bradysia",
+    includeHistorical ? eco.animals.bradysia.all() : eco.animals.bradysia.living()
+  );
+  assertAnimalStates(
+    "dalotia",
+    includeHistorical ? eco.animals.dalotia.all() : eco.animals.dalotia.living()
+  );
 
   for (const [label, population] of [
     ["fittonia", eco.plants.fittonia],
     ["peperomia", eco.plants.peperomia],
     ["pilea", eco.plants.pilea]
   ] as const) {
-    const ramets = population.all();
+    const ramets = includeHistorical ? population.all() : population.living();
     assertUniqueIds(label, ramets);
     for (const ramet of ramets) {
       assertFiniteNumber(ramet.birthTimeSeconds, `${label}#${ramet.id}.birthTimeSeconds`);
@@ -621,7 +636,7 @@ export function runIntegratedEcosystem(
   for (let day = 1; day <= options.days; day++) {
     try {
       eco.scheduler.step(stepsPerDay);
-      assertIntegratedStateValid(eco);
+      assertIntegratedStateValid(eco, day === options.days);
       eco.invariants.check(eco.world);
     } catch (error) {
       invariantFailures++;
