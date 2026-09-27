@@ -43,8 +43,12 @@ try {
 
   const worldClock = page.locator(".viewport-label.top-right strong");
   const initialClock = await worldClock.textContent();
-  await page.waitForTimeout(1500);
-  const advancedClock = await worldClock.textContent();
+  let advancedClock = initialClock;
+  const clockDeadline = Date.now() + 8000;
+  while (Date.now() < clockDeadline && advancedClock === initialClock) {
+    await page.waitForTimeout(500);
+    advancedClock = await worldClock.textContent();
+  }
   if (!initialClock || !advancedClock || initialClock === advancedClock) {
     throw new Error(`World clock did not advance: ${initialClock} -> ${advancedClock}`);
   }
