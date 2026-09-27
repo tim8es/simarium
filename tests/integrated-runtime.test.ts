@@ -237,6 +237,49 @@ describe("integrated browser runtime", () => {
     expect(restoredEnd.sections).toEqual(sourceEnd.sections);
   });
 
+  it("records explicit diagnostic cause when a plant ramet is removed", () => {
+    const adapter = init(7071);
+    const plant = adapter.renderSnapshot().entities.find(
+      (entity) => entity.speciesId === "fittonia_albivenis"
+    );
+    expect(plant).toBeDefined();
+
+    adapter.applyUserAction({
+      sequence: 0,
+      targetTick: 0,
+      action: {
+        type: "remove_organisms",
+        entityIds: [plant!.entityId]
+      }
+    });
+    adapter.step(1);
+
+    expect(
+      adapter.renderSnapshot().entities.some(
+        (entity) => entity.entityId === plant!.entityId
+      )
+    ).toBe(false);
+
+    const stats = adapter.stats() as unknown as {
+      events: {
+        recent: Array<{
+          speciesId: string;
+          type: string;
+          entityId: string | null;
+          label: string;
+        }>;
+      };
+    };
+    expect(stats.events.recent).toContainEqual(
+      expect.objectContaining({
+        speciesId: "fittonia_albivenis",
+        type: "death",
+        entityId: plant!.entityId,
+        label: expect.stringContaining("user_removal")
+      })
+    );
+  });
+
   it("keeps ecology deterministic when render and stats are observed", () => {
     const observed = init(7041);
     const headless = init(7041);
