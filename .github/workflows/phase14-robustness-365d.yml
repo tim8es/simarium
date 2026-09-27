@@ -51,7 +51,7 @@ jobs:
             /usr/bin/time -v node dist/tools/ecosystem-batch.js \
               --days 365 \
               --seeds "${SEED}:1" \
-              --sample 15 \
+              --sample 1 \
               --format json \
               > "${PART}"
             parts+=("${PART}")
