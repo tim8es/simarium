@@ -54,9 +54,23 @@ export interface EcosystemSnapshot {
 
 export interface PopulationRunMetrics extends PopulationSnapshot {
   finalLiving: number;
+  meanLiving: number;
+  peakLiving: number;
+  troughLiving: number;
   coefficientOfVariation: number;
   peakToTroughRatio: number | null;
   extinctionDay: number | null;
+  generationTurnover: number;
+}
+
+export interface PopulationStabilityOutcome {
+  meanLiving: number;
+  peakLiving: number;
+  troughLiving: number;
+  coefficientOfVariation: number;
+  peakToTroughRatio: number | null;
+  extinctionDay: number | null;
+  generationTurnover: number;
 }
 
 export interface PlantRunMetrics extends PopulationRunMetrics {
@@ -141,6 +155,16 @@ export interface RunOutcome {
     bradysia: number;
     dalotia: number;
   };
+  stability: {
+    fittonia: PopulationStabilityOutcome;
+    peperomia: PopulationStabilityOutcome;
+    pilea: PopulationStabilityOutcome;
+    folsomia: PopulationStabilityOutcome;
+    trichorhina: PopulationStabilityOutcome;
+    bradysia: PopulationStabilityOutcome;
+    dalotia: PopulationStabilityOutcome;
+  };
+  resourceDrift: ResourceSnapshot;
   litterNitrogenTracerReturned: boolean;
   deathCauses: {
     folsomia: Record<string, number>;
@@ -196,6 +220,52 @@ export interface BatchSummary {
     bradysia: number;
     dalotia: number;
   };
+  meanLiving: {
+    fittonia: number;
+    peperomia: number;
+    pilea: number;
+    folsomia: number;
+    trichorhina: number;
+    bradysia: number;
+    dalotia: number;
+  };
+  meanCoefficientOfVariation: {
+    fittonia: number;
+    peperomia: number;
+    pilea: number;
+    folsomia: number;
+    trichorhina: number;
+    bradysia: number;
+    dalotia: number;
+  };
+  meanPeakToTroughRatio: {
+    fittonia: number | null;
+    peperomia: number | null;
+    pilea: number | null;
+    folsomia: number | null;
+    trichorhina: number | null;
+    bradysia: number | null;
+    dalotia: number | null;
+  };
+  meanGenerationTurnover: {
+    fittonia: number;
+    peperomia: number;
+    pilea: number;
+    folsomia: number;
+    trichorhina: number;
+    bradysia: number;
+    dalotia: number;
+  };
+  meanExtinctionDay: {
+    fittonia: number | null;
+    peperomia: number | null;
+    pilea: number | null;
+    folsomia: number | null;
+    trichorhina: number | null;
+    bradysia: number | null;
+    dalotia: number | null;
+  };
+  meanResourceDrift: ResourceSnapshot;
 }
 
 type AnimalCollection = {
@@ -311,12 +381,21 @@ function animalMetrics(
   selector: (sample: EcosystemSnapshot) => number
 ): PopulationRunMetrics {
   const livingSeries = samples.map(selector);
+  const positive = livingSeries.filter((value) => value > 0);
+  const meanLiving =
+    livingSeries.reduce((sum, value) => sum + value, 0) /
+    Math.max(1, livingSeries.length);
   return {
     ...final,
     finalLiving: final.living,
+    meanLiving,
+    peakLiving: livingSeries.length > 0 ? Math.max(...livingSeries) : 0,
+    troughLiving: positive.length > 0 ? Math.min(...positive) : 0,
     coefficientOfVariation: coefficientOfVariation(livingSeries),
     peakToTroughRatio: peakToTrough(livingSeries),
-    extinctionDay: extinctionDay(samples, selector)
+    extinctionDay: extinctionDay(samples, selector),
+    generationTurnover:
+      final.totalEver > 0 ? final.postStartEver / final.totalEver : 0
   };
 }
 
@@ -518,6 +597,42 @@ function deathEventCauses(
   return countStrings(causes);
 }
 
+function resourceDelta(
+  initial: ResourceSnapshot,
+  final: ResourceSnapshot
+): ResourceSnapshot {
+  return {
+    totalCarbonMg: final.totalCarbonMg - initial.totalCarbonMg,
+    totalNitrogenMg: final.totalNitrogenMg - initial.totalNitrogenMg,
+    totalPhosphorusMg: final.totalPhosphorusMg - initial.totalPhosphorusMg,
+    totalWaterG: final.totalWaterG - initial.totalWaterG,
+    litterCarbonMg: final.litterCarbonMg - initial.litterCarbonMg,
+    fineDetritusCarbonMg:
+      final.fineDetritusCarbonMg - initial.fineDetritusCarbonMg,
+    corpseCarbonMg: final.corpseCarbonMg - initial.corpseCarbonMg,
+    availableNitrogenMg:
+      final.availableNitrogenMg - initial.availableNitrogenMg,
+    availablePhosphorusMg:
+      final.availablePhosphorusMg - initial.availablePhosphorusMg,
+    fungalCarbonMg: final.fungalCarbonMg - initial.fungalCarbonMg,
+    bacterialCarbonMg: final.bacterialCarbonMg - initial.bacterialCarbonMg
+  };
+}
+
+function stabilityOutcome(
+  metrics: PopulationRunMetrics
+): PopulationStabilityOutcome {
+  return {
+    meanLiving: metrics.meanLiving,
+    peakLiving: metrics.peakLiving,
+    troughLiving: metrics.troughLiving,
+    coefficientOfVariation: metrics.coefficientOfVariation,
+    peakToTroughRatio: metrics.peakToTroughRatio,
+    extinctionDay: metrics.extinctionDay,
+    generationTurnover: metrics.generationTurnover
+  };
+}
+
 function runOutcome(run: IntegratedRunResult): RunOutcome {
   const persistence = {
     fittonia: run.summary.plants.fittonia.finalLiving > 0,
@@ -583,6 +698,19 @@ function runOutcome(run: IntegratedRunResult): RunOutcome {
       bradysia: run.summary.animals.bradysia.finalLiving,
       dalotia: run.summary.animals.dalotia.finalLiving
     },
+    stability: {
+      fittonia: stabilityOutcome(run.summary.plants.fittonia),
+      peperomia: stabilityOutcome(run.summary.plants.peperomia),
+      pilea: stabilityOutcome(run.summary.plants.pilea),
+      folsomia: stabilityOutcome(run.summary.animals.folsomia),
+      trichorhina: stabilityOutcome(run.summary.animals.trichorhina),
+      bradysia: stabilityOutcome(run.summary.animals.bradysia),
+      dalotia: stabilityOutcome(run.summary.animals.dalotia)
+    },
+    resourceDrift: resourceDelta(
+      run.samples[0]!.resources,
+      run.summary.finalResources
+    ),
     litterNitrogenTracerReturned:
       run.summary.litterNitrogenTracer.reachedPlantTissue,
     deathCauses: {
@@ -620,6 +748,17 @@ function outcomeMean(
   if (outcomes.length === 0) return 0;
   return outcomes.reduce((sum, outcome) => sum + selector(outcome), 0) /
     outcomes.length;
+}
+
+function outcomeMeanNullable(
+  outcomes: RunOutcome[],
+  selector: (outcome: RunOutcome) => number | null
+): number | null {
+  const values = outcomes
+    .map(selector)
+    .filter((value): value is number => value !== null);
+  if (values.length === 0) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function summarizeOutcomes(
@@ -683,6 +822,64 @@ function summarizeOutcomes(
       trichorhina: outcomeMean(outcomes, (x) => x.finalLiving.trichorhina),
       bradysia: outcomeMean(outcomes, (x) => x.finalLiving.bradysia),
       dalotia: outcomeMean(outcomes, (x) => x.finalLiving.dalotia)
+    },
+    meanLiving: {
+      fittonia: outcomeMean(outcomes, (x) => x.stability.fittonia.meanLiving),
+      peperomia: outcomeMean(outcomes, (x) => x.stability.peperomia.meanLiving),
+      pilea: outcomeMean(outcomes, (x) => x.stability.pilea.meanLiving),
+      folsomia: outcomeMean(outcomes, (x) => x.stability.folsomia.meanLiving),
+      trichorhina: outcomeMean(outcomes, (x) => x.stability.trichorhina.meanLiving),
+      bradysia: outcomeMean(outcomes, (x) => x.stability.bradysia.meanLiving),
+      dalotia: outcomeMean(outcomes, (x) => x.stability.dalotia.meanLiving)
+    },
+    meanCoefficientOfVariation: {
+      fittonia: outcomeMean(outcomes, (x) => x.stability.fittonia.coefficientOfVariation),
+      peperomia: outcomeMean(outcomes, (x) => x.stability.peperomia.coefficientOfVariation),
+      pilea: outcomeMean(outcomes, (x) => x.stability.pilea.coefficientOfVariation),
+      folsomia: outcomeMean(outcomes, (x) => x.stability.folsomia.coefficientOfVariation),
+      trichorhina: outcomeMean(outcomes, (x) => x.stability.trichorhina.coefficientOfVariation),
+      bradysia: outcomeMean(outcomes, (x) => x.stability.bradysia.coefficientOfVariation),
+      dalotia: outcomeMean(outcomes, (x) => x.stability.dalotia.coefficientOfVariation)
+    },
+    meanPeakToTroughRatio: {
+      fittonia: outcomeMeanNullable(outcomes, (x) => x.stability.fittonia.peakToTroughRatio),
+      peperomia: outcomeMeanNullable(outcomes, (x) => x.stability.peperomia.peakToTroughRatio),
+      pilea: outcomeMeanNullable(outcomes, (x) => x.stability.pilea.peakToTroughRatio),
+      folsomia: outcomeMeanNullable(outcomes, (x) => x.stability.folsomia.peakToTroughRatio),
+      trichorhina: outcomeMeanNullable(outcomes, (x) => x.stability.trichorhina.peakToTroughRatio),
+      bradysia: outcomeMeanNullable(outcomes, (x) => x.stability.bradysia.peakToTroughRatio),
+      dalotia: outcomeMeanNullable(outcomes, (x) => x.stability.dalotia.peakToTroughRatio)
+    },
+    meanGenerationTurnover: {
+      fittonia: outcomeMean(outcomes, (x) => x.stability.fittonia.generationTurnover),
+      peperomia: outcomeMean(outcomes, (x) => x.stability.peperomia.generationTurnover),
+      pilea: outcomeMean(outcomes, (x) => x.stability.pilea.generationTurnover),
+      folsomia: outcomeMean(outcomes, (x) => x.stability.folsomia.generationTurnover),
+      trichorhina: outcomeMean(outcomes, (x) => x.stability.trichorhina.generationTurnover),
+      bradysia: outcomeMean(outcomes, (x) => x.stability.bradysia.generationTurnover),
+      dalotia: outcomeMean(outcomes, (x) => x.stability.dalotia.generationTurnover)
+    },
+    meanExtinctionDay: {
+      fittonia: outcomeMeanNullable(outcomes, (x) => x.stability.fittonia.extinctionDay),
+      peperomia: outcomeMeanNullable(outcomes, (x) => x.stability.peperomia.extinctionDay),
+      pilea: outcomeMeanNullable(outcomes, (x) => x.stability.pilea.extinctionDay),
+      folsomia: outcomeMeanNullable(outcomes, (x) => x.stability.folsomia.extinctionDay),
+      trichorhina: outcomeMeanNullable(outcomes, (x) => x.stability.trichorhina.extinctionDay),
+      bradysia: outcomeMeanNullable(outcomes, (x) => x.stability.bradysia.extinctionDay),
+      dalotia: outcomeMeanNullable(outcomes, (x) => x.stability.dalotia.extinctionDay)
+    },
+    meanResourceDrift: {
+      totalCarbonMg: outcomeMean(outcomes, (x) => x.resourceDrift.totalCarbonMg),
+      totalNitrogenMg: outcomeMean(outcomes, (x) => x.resourceDrift.totalNitrogenMg),
+      totalPhosphorusMg: outcomeMean(outcomes, (x) => x.resourceDrift.totalPhosphorusMg),
+      totalWaterG: outcomeMean(outcomes, (x) => x.resourceDrift.totalWaterG),
+      litterCarbonMg: outcomeMean(outcomes, (x) => x.resourceDrift.litterCarbonMg),
+      fineDetritusCarbonMg: outcomeMean(outcomes, (x) => x.resourceDrift.fineDetritusCarbonMg),
+      corpseCarbonMg: outcomeMean(outcomes, (x) => x.resourceDrift.corpseCarbonMg),
+      availableNitrogenMg: outcomeMean(outcomes, (x) => x.resourceDrift.availableNitrogenMg),
+      availablePhosphorusMg: outcomeMean(outcomes, (x) => x.resourceDrift.availablePhosphorusMg),
+      fungalCarbonMg: outcomeMean(outcomes, (x) => x.resourceDrift.fungalCarbonMg),
+      bacterialCarbonMg: outcomeMean(outcomes, (x) => x.resourceDrift.bacterialCarbonMg)
     }
   };
 }
