@@ -84,6 +84,12 @@ export const mockObservationSnapshot: ObservationSnapshot = {
     availableNitrogenMg: 8.1,
     availablePhosphorusMg: 3.7
   },
+  temperatureGrid: {
+    width: 2,
+    height: 1,
+    depth: 2,
+    values: [24.2, 24.8, 25.1, 24.5]
+  },
   populations: [
     {
       speciesId: "folsomia",
