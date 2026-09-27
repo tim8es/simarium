@@ -33,6 +33,7 @@ const actionLabels: ReadonlyArray<[UserActionType, string, string]> = [
   ["CHANGE_LIGHT", "Change light", "Boundary condition"],
   ["CHANGE_VENTILATION", "Change ventilation", "Boundary condition"],
   ["PLACE_HARDSCAPE", "Place hardscape", "Habitat geometry"],
+  ["REMOVE_HARDSCAPE", "Remove hardscape", "Habitat geometry"],
   ["PLANT_RAMET", "Plant new ramet", "Population intervention"]
 ];
 
