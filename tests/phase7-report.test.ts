@@ -5,6 +5,7 @@ import {
   batchSummaryToCsv
 } from "../tools/ecosystem-report.ts";
 import {
+  assertIntegratedStateValid,
   runEcosystemBatch,
   runIntegratedEcosystem
 } from "../tools/ecosystem-analysis.ts";
@@ -33,6 +34,21 @@ describe("Phase 7 report/export helpers", () => {
     expect(lines[0]).toContain("dalotia_living");
     expect(lines[0]).toContain("total_carbon_mg");
     expect(lines.at(-1)?.startsWith("4,")).toBe(true);
+  }, 30_000);
+
+  it("rejects non-finite organism state even when material pools remain finite", () => {
+    const run = runIntegratedEcosystem({
+      seed: 7307,
+      days: 1,
+      sampleEveryDays: 1
+    });
+    const individual = run.ecosystem.animals.folsomia.living()[0];
+    expect(individual).toBeDefined();
+    individual!.reserveCarbonMg = Number.NaN;
+
+    expect(() => assertIntegratedStateValid(run.ecosystem)).toThrow(
+      /Non-finite organism state/
+    );
   }, 30_000);
 
   it("merges compact single-seed batch shards without applying acceptance early", () => {
