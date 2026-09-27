@@ -116,7 +116,12 @@ try {
     }
 
     const orbit = passes.orbit.metrics;
+    const rendererName = String(passes.orbit.webgl.renderer ?? "");
+    const softwareRenderer = /swiftshader|llvmpipe|software|basic render/i.test(
+      rendererName
+    );
     const gate = {
+      physicalHardwareRenderer: !headless && !softwareRenderer,
       orbitFpsAtLeast55: orbit.fps >= 55,
       orbitAverageFrameAtMost20Ms: orbit.averageFrameMs <= 20,
       noMeasuredLongTaskOver50Ms: orbit.maxLongTaskMs <= 50
