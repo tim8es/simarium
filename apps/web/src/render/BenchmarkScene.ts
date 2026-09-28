@@ -3,6 +3,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   CapsuleGeometry,
+  CircleGeometry,
   Color,
   CylinderGeometry,
   DirectionalLight,
