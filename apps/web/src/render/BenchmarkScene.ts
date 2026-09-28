@@ -4,7 +4,6 @@ import {
   BufferGeometry,
   CapsuleGeometry,
   Color,
-  ConeGeometry,
   CylinderGeometry,
   DirectionalLight,
   DoubleSide,
@@ -26,17 +25,18 @@ import {
   PlaneGeometry,
   Points,
   PointsMaterial,
-  Quaternion,
   Raycaster,
   Scene,
   SphereGeometry,
   Vector2,
   Vector3
 } from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RenderAdapter, type RenderEntity } from "@simarium/render-core";
 
 const PLANT_SPECIES = new Set(["fittonia-albivenis", "peperomia-caperata", "pilea-depressa"]);
 const LEAVES_PER_PLANT = 24;
+const MAX_STEMS = 768;
 const MAX_NEAR_ANIMALS = 260;
 const MAX_ANIMALS = 1200;
 
@@ -83,12 +83,37 @@ type VisibleAnimal = {
   entity: Readonly<RenderEntity>;
   distanceSq: number;
   position: Vector3;
+  heading: number;
 };
 
 const plantStyle = {
-  "fittonia-albivenis": { color: 0x3f7b4f, length: 0.055, width: 0.03, height: 0.17 },
-  "peperomia-caperata": { color: 0x315b3e, length: 0.05, width: 0.038, height: 0.15 },
-  "pilea-depressa": { color: 0x5d9b57, length: 0.03, width: 0.021, height: 0.11 }
+  "fittonia-albivenis": {
+    color: 0x3f7b4f,
+    length: 0.055,
+    width: 0.03,
+    height: 0.17,
+    stems: 2,
+    spread: 0.9,
+    upright: 0.82
+  },
+  "peperomia-caperata": {
+    color: 0x315b3e,
+    length: 0.052,
+    width: 0.043,
+    height: 0.145,
+    stems: 1,
+    spread: 0.78,
+    upright: 0.68
+  },
+  "pilea-depressa": {
+    color: 0x5d9b57,
+    length: 0.029,
+    width: 0.024,
+    height: 0.105,
+    stems: 3,
+    spread: 1.16,
+    upright: 0.48
+  }
 } as const;
 
 const animalStyle: Record<AnimalVisualKey, { color: number; length: number; height: number; width: number }> = {
@@ -113,31 +138,166 @@ function animalKey(entity: Readonly<RenderEntity>): AnimalVisualKey | null {
   return ANIMAL_VISUAL_KEYS.includes(key) ? key : null;
 }
 
+function mergeAnimalParts(parts: BufferGeometry[]): BufferGeometry {
+  const merged = mergeGeometries(parts, false);
+  for (const part of parts) part.dispose();
+  if (!merged) throw new Error("Unable to merge procedural animal geometry");
+  return merged;
+}
+
+function ellipsoid(
+  x: number,
+  y: number,
+  z: number,
+  offsetX = 0,
+  offsetY = 0,
+  offsetZ = 0
+): BufferGeometry {
+  const geometry = new SphereGeometry(0.5, 8, 5);
+  geometry.scale(x, y, z);
+  geometry.translate(offsetX, offsetY, offsetZ);
+  return geometry;
+}
+
+function horizontalCapsule(
+  radius: number,
+  length: number,
+  offsetX = 0
+): BufferGeometry {
+  const geometry = new CapsuleGeometry(radius, length, 3, 7);
+  geometry.rotateZ(Math.PI / 2);
+  geometry.translate(offsetX, 0, 0);
+  return geometry;
+}
+
 function animalGeometry(key: AnimalVisualKey): BufferGeometry {
+  if (key.endsWith(":egg")) {
+    return ellipsoid(0.92, 0.68, 0.76);
+  }
+
   if (key.startsWith("folsomia-candida:")) {
-    const geometry = new CapsuleGeometry(0.22, 0.56, 3, 6);
-    geometry.rotateZ(Math.PI / 2);
-    return geometry;
+    return mergeAnimalParts([
+      horizontalCapsule(0.18, 0.5, 0.02),
+      ellipsoid(0.32, 0.48, 0.5, 0.43)
+    ]);
   }
+
   if (key.startsWith("trichorhina-tomentosa:")) {
-    return new SphereGeometry(0.5, 8, 5);
+    const segments: BufferGeometry[] = [];
+    for (let segment = 0; segment < 7; segment++) {
+      const t = segment / 6;
+      const width = 0.78 + 0.2 * Math.sin(t * Math.PI);
+      segments.push(
+        ellipsoid(
+          0.24,
+          0.42,
+          0.68 * width,
+          -0.43 + t * 0.86,
+          0,
+          0
+        )
+      );
+    }
+    return mergeAnimalParts(segments);
   }
+
   if (key === "bradysia-impatiens:adult") {
-    const geometry = new ConeGeometry(0.34, 1, 6);
-    geometry.rotateZ(-Math.PI / 2);
-    return geometry;
+    const leftWing = new PlaneGeometry(0.64, 0.32);
+    leftWing.rotateX(Math.PI / 2);
+    leftWing.rotateY(-0.18);
+    leftWing.translate(0.02, 0.08, 0.2);
+    const rightWing = new PlaneGeometry(0.64, 0.32);
+    rightWing.rotateX(Math.PI / 2);
+    rightWing.rotateY(0.18);
+    rightWing.translate(0.02, 0.08, -0.2);
+    return mergeAnimalParts([
+      horizontalCapsule(0.12, 0.58, -0.02),
+      ellipsoid(0.25, 0.34, 0.32, 0.42),
+      leftWing,
+      rightWing
+    ]);
   }
+
   if (key.startsWith("bradysia-impatiens:")) {
-    const geometry = new CapsuleGeometry(0.18, 0.64, 3, 6);
-    geometry.rotateZ(Math.PI / 2);
-    return geometry;
+    return mergeAnimalParts([
+      horizontalCapsule(0.15, 0.62, -0.02),
+      ellipsoid(0.24, 0.33, 0.3, 0.43)
+    ]);
   }
+
+  if (key === "dalotia-coriaria:adult") {
+    return mergeAnimalParts([
+      horizontalCapsule(0.2, 0.42, -0.22),
+      ellipsoid(0.42, 0.62, 0.64, 0.18),
+      ellipsoid(0.3, 0.48, 0.48, 0.5)
+    ]);
+  }
+
   if (key.startsWith("dalotia-coriaria:")) {
-    const geometry = new CapsuleGeometry(0.28, 0.5, 3, 6);
-    geometry.rotateZ(Math.PI / 2);
-    return geometry;
+    return mergeAnimalParts([
+      horizontalCapsule(0.18, 0.55, -0.03),
+      ellipsoid(0.26, 0.38, 0.4, 0.42)
+    ]);
   }
+
   return new DodecahedronGeometry(0.5, 0);
+}
+
+function leafGeometry(speciesId: string): BufferGeometry {
+  const boundary: readonly (readonly [number, number])[] =
+    speciesId === "fittonia-albivenis"
+      ? [
+          [0, 0],
+          [0.14, -0.28],
+          [0.48, -0.5],
+          [0.82, -0.32],
+          [1, 0],
+          [0.82, 0.32],
+          [0.48, 0.5],
+          [0.14, 0.28]
+        ]
+      : speciesId === "peperomia-caperata"
+        ? [
+            [0, 0],
+            [0.15, -0.48],
+            [0.5, -0.55],
+            [0.84, -0.3],
+            [1, 0],
+            [0.84, 0.3],
+            [0.5, 0.55],
+            [0.15, 0.48]
+          ]
+        : [
+            [0, 0],
+            [0.18, -0.36],
+            [0.5, -0.48],
+            [0.84, -0.32],
+            [1, 0],
+            [0.84, 0.32],
+            [0.5, 0.48],
+            [0.18, 0.36]
+          ];
+
+  const positions = [0.48, 0, 0];
+  for (const [x, y] of boundary) positions.push(x, y, 0);
+  const indices: number[] = [];
+  for (let index = 0; index < boundary.length; index++) {
+    indices.push(0, index + 1, ((index + 1) % boundary.length) + 1);
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new BufferAttribute(new Float32Array(positions), 3)
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function leafCountForPlant(scale: number): number {
+  if (scale >= 0.55) return LEAVES_PER_PLANT;
+  const progress = Math.max(0, Math.min(1, (scale - 0.16) / 0.39));
+  return Math.max(4, Math.round(4 + 20 * Math.sqrt(progress)));
 }
 
 function hash01(value: string): number {
@@ -168,16 +328,17 @@ export class BenchmarkScene {
   private readonly farColors = new Float32Array(MAX_ANIMALS * 3);
   private readonly dummy = new Object3D();
   private readonly position = new Vector3();
-  private readonly quaternion = new Quaternion();
   private readonly scale = new Vector3();
   private readonly frustum = new Frustum();
   private readonly projectionView = new Matrix4();
   private readonly visibleAnimals: VisibleAnimal[] = [];
   private readonly smoothedAnimalPositions = new Map<string, Vector3>();
+  private readonly animalHeadings = new Map<string, number>();
   private readonly seenAnimalIds = new Set<string>();
   private readonly raycaster = new Raycaster();
   private readonly pointer = new Vector2();
   private plantSignature = "";
+  private visualTimeSeconds = 0;
   private metrics: BenchmarkSceneMetrics = {
     visibleEntityCount: 0,
     visibleAnimalMeshCount: 0,
@@ -213,6 +374,7 @@ export class BenchmarkScene {
     let animalCount = 0;
     let visiblePlants = 0;
     this.seenAnimalIds.clear();
+    this.visualTimeSeconds += Math.max(0, dtSeconds);
     const blend = 1 - Math.exp(-8 * Math.max(0, dtSeconds));
 
     this.adapter.forEachRenderableEntity((entity) => {
@@ -224,10 +386,19 @@ export class BenchmarkScene {
 
       this.seenAnimalIds.add(entity.id);
       let visualPosition = this.smoothedAnimalPositions.get(entity.id);
+      let heading =
+        this.animalHeadings.get(entity.id) ??
+        hash01(`${entity.id}:heading`) * Math.PI * 2;
       if (!visualPosition) {
         visualPosition = new Vector3(...entity.position);
         this.smoothedAnimalPositions.set(entity.id, visualPosition);
       } else {
+        const dx = this.position.x - visualPosition.x;
+        const dz = this.position.z - visualPosition.z;
+        if (dx * dx + dz * dz > 1e-8) {
+          heading = Math.atan2(-dz, dx);
+          this.animalHeadings.set(entity.id, heading);
+        }
         visualPosition.lerp(this.position, blend);
       }
       if (!this.frustum.containsPoint(visualPosition)) return;
@@ -238,18 +409,23 @@ export class BenchmarkScene {
         record.entity = entity;
         record.distanceSq = distanceSq;
         record.position.copy(visualPosition);
+        record.heading = heading;
       } else {
         animals.push({
           entity,
           distanceSq,
-          position: visualPosition.clone()
+          position: visualPosition.clone(),
+          heading
         });
       }
       animalCount++;
     });
 
     for (const id of this.smoothedAnimalPositions.keys()) {
-      if (!this.seenAnimalIds.has(id)) this.smoothedAnimalPositions.delete(id);
+      if (!this.seenAnimalIds.has(id)) {
+        this.smoothedAnimalPositions.delete(id);
+        this.animalHeadings.delete(id);
+      }
     }
 
     animals.length = animalCount;
@@ -554,7 +730,7 @@ export class BenchmarkScene {
     const mesh = new InstancedMesh(
       new CylinderGeometry(0.003, 0.004, 1, 6),
       new MeshStandardMaterial({ color: 0x38593b, roughness: 0.92 }),
-      512
+      MAX_STEMS
     );
     mesh.castShadow = true;
     this.scene.add(mesh);
@@ -589,7 +765,12 @@ export class BenchmarkScene {
       const style = animalStyle[key];
       const mesh = new InstancedMesh(
         animalGeometry(key),
-        new MeshStandardMaterial({ color: style.color, roughness: 0.72, metalness: 0 }),
+        new MeshStandardMaterial({
+          color: style.color,
+          roughness: 0.72,
+          metalness: 0,
+          side: DoubleSide
+        }),
         MAX_NEAR_ANIMALS
       );
       mesh.count = 0;
@@ -600,9 +781,10 @@ export class BenchmarkScene {
   }
 
   private refreshPlantInstances(force: boolean): void {
-    const plants = this.adapter
-      .getRenderableEntities()
-      .filter((entity) => PLANT_SPECIES.has(entity.speciesId));
+    const plants: Readonly<RenderEntity>[] = [];
+    this.adapter.forEachRenderableEntity((entity) => {
+      if (PLANT_SPECIES.has(entity.speciesId)) plants.push(entity);
+    });
     const signature = plants
       .map((plant) => `${plant.id}:${plant.scale.toFixed(4)}`)
       .sort()
@@ -612,7 +794,7 @@ export class BenchmarkScene {
     this.buildPlantInstances(plants);
   }
 
-  private buildPlantInstances(plants: readonly RenderEntity[]): void {
+  private buildPlantInstances(plants: readonly Readonly<RenderEntity>[]): void {
     for (const mesh of this.leafMeshes.values()) {
       this.scene.remove(mesh);
       mesh.geometry.dispose();
@@ -626,7 +808,7 @@ export class BenchmarkScene {
     this.leafEntityIds.clear();
     this.stemEntityIds.splice(0, this.stemEntityIds.length);
 
-    const speciesPlants = new Map<string, RenderEntity[]>();
+    const speciesPlants = new Map<string, Readonly<RenderEntity>[]>();
     for (const plant of plants) {
       const bucket = speciesPlants.get(plant.speciesId) ?? [];
       bucket.push(plant);
@@ -640,10 +822,10 @@ export class BenchmarkScene {
       const members = speciesPlants.get(speciesId) ?? [];
       const capacity = Math.max(1, members.length * LEAVES_PER_PLANT);
       const mesh = new InstancedMesh(
-        new PlaneGeometry(1, 1),
+        leafGeometry(speciesId),
         new MeshStandardMaterial({
           color: style.color,
-          roughness: 0.86,
+          roughness: 0.82,
           side: DoubleSide
         }),
         capacity
@@ -653,25 +835,44 @@ export class BenchmarkScene {
 
       let leafIndex = 0;
       const leafIds: string[] = [];
+      const leafColor = new Color();
       for (const plant of members) {
         const baseAngle = hash01(plant.id) * Math.PI * 2;
-        for (let leaf = 0; leaf < LEAVES_PER_PLANT; leaf++) {
-          const t = leaf / LEAVES_PER_PLANT;
-          const angle = baseAngle + leaf * 2.399963229728653;
-          const radius = (0.018 + 0.07 * Math.sqrt(t)) * plant.scale;
+        const leafCount = leafCountForPlant(plant.scale);
+        for (let leaf = 0; leaf < leafCount; leaf++) {
+          const t = leafCount <= 1 ? 0 : leaf / (leafCount - 1);
+          const angle =
+            baseAngle +
+            leaf * 2.399963229728653 +
+            (hash01(`${plant.id}:leaf-angle:${leaf}`) - 0.5) * 0.32;
+          const spreadJitter =
+            0.82 + hash01(`${plant.id}:leaf-radius:${leaf}`) * 0.34;
+          const radius =
+            (0.012 + 0.066 * Math.sqrt(t)) *
+            plant.scale *
+            style.spread *
+            spreadJitter;
           const height =
-            (0.035 + style.height * (0.25 + t * 0.75)) * plant.scale;
+            (0.022 +
+              style.height *
+                (0.18 + t * style.upright) *
+                (0.88 + hash01(`${plant.id}:leaf-height:${leaf}`) * 0.22)) *
+            plant.scale;
           this.dummy.position.set(
             plant.position[0] + Math.cos(angle) * radius,
             plant.position[1] + height,
             plant.position[2] + Math.sin(angle) * radius
           );
           this.dummy.rotation.set(
-            -Math.PI / 2 + 0.28 * Math.sin(angle),
+            -Math.PI / 2 + 0.34 * Math.sin(angle),
             angle,
-            0.18 * Math.cos(angle)
+            0.22 * Math.cos(angle) +
+              (hash01(`${plant.id}:leaf-roll:${leaf}`) - 0.5) * 0.18
           );
-          const leafScale = (0.7 + 0.5 * t) * plant.scale;
+          const leafScale =
+            (0.58 + 0.56 * t) *
+            plant.scale *
+            (0.86 + hash01(`${plant.id}:leaf-scale:${leaf}`) * 0.28);
           this.dummy.scale.set(
             style.length * leafScale,
             style.width * leafScale,
@@ -679,27 +880,55 @@ export class BenchmarkScene {
           );
           this.dummy.updateMatrix();
           mesh.setMatrixAt(leafIndex, this.dummy.matrix);
+          leafColor.setHex(style.color);
+          leafColor.offsetHSL(
+            (hash01(`${plant.id}:leaf-hue:${leaf}`) - 0.5) * 0.025,
+            0,
+            (hash01(`${plant.id}:leaf-light:${leaf}`) - 0.5) * 0.09
+          );
+          mesh.setColorAt(leafIndex, leafColor);
           leafIds[leafIndex] = plant.id;
           leafIndex++;
         }
 
-        if (stemIndex >= 512) continue;
-        const stemHeight = style.height * plant.scale;
-        this.dummy.position.set(
-          plant.position[0],
-          plant.position[1] + stemHeight * 0.5,
-          plant.position[2]
-        );
-        this.dummy.rotation.set(0, 0, 0);
-        this.dummy.scale.set(plant.scale, stemHeight, plant.scale);
-        this.dummy.updateMatrix();
-        this.stemMesh.setMatrixAt(stemIndex, this.dummy.matrix);
-        this.stemEntityIds[stemIndex] = plant.id;
-        stemIndex++;
+        for (
+          let branch = 0;
+          branch < style.stems && stemIndex < MAX_STEMS;
+          branch++
+        ) {
+          const branchAngle =
+            baseAngle + (branch / style.stems) * Math.PI * 2;
+          const branchOffset =
+            branch === 0 ? 0 : 0.01 * plant.scale * style.spread;
+          const stemHeight =
+            style.height *
+            plant.scale *
+            (0.7 + 0.22 * hash01(`${plant.id}:stem:${branch}`));
+          this.dummy.position.set(
+            plant.position[0] + Math.cos(branchAngle) * branchOffset,
+            plant.position[1] + stemHeight * 0.5,
+            plant.position[2] + Math.sin(branchAngle) * branchOffset
+          );
+          this.dummy.rotation.set(
+            Math.sin(branchAngle) * 0.1,
+            branchAngle,
+            Math.cos(branchAngle) * 0.12
+          );
+          this.dummy.scale.set(
+            plant.scale * (branch === 0 ? 1 : 0.72),
+            stemHeight,
+            plant.scale * (branch === 0 ? 1 : 0.72)
+          );
+          this.dummy.updateMatrix();
+          this.stemMesh.setMatrixAt(stemIndex, this.dummy.matrix);
+          this.stemEntityIds[stemIndex] = plant.id;
+          stemIndex++;
+        }
       }
 
       mesh.count = leafIndex;
       mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       this.scene.add(mesh);
       this.leafMeshes.set(speciesId, mesh);
       this.leafEntityIds.set(speciesId, leafIds);
@@ -731,10 +960,31 @@ export class BenchmarkScene {
       const style = animalStyle[key];
 
       this.position.copy(animals[i]!.position);
-      this.quaternion.set(...entity.orientation);
-      this.scale.set(style.length * entity.scale, style.height * entity.scale, style.width * entity.scale);
+      const dormant =
+        entity.lifeStage === "egg" || entity.lifeStage === "pupa";
+      const locomoting =
+        !dormant &&
+        entity.animationState !== "idle" &&
+        entity.animationState !== "rest";
+      const phase =
+        this.visualTimeSeconds * (entity.lifeStage === "adult" ? 8 : 5) +
+        hash01(entity.id) * Math.PI * 2;
+      const bob =
+        locomoting
+          ? Math.sin(phase) * style.height * entity.scale * 0.12
+          : 0;
+      this.position.y += bob;
+      this.scale.set(
+        style.length * entity.scale,
+        style.height * entity.scale,
+        style.width * entity.scale
+      );
       this.dummy.position.copy(this.position);
-      this.dummy.quaternion.copy(this.quaternion);
+      this.dummy.rotation.set(
+        0,
+        animals[i]!.heading + (locomoting ? Math.sin(phase * 0.5) * 0.08 : 0),
+        0
+      );
       this.dummy.scale.copy(this.scale);
       this.dummy.updateMatrix();
       mesh.setMatrixAt(index, this.dummy.matrix);
