@@ -60,6 +60,12 @@ const SPECIES: Record<string, SpeciesMeta> = {
     category: "plant",
     trophicRole: "producer"
   },
+  pilea_microphylla: {
+    commonName: "Artillery plant",
+    scientificName: "Pilea microphylla",
+    category: "plant",
+    trophicRole: "producer"
+  },
   folsomia_candida: {
     commonName: "Springtail",
     scientificName: "Folsomia candida",
@@ -102,6 +108,7 @@ const SPECIES_ALIASES: Record<string, string> = {
   "fittonia-albivenis": "fittonia_albivenis",
   "peperomia-caperata": "peperomia_caperata",
   "pilea-depressa": "pilea_depressa",
+  "pilea-microphylla": "pilea_microphylla",
   "folsomia-candida": "folsomia_candida",
   "trichorhina-tomentosa": "trichorhina_tomentosa",
   "bradysia-impatiens": "bradysia_impatiens",
@@ -185,8 +192,8 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
   private actions = new DeterministicUserActionQueue();
   private appliedActions: UserActionEnvelope[] = [];
   private simulationVersion = "0.1.0";
-  private speciesDataVersion = "species-v2";
-  private presetVersion = "phase7-integrated";
+  private speciesDataVersion = "species-v3-succession-preview";
+  private presetVersion = "succession-biodiversity-v1";
   private initialAtmosphereCarbonMg = 1;
   private initialAtmosphereWaterG = 1;
   private initialSubstrateWaterG = 1;
@@ -299,18 +306,27 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     const eco = this.requireEco();
     const entities: RenderEntityDto[] = [];
 
-    for (const [speciesId, population] of [
-      ["fittonia_albivenis", eco.plants.fittonia],
-      ["peperomia_caperata", eco.plants.peperomia],
-      ["pilea_depressa", eco.plants.pilea]
+    for (const [speciesId, population, poolPrefix, referenceRametCarbonMg] of [
+      ["fittonia_albivenis", eco.plants.fittonia, "fittonia", 18],
+      ["peperomia_caperata", eco.plants.peperomia, "peperomia", 22],
+      ["pilea_depressa", eco.plants.pilea, "pilea", 12],
+      ["pilea_microphylla", eco.plants.pileaMicrophylla, "pilea_microphylla", 7]
     ] as const) {
       const livingRamets = population.living();
+      const structuralCarbonMg =
+        eco.world.ledger.getPool(`${poolPrefix}_structural`).carbonMg;
       const visualPositions = new Map<number, { x: number; y: number; z: number }>();
       for (const ramet of livingRamets) {
-        const biomassScale = Math.sqrt(ramet.share * livingRamets.length);
+        const rametCarbonMg = structuralCarbonMg * ramet.share;
+        const biomassScale = Math.sqrt(
+          Math.max(0.04, rametCarbonMg / referenceRametCarbonMg)
+        );
         const ageDays = Math.max(0, ramet.ageSeconds / 86_400);
-        const juvenileScale = 0.58 + 0.42 * (1 - Math.exp(-ageDays / 10));
-        const baseScale = Math.max(0.42, Math.min(1.9, biomassScale * juvenileScale));
+        const juvenileScale = 0.42 + 0.58 * (1 - Math.exp(-ageDays / 14));
+        const baseScale = Math.max(
+          0.24,
+          Math.min(2.8, biomassScale * juvenileScale)
+        );
 
         const parentPosition =
           ramet.parentId === undefined ? undefined : visualPositions.get(ramet.parentId);
@@ -319,9 +335,10 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
           const angle = hash01(`${speciesId}:${ramet.id}:clone-angle`) * Math.PI * 2;
           const spread =
             speciesId === "pilea_depressa" ? 0.045 :
+            speciesId === "pilea_microphylla" ? 0.034 :
             speciesId === "fittonia_albivenis" ? 0.038 :
             0.028;
-          const radius = spread * (0.55 + hash01(`${speciesId}:${ramet.id}:clone-radius`) * 0.75);
+          const radius = spread * (0.55 + hash01(`${speciesId}:${ramet.id}:clone-radius`) * 0.9);
           position = {
             x: Math.max(-WORLD_WIDTH_M * 0.46, Math.min(WORLD_WIDTH_M * 0.46, parentPosition.x + Math.cos(angle) * radius)),
             y: SUBSTRATE_Y_M,
@@ -337,10 +354,11 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
           position,
           orientation: { x: 0, y: 0, z: 0, w: 1 },
           displayScale: baseScale,
-          action: ageDays < 12 ? "new-growth" : "grow",
+          action: ageDays < 18 ? "new-growth" : "grow",
           debugAttributes: {
             ageSeconds: ramet.ageSeconds,
-            share: ramet.share
+            share: ramet.share,
+            structuralCarbonMg: rametCarbonMg
           }
         });
       }
@@ -374,6 +392,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     if (speciesId === "fittonia_albivenis") return this.plantDetails(speciesId, eco.plants.fittonia, id, "fittonia");
     if (speciesId === "peperomia_caperata") return this.plantDetails(speciesId, eco.plants.peperomia, id, "peperomia");
     if (speciesId === "pilea_depressa") return this.plantDetails(speciesId, eco.plants.pilea, id, "pilea");
+    if (speciesId === "pilea_microphylla") return this.plantDetails(speciesId, eco.plants.pileaMicrophylla, id, "pilea_microphylla");
     if (speciesId === "folsomia_candida") return this.folsomiaDetails(id);
     if (speciesId === "trichorhina_tomentosa") return this.trichorhinaDetails(id);
     if (speciesId === "bradysia_impatiens") return this.bradysiaDetails(id);
@@ -400,6 +419,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
         fittonia_albivenis: livingCount(eco.plants.fittonia),
         peperomia_caperata: livingCount(eco.plants.peperomia),
         pilea_depressa: livingCount(eco.plants.pilea),
+        pilea_microphylla: livingCount(eco.plants.pileaMicrophylla),
         folsomia_candida: livingCount(eco.animals.folsomia),
         trichorhina_tomentosa: livingCount(eco.animals.trichorhina),
         bradysia_impatiens: livingCount(eco.animals.bradysia),
@@ -479,7 +499,8 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
         plants: toJsonValue({
           fittonia: eco.plants.fittonia.all(),
           peperomia: eco.plants.peperomia.all(),
-          pilea: eco.plants.pilea.all()
+          pilea: eco.plants.pilea.all(),
+          pileaMicrophylla: eco.plants.pileaMicrophylla.all()
         }),
         microbeFields: toJsonValue({
           linnemannia: eco.world.ledger.getPool("linnemannia_biomass"),
@@ -535,6 +556,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       fittonia_albivenis: livingCount(eco.plants.fittonia),
       peperomia_caperata: livingCount(eco.plants.peperomia),
       pilea_depressa: livingCount(eco.plants.pilea),
+      pilea_microphylla: livingCount(eco.plants.pileaMicrophylla),
       folsomia_candida: livingCount(eco.animals.folsomia),
       trichorhina_tomentosa: livingCount(eco.animals.trichorhina),
       bradysia_impatiens: livingCount(eco.animals.bradysia),
@@ -1092,6 +1114,10 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       this.introducePlant(speciesId, eco.plants.pilea, "pilea", count);
       return;
     }
+    if (speciesId === "pilea_microphylla") {
+      this.introducePlant(speciesId, eco.plants.pileaMicrophylla, "pilea_microphylla", count);
+      return;
+    }
 
     for (let index = 0; index < count; index++) {
       if (speciesId === "folsomia_candida") {
@@ -1273,6 +1299,10 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       this.removePlant(eco.plants.pilea, id, "pilea");
       return;
     }
+    if (speciesId === "pilea_microphylla") {
+      this.removePlant(eco.plants.pileaMicrophylla, id, "pilea_microphylla");
+      return;
+    }
     throw new Error(`Species ${speciesId} cannot be removed by this runtime`);
   }
 
@@ -1320,6 +1350,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     appendTail("fittonia_albivenis", eco.plants.fittonia.eventLog());
     appendTail("peperomia_caperata", eco.plants.peperomia.eventLog());
     appendTail("pilea_depressa", eco.plants.pilea.eventLog());
+    appendTail("pilea_microphylla", eco.plants.pileaMicrophylla.eventLog());
 
     const trichorhina = eco.animals.trichorhina.all();
     for (
@@ -1434,6 +1465,7 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       else if (from === "fittonia_structural") source = "fittonia_albivenis";
       else if (from === "peperomia_structural") source = "peperomia_caperata";
       else if (from === "pilea_structural") source = "pilea_depressa";
+      else if (from === "pilea_microphylla_structural") source = "pilea_microphylla";
       else source = "detritus";
       target = "bradysia_impatiens";
     } else if (to === "dalotia_feed_buffer") {
