@@ -33,6 +33,7 @@ const AIR_Y_MAX_M = 0.72;
 const DAY_SECONDS = 86_400;
 const MAX_RENDER_ANIMALS = 1_200;
 const MAX_RENDER_ANIMALS_PER_SPECIES = Math.floor(MAX_RENDER_ANIMALS / 4);
+const PLANT_VISUAL_GROWTH_STEPS = 8;
 
 type SpeciesMeta = {
   commonName: string;
@@ -299,18 +300,26 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     const eco = this.requireEco();
     const entities: RenderEntityDto[] = [];
 
-    for (const [speciesId, population] of [
-      ["fittonia_albivenis", eco.plants.fittonia],
-      ["peperomia_caperata", eco.plants.peperomia],
-      ["pilea_depressa", eco.plants.pilea]
+    for (const [speciesId, population, visualMaturityDays] of [
+      ["fittonia_albivenis", eco.plants.fittonia, 40],
+      ["peperomia_caperata", eco.plants.peperomia, 60],
+      ["pilea_depressa", eco.plants.pilea, 30]
     ] as const) {
       const livingRamets = population.living();
       const visualPositions = new Map<number, { x: number; y: number; z: number }>();
       for (const ramet of livingRamets) {
         const biomassScale = Math.sqrt(ramet.share * livingRamets.length);
-        const ageDays = Math.max(0, ramet.ageSeconds / 86_400);
-        const juvenileScale = 0.58 + 0.42 * (1 - Math.exp(-ageDays / 10));
-        const baseScale = Math.max(0.42, Math.min(1.9, biomassScale * juvenileScale));
+        const ageDays = Math.max(0, ramet.ageSeconds / DAY_SECONDS);
+        const maturityProgress = clamp01(ageDays / visualMaturityDays);
+        const visualGrowthProgress =
+          Math.floor(maturityProgress * PLANT_VISUAL_GROWTH_STEPS) /
+          PLANT_VISUAL_GROWTH_STEPS;
+        const juvenileScale =
+          0.16 + 0.84 * Math.sqrt(visualGrowthProgress);
+        const baseScale = Math.max(
+          0.12,
+          Math.min(1.9, biomassScale * juvenileScale)
+        );
 
         const parentPosition =
           ramet.parentId === undefined ? undefined : visualPositions.get(ramet.parentId);
@@ -337,10 +346,11 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
           position,
           orientation: { x: 0, y: 0, z: 0, w: 1 },
           displayScale: baseScale,
-          action: ageDays < 12 ? "new-growth" : "grow",
+          action: visualGrowthProgress < 1 ? "new-growth" : "grow",
           debugAttributes: {
             ageSeconds: ramet.ageSeconds,
-            share: ramet.share
+            share: ramet.share,
+            visualGrowthProgress
           }
         });
       }
@@ -594,14 +604,9 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
     if (limit <= 0 || individuals.length === 0) return;
     const eco = this.requireEco();
     const renderCount = Math.min(limit, individuals.length);
-    const stride = individuals.length / renderCount;
 
     for (let sampleIndex = 0; sampleIndex < renderCount; sampleIndex++) {
-      const individual =
-        individuals[Math.min(
-          individuals.length - 1,
-          Math.floor(sampleIndex * stride)
-        )]!;
+      const individual = individuals[sampleIndex]!;
       const ref = entityRef(speciesId, individual.id);
       const habitat = eco.habitat.get(ref);
       const fallbackX = Math.floor(hash01(`${ref}:x`) * eco.habitat.width);
@@ -613,10 +618,18 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
         (speciesId === "bradysia_impatiens" && individual.stage === "adult"
           ? "air"
           : "substrate");
-      const x =
+      const cellWidthM = (WORLD_WIDTH_M * 0.96) / eco.habitat.width;
+      const cellDepthM = (WORLD_DEPTH_M * 0.94) / eco.habitat.depth;
+      const cellCenterX =
         ((cellX + 0.5) / eco.habitat.width - 0.5) * WORLD_WIDTH_M * 0.96;
-      const z =
+      const cellCenterZ =
         ((cellZ + 0.5) / eco.habitat.depth - 0.5) * WORLD_DEPTH_M * 0.94;
+      const x =
+        cellCenterX +
+        (hash01(`${ref}:render-offset-x`) - 0.5) * cellWidthM * 0.72;
+      const z =
+        cellCenterZ +
+        (hash01(`${ref}:render-offset-z`) - 0.5) * cellDepthM * 0.72;
       const airT = hash01(`${ref}:height`);
       const y =
         layer === "air"
