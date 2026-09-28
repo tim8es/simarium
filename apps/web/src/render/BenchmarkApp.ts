@@ -116,6 +116,18 @@ export class BenchmarkApp {
     this.benchmarkScene.setBiologicalLight(lightPar, nightObservationAid);
   }
 
+  setBioticGroundcover(
+    litterCarbonMg: number,
+    fungalCarbonMg: number,
+    bacterialCarbonMg: number
+  ): void {
+    this.benchmarkScene.setBioticGroundcover(
+      litterCarbonMg,
+      fungalCarbonMg,
+      bacterialCarbonMg
+    );
+  }
+
   applyExternalSnapshot(snapshot: RenderWorldSnapshot): void {
     if (this.source) {
       throw new Error("Cannot apply external snapshot in synthetic benchmark mode");

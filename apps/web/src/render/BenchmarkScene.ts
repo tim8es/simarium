@@ -34,7 +34,7 @@ import {
 } from "three";
 import { RenderAdapter, type RenderEntity } from "@simarium/render-core";
 
-const PLANT_SPECIES = new Set(["fittonia-albivenis", "peperomia-caperata", "pilea-depressa"]);
+const PLANT_SPECIES = new Set(["fittonia-albivenis", "peperomia-caperata", "pilea-depressa", "pilea-microphylla"]);
 const MAX_NEAR_ANIMALS = 260;
 const MAX_ANIMALS = 1200;
 const ANIMAL_PICK_RADIUS_PX = 10;
@@ -95,7 +95,8 @@ type VisibleAnimal = {
 const plantStyle = {
   "fittonia-albivenis": { color: 0x3f7b4f, length: 0.055, width: 0.036, height: 0.17, baseLeaves: 18, extraLeaves: 18 },
   "peperomia-caperata": { color: 0x315b3e, length: 0.052, width: 0.044, height: 0.15, baseLeaves: 12, extraLeaves: 15 },
-  "pilea-depressa": { color: 0x5d9b57, length: 0.029, width: 0.025, height: 0.11, baseLeaves: 24, extraLeaves: 24 }
+  "pilea-depressa": { color: 0x5d9b57, length: 0.029, width: 0.025, height: 0.11, baseLeaves: 24, extraLeaves: 24 },
+  "pilea-microphylla": { color: 0x79a866, length: 0.017, width: 0.012, height: 0.075, baseLeaves: 30, extraLeaves: 42 }
 } as const;
 
 const animalStyle: Record<AnimalVisualKey, { color: number; length: number; height: number; width: number }> = {
@@ -203,6 +204,8 @@ export class BenchmarkScene {
   private readonly stemEntityIds: string[] = [];
   private readonly dynamicHardscapeMeshes = new Map<string, Mesh>();
   private readonly temperatureOverlay: InstancedMesh;
+  private readonly fungalPatches: InstancedMesh;
+  private readonly bacterialColonies: InstancedMesh;
   private readonly hemisphereLight: HemisphereLight;
   private readonly keyLight: DirectionalLight;
   private readonly farPoints: Points;
@@ -238,6 +241,8 @@ export class BenchmarkScene {
     this.addTerrarium();
     this.addHardscape();
     this.temperatureOverlay = this.createTemperatureOverlay();
+    this.fungalPatches = this.createBioticGroundcoverMesh(0xd8dfc2, 0.38, 120);
+    this.bacterialColonies = this.createBioticGroundcoverMesh(0xb6a77b, 0.22, 100);
     this.stemMesh = this.createStemMesh();
     this.farPoints = this.createFarPoints();
     this.createAnimalMeshes();
@@ -431,6 +436,36 @@ export class BenchmarkScene {
     if (this.temperatureOverlay.instanceColor) {
       this.temperatureOverlay.instanceColor.needsUpdate = true;
     }
+  }
+
+  setBioticGroundcover(
+    litterCarbonMg: number,
+    fungalCarbonMg: number,
+    bacterialCarbonMg: number
+  ): void {
+    const fungalCount = Math.min(
+      120,
+      Math.max(0, Math.round(Math.sqrt(Math.max(0, fungalCarbonMg)) * 10))
+    );
+    const bacterialCount = Math.min(
+      100,
+      Math.max(0, Math.round(Math.sqrt(Math.max(0, bacterialCarbonMg)) * 8))
+    );
+    const litterFactor = Math.max(0.55, Math.min(1.6, Math.sqrt(Math.max(1, litterCarbonMg) / 400)));
+    this.populateBioticGroundcover(
+      this.fungalPatches,
+      fungalCount,
+      "fungus",
+      0.0055 * litterFactor,
+      0.018 * litterFactor
+    );
+    this.populateBioticGroundcover(
+      this.bacterialColonies,
+      bacterialCount,
+      "bacteria",
+      0.0028 * litterFactor,
+      0.009 * litterFactor
+    );
   }
 
   setDynamicHardscape(entries: readonly DynamicHardscapeEntry[]): void {
@@ -748,6 +783,56 @@ export class BenchmarkScene {
     this.scene.add(wood);
   }
 
+  private createBioticGroundcoverMesh(
+    color: number,
+    opacity: number,
+    capacity: number
+  ): InstancedMesh {
+    const mesh = new InstancedMesh(
+      new CircleGeometry(0.5, 8),
+      new MeshStandardMaterial({
+        color,
+        roughness: 1,
+        transparent: true,
+        opacity,
+        depthWrite: false,
+        side: DoubleSide
+      }),
+      capacity
+    );
+    mesh.count = 0;
+    mesh.frustumCulled = false;
+    mesh.renderOrder = 1;
+    this.scene.add(mesh);
+    return mesh;
+  }
+
+  private populateBioticGroundcover(
+    mesh: InstancedMesh,
+    count: number,
+    prefix: string,
+    minSize: number,
+    maxSize: number
+  ): void {
+    for (let i = 0; i < count; i++) {
+      const a = hash01(`${prefix}:x:${i}`);
+      const b = hash01(`${prefix}:z:${i}`);
+      const s = hash01(`${prefix}:s:${i}`);
+      this.dummy.position.set(
+        (a - 0.5) * 1.08,
+        0.133 + (i % 4) * 0.00015,
+        (b - 0.5) * 0.5
+      );
+      this.dummy.rotation.set(-Math.PI / 2, 0, hash01(`${prefix}:r:${i}`) * Math.PI * 2);
+      const size = minSize + (maxSize - minSize) * s;
+      this.dummy.scale.set(size, size * (0.55 + b * 0.6), 1);
+      this.dummy.updateMatrix();
+      mesh.setMatrixAt(i, this.dummy.matrix);
+    }
+    mesh.count = count;
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+
   private createTemperatureOverlay(): InstancedMesh {
     const mesh = new InstancedMesh(
       new PlaneGeometry(1, 1),
@@ -882,7 +967,7 @@ export class BenchmarkScene {
       const leafCounts = members.map((plant) =>
         Math.max(
           6,
-          Math.round(style.baseLeaves + style.extraLeaves * Math.max(0, Math.min(1.4, plant.scale / 1.4)))
+          Math.round(style.baseLeaves + style.extraLeaves * Math.max(0, Math.min(1.8, plant.scale / 1.6)))
         )
       );
       const capacity = Math.max(1, leafCounts.reduce((sum, count) => sum + count, 0));
