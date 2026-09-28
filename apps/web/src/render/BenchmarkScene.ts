@@ -828,7 +828,7 @@ export class BenchmarkScene {
           transparent: wing,
           opacity: wing ? 0.5 : 1,
           depthWrite: !wing,
-          side: wing ? DoubleSide : undefined
+          ...(wing ? { side: DoubleSide } : {})
         }),
         MAX_NEAR_ANIMALS
       );
