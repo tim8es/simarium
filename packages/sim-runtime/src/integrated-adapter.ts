@@ -24,6 +24,7 @@ import {
   type UserActionEnvelope
 } from "./user-actions.js";
 import type { SimulationRuntimeAdapter } from "./worker-runtime.js";
+import integratedFixture from "../../../data/experiments/phase7-integrated.json" with { type: "json" };
 
 const WORLD_WIDTH_M = 1.2;
 const WORLD_DEPTH_M = 0.6;
