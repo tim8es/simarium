@@ -304,16 +304,40 @@ export class IntegratedEcosystemRuntimeAdapter implements SimulationRuntimeAdapt
       ["peperomia_caperata", eco.plants.peperomia],
       ["pilea_depressa", eco.plants.pilea]
     ] as const) {
-      for (const ramet of population.living()) {
-        const baseScale = Math.max(0.55, Math.min(1.8, Math.sqrt(ramet.share * population.living().length)));
+      const livingRamets = population.living();
+      const visualPositions = new Map<number, { x: number; y: number; z: number }>();
+      for (const ramet of livingRamets) {
+        const biomassScale = Math.sqrt(ramet.share * livingRamets.length);
+        const ageDays = Math.max(0, ramet.ageSeconds / 86_400);
+        const juvenileScale = 0.58 + 0.42 * (1 - Math.exp(-ageDays / 10));
+        const baseScale = Math.max(0.42, Math.min(1.9, biomassScale * juvenileScale));
+
+        const parentPosition =
+          ramet.parentId === undefined ? undefined : visualPositions.get(ramet.parentId);
+        let position = plantPosition(speciesId, ramet.id);
+        if (parentPosition) {
+          const angle = hash01(`${speciesId}:${ramet.id}:clone-angle`) * Math.PI * 2;
+          const spread =
+            speciesId === "pilea_depressa" ? 0.045 :
+            speciesId === "fittonia_albivenis" ? 0.038 :
+            0.028;
+          const radius = spread * (0.55 + hash01(`${speciesId}:${ramet.id}:clone-radius`) * 0.75);
+          position = {
+            x: Math.max(-WORLD_WIDTH_M * 0.46, Math.min(WORLD_WIDTH_M * 0.46, parentPosition.x + Math.cos(angle) * radius)),
+            y: SUBSTRATE_Y_M,
+            z: Math.max(-WORLD_DEPTH_M * 0.45, Math.min(WORLD_DEPTH_M * 0.45, parentPosition.z + Math.sin(angle) * radius))
+          };
+        }
+        visualPositions.set(ramet.id, position);
+
         entities.push({
           entityId: entityRef(speciesId, ramet.id),
           speciesId,
           lifeStage: "ramet",
-          position: plantPosition(speciesId, ramet.id),
+          position,
           orientation: { x: 0, y: 0, z: 0, w: 1 },
           displayScale: baseScale,
-          action: "grow",
+          action: ageDays < 12 ? "new-growth" : "grow",
           debugAttributes: {
             ageSeconds: ramet.ageSeconds,
             share: ramet.share

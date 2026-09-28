@@ -3,8 +3,8 @@ import {
   BufferAttribute,
   BufferGeometry,
   CapsuleGeometry,
+  CircleGeometry,
   Color,
-  ConeGeometry,
   CylinderGeometry,
   DirectionalLight,
   DoubleSide,
@@ -26,7 +26,6 @@ import {
   PlaneGeometry,
   Points,
   PointsMaterial,
-  Quaternion,
   Raycaster,
   Scene,
   SphereGeometry,
@@ -36,7 +35,6 @@ import {
 import { RenderAdapter, type RenderEntity } from "@simarium/render-core";
 
 const PLANT_SPECIES = new Set(["fittonia-albivenis", "peperomia-caperata", "pilea-depressa"]);
-const LEAVES_PER_PLANT = 24;
 const MAX_NEAR_ANIMALS = 260;
 const MAX_ANIMALS = 1200;
 const ANIMAL_PICK_RADIUS_PX = 10;
@@ -91,12 +89,13 @@ type VisibleAnimal = {
   entity: Readonly<RenderEntity>;
   distanceSq: number;
   position: Vector3;
+  heading: number;
 };
 
 const plantStyle = {
-  "fittonia-albivenis": { color: 0x3f7b4f, length: 0.055, width: 0.03, height: 0.17 },
-  "peperomia-caperata": { color: 0x315b3e, length: 0.05, width: 0.038, height: 0.15 },
-  "pilea-depressa": { color: 0x5d9b57, length: 0.03, width: 0.021, height: 0.11 }
+  "fittonia-albivenis": { color: 0x3f7b4f, length: 0.055, width: 0.036, height: 0.17, baseLeaves: 18, extraLeaves: 18 },
+  "peperomia-caperata": { color: 0x315b3e, length: 0.052, width: 0.044, height: 0.15, baseLeaves: 12, extraLeaves: 15 },
+  "pilea-depressa": { color: 0x5d9b57, length: 0.029, width: 0.025, height: 0.11, baseLeaves: 24, extraLeaves: 24 }
 } as const;
 
 const animalStyle: Record<AnimalVisualKey, { color: number; length: number; height: number; width: number }> = {
@@ -122,30 +121,64 @@ function animalKey(entity: Readonly<RenderEntity>): AnimalVisualKey | null {
 }
 
 function animalGeometry(key: AnimalVisualKey): BufferGeometry {
+  if (key.endsWith(":egg")) {
+    return new SphereGeometry(0.5, 7, 5);
+  }
+  if (key.endsWith(":pupa")) {
+    const geometry = new CapsuleGeometry(0.28, 0.42, 3, 7);
+    geometry.rotateZ(Math.PI / 2);
+    return geometry;
+  }
   if (key.startsWith("folsomia-candida:")) {
-    const geometry = new CapsuleGeometry(0.22, 0.56, 3, 6);
+    const geometry = new CapsuleGeometry(0.2, 0.6, 4, 7);
     geometry.rotateZ(Math.PI / 2);
     return geometry;
   }
   if (key.startsWith("trichorhina-tomentosa:")) {
-    return new SphereGeometry(0.5, 8, 5);
-  }
-  if (key === "bradysia-impatiens:adult") {
-    const geometry = new ConeGeometry(0.34, 1, 6);
-    geometry.rotateZ(-Math.PI / 2);
-    return geometry;
-  }
-  if (key.startsWith("bradysia-impatiens:")) {
-    const geometry = new CapsuleGeometry(0.18, 0.64, 3, 6);
+    const geometry = new CapsuleGeometry(0.38, 0.26, 4, 8);
     geometry.rotateZ(Math.PI / 2);
     return geometry;
   }
+  if (key === "bradysia-impatiens:adult") {
+    const geometry = new CapsuleGeometry(0.13, 0.74, 3, 7);
+    geometry.rotateZ(Math.PI / 2);
+    return geometry;
+  }
+  if (key.startsWith("bradysia-impatiens:")) {
+    const geometry = new CapsuleGeometry(0.16, 0.68, 3, 7);
+    geometry.rotateZ(Math.PI / 2);
+    return geometry;
+  }
+  if (key === "dalotia-coriaria:adult") {
+    return new BoxGeometry(1, 0.34, 0.44, 1, 1, 1);
+  }
   if (key.startsWith("dalotia-coriaria:")) {
-    const geometry = new CapsuleGeometry(0.28, 0.5, 3, 6);
+    const geometry = new CapsuleGeometry(0.22, 0.58, 3, 7);
     geometry.rotateZ(Math.PI / 2);
     return geometry;
   }
   return new DodecahedronGeometry(0.5, 0);
+}
+
+function animalAccentGeometry(key: AnimalVisualKey): BufferGeometry | null {
+  if (key.endsWith(":egg") || key.endsWith(":pupa")) return null;
+  if (key === "bradysia-impatiens:adult") return new PlaneGeometry(1, 1);
+  if (
+    key.startsWith("folsomia-candida:") ||
+    key.startsWith("trichorhina-tomentosa:") ||
+    key.startsWith("dalotia-coriaria:")
+  ) {
+    return new SphereGeometry(0.5, 7, 5);
+  }
+  return null;
+}
+
+function plantLeafGeometry(speciesId: keyof typeof plantStyle): BufferGeometry {
+  const segments =
+    speciesId === "peperomia-caperata" ? 10 :
+    speciesId === "fittonia-albivenis" ? 9 :
+    7;
+  return new CircleGeometry(0.5, segments);
 }
 
 function hash01(value: string): number {
@@ -164,6 +197,7 @@ export class BenchmarkScene {
   private readonly leafMeshes = new Map<string, InstancedMesh>();
   private readonly leafEntityIds = new Map<string, string[]>();
   private readonly animalMeshes = new Map<AnimalVisualKey, InstancedMesh>();
+  private readonly animalAccentMeshes = new Map<AnimalVisualKey, InstancedMesh>();
   private readonly animalInstanceIds = new Map<AnimalVisualKey, string[]>();
   private readonly stemMesh: InstancedMesh;
   private readonly stemEntityIds: string[] = [];
@@ -176,13 +210,14 @@ export class BenchmarkScene {
   private readonly farColors = new Float32Array(MAX_ANIMALS * 3);
   private readonly dummy = new Object3D();
   private readonly position = new Vector3();
-  private readonly quaternion = new Quaternion();
   private readonly scale = new Vector3();
   private readonly frustum = new Frustum();
   private readonly projectionView = new Matrix4();
   private readonly visibleAnimals: VisibleAnimal[] = [];
   private readonly smoothedAnimalPositions = new Map<string, Vector3>();
+  private readonly animalHeadings = new Map<string, number>();
   private readonly seenAnimalIds = new Set<string>();
+  private visualTimeSeconds = 0;
   private readonly raycaster = new Raycaster();
   private readonly pointer = new Vector2();
   private plantSignature = "";
@@ -213,6 +248,7 @@ export class BenchmarkScene {
   }
 
   update(camera: PerspectiveCamera, dtSeconds: number): BenchmarkSceneMetrics {
+    this.visualTimeSeconds += Math.max(0, dtSeconds);
     this.refreshPlantInstances(false);
     camera.updateMatrixWorld();
     this.projectionView.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
@@ -233,32 +269,76 @@ export class BenchmarkScene {
 
       this.seenAnimalIds.add(entity.id);
       let visualPosition = this.smoothedAnimalPositions.get(entity.id);
+      let heading = this.animalHeadings.get(entity.id) ?? hash01(`${entity.id}:heading`) * Math.PI * 2;
       if (!visualPosition) {
         visualPosition = new Vector3(...entity.position);
         this.smoothedAnimalPositions.set(entity.id, visualPosition);
       } else {
+        const dx = this.position.x - visualPosition.x;
+        const dz = this.position.z - visualPosition.z;
+        if (dx * dx + dz * dz > 1e-10) {
+          heading = -Math.atan2(dz, dx);
+          this.animalHeadings.set(entity.id, heading);
+        }
         visualPosition.lerp(this.position, blend);
       }
-      if (!this.frustum.containsPoint(visualPosition)) return;
 
-      const distanceSq = camera.position.distanceToSquared(visualPosition);
+      const animatedPosition = visualPosition.clone();
+      const phase = hash01(`${entity.id}:phase`) * Math.PI * 2;
+      const t = this.visualTimeSeconds;
+      const localX = Math.cos(heading);
+      const localZ = -Math.sin(heading);
+      const sideX = -localZ;
+      const sideZ = localX;
+
+      if (entity.speciesId === "bradysia-impatiens" && entity.lifeStage === "adult") {
+        animatedPosition.x += Math.sin(t * 4.8 + phase) * 0.006;
+        animatedPosition.y += Math.sin(t * 6.4 + phase * 1.7) * 0.004;
+        animatedPosition.z += Math.cos(t * 4.2 + phase) * 0.006;
+        heading += Math.sin(t * 2.5 + phase) * 0.35;
+      } else if (entity.speciesId === "folsomia-candida") {
+        const hop = Math.pow(Math.max(0, Math.sin(t * 6.8 + phase)), 8);
+        animatedPosition.y += 0.00035 + hop * 0.0024;
+        animatedPosition.x += sideX * Math.sin(t * 4.4 + phase) * 0.0007;
+        animatedPosition.z += sideZ * Math.sin(t * 4.4 + phase) * 0.0007;
+        heading += Math.sin(t * 3.1 + phase) * 0.18;
+      } else if (entity.speciesId === "trichorhina-tomentosa") {
+        animatedPosition.y += 0.00028;
+        animatedPosition.x += sideX * Math.sin(t * 1.8 + phase) * 0.00045;
+        animatedPosition.z += sideZ * Math.sin(t * 1.8 + phase) * 0.00045;
+        heading += Math.sin(t * 1.4 + phase) * 0.11;
+      } else if (entity.speciesId === "dalotia-coriaria") {
+        animatedPosition.y += 0.00032 + Math.max(0, Math.sin(t * 5 + phase)) * 0.00032;
+        animatedPosition.x += sideX * Math.sin(t * 3.7 + phase) * 0.00065;
+        animatedPosition.z += sideZ * Math.sin(t * 3.7 + phase) * 0.00065;
+        heading += Math.sin(t * 2.7 + phase) * 0.14;
+      }
+
+      if (!this.frustum.containsPoint(animatedPosition)) return;
+
+      const distanceSq = camera.position.distanceToSquared(animatedPosition);
       const record = animals[animalCount];
       if (record) {
         record.entity = entity;
         record.distanceSq = distanceSq;
-        record.position.copy(visualPosition);
+        record.position.copy(animatedPosition);
+        record.heading = heading;
       } else {
         animals.push({
           entity,
           distanceSq,
-          position: visualPosition.clone()
+          position: animatedPosition,
+          heading
         });
       }
       animalCount++;
     });
 
     for (const id of this.smoothedAnimalPositions.keys()) {
-      if (!this.seenAnimalIds.has(id)) this.smoothedAnimalPositions.delete(id);
+      if (!this.seenAnimalIds.has(id)) {
+        this.smoothedAnimalPositions.delete(id);
+        this.animalHeadings.delete(id);
+      }
     }
 
     animals.length = animalCount;
@@ -735,6 +815,28 @@ export class BenchmarkScene {
       mesh.frustumCulled = false;
       this.scene.add(mesh);
       this.animalMeshes.set(key, mesh);
+
+      const accentGeometry = animalAccentGeometry(key);
+      if (!accentGeometry) continue;
+      const wing = key === "bradysia-impatiens:adult";
+      const accent = new InstancedMesh(
+        accentGeometry,
+        new MeshStandardMaterial({
+          color: wing ? 0xc6d6d7 : Math.max(0, style.color - 0x101010),
+          roughness: wing ? 0.38 : 0.82,
+          metalness: 0,
+          transparent: wing,
+          opacity: wing ? 0.5 : 1,
+          depthWrite: !wing,
+          ...(wing ? { side: DoubleSide } : {})
+        }),
+        MAX_NEAR_ANIMALS
+      );
+      accent.count = 0;
+      accent.frustumCulled = false;
+      accent.renderOrder = wing ? 3 : 0;
+      this.scene.add(accent);
+      this.animalAccentMeshes.set(key, accent);
     }
   }
 
@@ -777,13 +879,20 @@ export class BenchmarkScene {
 
     for (const [speciesId, style] of Object.entries(plantStyle)) {
       const members = speciesPlants.get(speciesId) ?? [];
-      const capacity = Math.max(1, members.length * LEAVES_PER_PLANT);
+      const leafCounts = members.map((plant) =>
+        Math.max(
+          6,
+          Math.round(style.baseLeaves + style.extraLeaves * Math.max(0, Math.min(1.4, plant.scale / 1.4)))
+        )
+      );
+      const capacity = Math.max(1, leafCounts.reduce((sum, count) => sum + count, 0));
       const mesh = new InstancedMesh(
-        new PlaneGeometry(1, 1),
+        plantLeafGeometry(speciesId as keyof typeof plantStyle),
         new MeshStandardMaterial({
-          color: style.color,
-          roughness: 0.86,
-          side: DoubleSide
+          color: 0xffffff,
+          roughness: 0.82,
+          side: DoubleSide,
+          vertexColors: true
         }),
         capacity
       );
@@ -792,10 +901,12 @@ export class BenchmarkScene {
 
       let leafIndex = 0;
       const leafIds: string[] = [];
-      for (const plant of members) {
+      for (let plantIndex = 0; plantIndex < members.length; plantIndex++) {
+        const plant = members[plantIndex]!;
+        const leafCount = leafCounts[plantIndex]!;
         const baseAngle = hash01(plant.id) * Math.PI * 2;
-        for (let leaf = 0; leaf < LEAVES_PER_PLANT; leaf++) {
-          const t = leaf / LEAVES_PER_PLANT;
+        for (let leaf = 0; leaf < leafCount; leaf++) {
+          const t = leaf / Math.max(1, leafCount - 1);
           const angle = baseAngle + leaf * 2.399963229728653;
           const radius = (0.018 + 0.07 * Math.sqrt(t)) * plant.scale;
           const height =
@@ -818,6 +929,10 @@ export class BenchmarkScene {
           );
           this.dummy.updateMatrix();
           mesh.setMatrixAt(leafIndex, this.dummy.matrix);
+          const leafColor = new Color(style.color);
+          const variation = (hash01(`${plant.id}:leaf:${leaf}`) - 0.5) * 0.12;
+          leafColor.offsetHSL(variation * 0.15, variation * 0.08, variation);
+          mesh.setColorAt(leafIndex, leafColor);
           leafIds[leafIndex] = plant.id;
           leafIndex++;
         }
@@ -839,6 +954,7 @@ export class BenchmarkScene {
 
       mesh.count = leafIndex;
       mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       this.scene.add(mesh);
       this.leafMeshes.set(speciesId, mesh);
       this.leafEntityIds.set(speciesId, leafIds);
@@ -870,21 +986,66 @@ export class BenchmarkScene {
       const style = animalStyle[key];
 
       this.position.copy(animals[i]!.position);
-      this.quaternion.set(...entity.orientation);
+      const heading = animals[i]!.heading;
+      const winged = key === "bradysia-impatiens:adult";
+      const movementPhase = this.visualTimeSeconds * (winged ? 8 : 4) + hash01(entity.id) * Math.PI * 2;
+      const pitch = winged ? Math.sin(movementPhase) * 0.16 : 0;
+      const roll = winged ? Math.cos(movementPhase * 0.8) * 0.22 : Math.sin(movementPhase) * 0.035;
+
       this.scale.set(style.length * entity.scale, style.height * entity.scale, style.width * entity.scale);
       this.dummy.position.copy(this.position);
-      this.dummy.quaternion.copy(this.quaternion);
+      this.dummy.rotation.set(pitch, heading, roll);
       this.dummy.scale.copy(this.scale);
       this.dummy.updateMatrix();
       mesh.setMatrixAt(index, this.dummy.matrix);
+
+      const accent = this.animalAccentMeshes.get(key);
+      if (accent) {
+        if (winged) {
+          this.dummy.position.set(
+            this.position.x,
+            this.position.y + style.height * entity.scale * 0.35,
+            this.position.z
+          );
+          this.dummy.rotation.set(-Math.PI / 2 + Math.sin(movementPhase * 1.7) * 0.18, heading, 0);
+          this.dummy.scale.set(
+            style.length * entity.scale * 0.72,
+            style.width * entity.scale * 2.4,
+            1
+          );
+        } else {
+          const forwardX = Math.cos(heading);
+          const forwardZ = -Math.sin(heading);
+          this.dummy.position.set(
+            this.position.x + forwardX * style.length * entity.scale * 0.42,
+            this.position.y + style.height * entity.scale * 0.08,
+            this.position.z + forwardZ * style.length * entity.scale * 0.42
+          );
+          this.dummy.rotation.set(0, heading, 0);
+          this.dummy.scale.set(
+            style.width * entity.scale * 0.72,
+            style.height * entity.scale * 0.82,
+            style.width * entity.scale * 0.72
+          );
+        }
+        this.dummy.updateMatrix();
+        accent.setMatrixAt(index, this.dummy.matrix);
+      }
+
       this.animalInstanceIds.get(key)![index] = entity.id;
       counts.set(key, index + 1);
     }
 
     for (const key of ANIMAL_VISUAL_KEYS) {
+      const count = counts.get(key)!;
       const mesh = this.animalMeshes.get(key)!;
-      mesh.count = counts.get(key)!;
+      mesh.count = count;
       mesh.instanceMatrix.needsUpdate = true;
+      const accent = this.animalAccentMeshes.get(key);
+      if (accent) {
+        accent.count = count;
+        accent.instanceMatrix.needsUpdate = true;
+      }
     }
   }
 
