@@ -33,6 +33,44 @@ describe("integrated browser runtime", () => {
     expect(afterDay.virtualTime).toBe(86_400);
   });
 
+  it("reveals succession species only from the conserved propagule bank", () => {
+    const adapter = init(7001);
+    const before = adapter.renderSnapshot();
+    expect(
+      before.entities.some((entity) => entity.speciesId === "pilea_microphylla")
+    ).toBe(false);
+
+    adapter.step(14 * 48 + 1);
+
+    const after = adapter.renderSnapshot();
+    expect(
+      after.entities.some((entity) => entity.speciesId === "pilea_microphylla")
+    ).toBe(true);
+
+    const saved = adapter.saveSnapshot();
+    const pools = saved.sections.materialPools as unknown as {
+      pools: Record<string, { carbonMg: number }>;
+    };
+    expect(pools.pools.pilea_microphylla_seedbank!.carbonMg).toBeLessThan(24);
+
+    const stats = adapter.stats() as unknown as {
+      populations: Record<string, number>;
+      materialLedger: {
+        residuals: {
+          carbonMg: number;
+          nitrogenMg: number;
+          phosphorusMg: number;
+          waterG: number;
+        };
+      };
+    };
+    expect(stats.populations.pilea_microphylla).toBeGreaterThan(0);
+    expect(Math.abs(stats.materialLedger.residuals.carbonMg)).toBeLessThan(1e-6);
+    expect(Math.abs(stats.materialLedger.residuals.nitrogenMg)).toBeLessThan(1e-6);
+    expect(Math.abs(stats.materialLedger.residuals.phosphorusMg)).toBeLessThan(1e-6);
+    expect(Math.abs(stats.materialLedger.residuals.waterG)).toBeLessThan(1e-6);
+  });
+
   it("round-trips an integrated world through deterministic replay save/load", () => {
     const source = init(7017);
     source.step(8);
