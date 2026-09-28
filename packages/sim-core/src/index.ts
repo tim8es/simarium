@@ -14,4 +14,5 @@ export * from "./systems.js";
 export * from "./tracer.js";
 export * from "./world.js";
 export * from "./plant-lineage.js";
+export * from "./plant-succession.js";
 export * from "./spatial.js";

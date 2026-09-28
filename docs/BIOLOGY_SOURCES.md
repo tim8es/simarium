@@ -29,6 +29,12 @@ Checked for the MVP species list and key ecological assumptions.
 - Penn State Extension, Pilea houseplant guidance: Pilea are low-growing tropical/subtropical plants suited to bright indirect light and warm conditions; typical daytime indoor temperatures of about 65–75 F are described. This is genus-level horticultural evidence and is therefore treated as low-confidence proxy data for *P. depressa* coefficients.
   https://extension.psu.edu/pilea-as-a-houseplant
 
+### Pilea microphylla
+- Royal Botanic Gardens, Kew — Plants of the World Online: accepted species; native from the southeastern United States and Caribbean through Mexico to northern South America and Peru; grows primarily in the wet tropical biome.
+  https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:1162156-2/general-information
+- Kew's Flora of the Cayman Islands description records a small pale-green herb with succulent, freely branched stems and leaves roughly 2–12 mm long. This supports the fine-textured visual form, not the runtime photosynthesis/growth coefficients.
+- Simarium's succession preview stores all numeric physiology, clonal timing and propagule-emergence values as ASSUMED/model-internal engineering parameters until species-specific longitudinal growth data are available. The initial propagule material is explicitly present in the conserved ledger.
+
 ## Invertebrates
 
 ### Folsomia candida

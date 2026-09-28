@@ -1,5 +1,5 @@
 schema_version: 2
-data_version: 0.6.0
+data_version: 0.7.0-preview
 status: parameterization_in_progress
 # Compatibility mirror of data/species.json. JSON is authoritative.
 
@@ -32,6 +32,16 @@ species:
     traits: [clonal, ramet_clonal_lifecycle, producer, litter_source, groundcover, moisture_sensitive, temperature_response]
     profile_path: data/species-profiles/pilea_depressa.json
     sources: [docs/BIOLOGY_SOURCES.md#pilea-depressa]
+    runtime_parameter_status: PARTIAL
+
+  - id: pilea_microphylla
+    scientific_name: Pilea microphylla
+    type: plant
+    ecological_roles: [producer, litter_source, groundcover]
+    life_stages: [propagule, ramet_young, ramet_adult, senescent]
+    traits: [clonal, ramet_clonal_lifecycle, producer, litter_source, groundcover, moisture_sensitive, temperature_response]
+    profile_path: data/species-profiles/pilea_microphylla.json
+    sources: [docs/BIOLOGY_SOURCES.md#pilea-microphylla]
     runtime_parameter_status: PARTIAL
 
   - id: folsomia_candida

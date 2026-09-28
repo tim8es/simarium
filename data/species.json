@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "data_version": "0.6.0",
+  "data_version": "0.7.0-preview",
   "status": "parameterization_in_progress",
   "species": [
     {
@@ -85,6 +85,36 @@
         "temperature_response"
       ],
       "profile_path": "data/species-profiles/pilea_depressa.json"
+    },
+    {
+      "id": "pilea_microphylla",
+      "scientific_name": "Pilea microphylla",
+      "type": "plant",
+      "ecological_roles": [
+        "producer",
+        "litter_source",
+        "groundcover"
+      ],
+      "life_stages": [
+        "propagule",
+        "ramet_young",
+        "ramet_adult",
+        "senescent"
+      ],
+      "sources": [
+        "docs/BIOLOGY_SOURCES.md#pilea-microphylla"
+      ],
+      "runtime_parameter_status": "PARTIAL",
+      "traits": [
+        "clonal",
+        "ramet_clonal_lifecycle",
+        "producer",
+        "litter_source",
+        "groundcover",
+        "moisture_sensitive",
+        "temperature_response"
+      ],
+      "profile_path": "data/species-profiles/pilea_microphylla.json"
     },
     {
       "id": "folsomia_candida",

@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "data_version": "0.7.0-preview",
+  "id": "pilea_microphylla",
+  "runtime_membership": "MVP",
+  "profile_status": "PARTIAL",
+  "identity": {
+    "accepted_scientific_name": "Pilea microphylla",
+    "synonyms": [],
+    "common_names": [
+      "artillery plant",
+      "rockweed"
+    ],
+    "taxonomy": {
+      "kingdom": "Plantae",
+      "phylum": "Tracheophyta",
+      "class": "Magnoliopsida",
+      "order": "Rosales",
+      "family": "Urticaceae",
+      "genus": "Pilea",
+      "species": "microphylla"
+    },
+    "taxon_source": "kew_powo"
+  },
+  "traits": [
+    "clonal",
+    "ramet_clonal_lifecycle",
+    "producer",
+    "litter_source",
+    "groundcover",
+    "moisture_sensitive",
+    "temperature_response"
+  ],
+  "biology": {
+    "stages": [
+      "propagule",
+      "ramet_young",
+      "ramet_adult",
+      "senescent"
+    ],
+    "development_timing": {
+      "emergence_schedule": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "kew_powo",
+        "notes": "Runtime emergence windows are engineering assumptions, not a measured dormancy schedule."
+      }
+    },
+    "lifespan": {
+      "ramet_lifespan_days_species_evidence": {
+        "value": null,
+        "unit": "day",
+        "status": "TBD",
+        "source": "kew_powo",
+        "notes": "Species-specific ramet lifespan not frozen."
+      }
+    },
+    "reproduction": {
+      "mode": "seed_bank_plus_clonal_proxy",
+      "mate_required": false,
+      "parameters": {},
+      "notes": "POWO describes tiny flowers/achenes; MVP preview represents delayed establishment from explicit pre-existing propagule material, then uses the generic clonal ramet engine as an engineering approximation."
+    },
+    "body_mass": {
+      "summary": "No species-specific dry-mass allometry is frozen.",
+      "parameters": {}
+    },
+    "water_dependence": {
+      "summary": "Wet-tropical habitat is supported; numeric water kinetics are engineering proxies.",
+      "parameters": {}
+    },
+    "thermal_response": {
+      "summary": "Wet-tropical occurrence is supported; numeric optimum/sigma are not measured species constants.",
+      "parameters": {}
+    }
+  },
+  "ecology": {
+    "diet": [
+      "photoautotrophic producer"
+    ],
+    "prey": [],
+    "predators": [
+      "herbivores not explicitly modeled"
+    ],
+    "habitat": [
+      "wet tropical ground layer",
+      "disturbed moist substrate"
+    ],
+    "locomotion": [
+      "branching groundcover spread"
+    ],
+    "activity_layer": [
+      "substrate surface"
+    ],
+    "substrate_preference": [
+      "moist organic substrate"
+    ]
+  },
+  "simulation": {
+    "metabolism": {},
+    "reserve_thresholds": {},
+    "feeding_rates": {},
+    "assimilation": {},
+    "critical_mass_thresholds": {},
+    "reproduction": {},
+    "reproduction_costs": {},
+    "mortality_conditions": {},
+    "notes": [
+      "All runtime numerical coefficients are stored in data/experiments/succession-biodiversity.json and remain ASSUMED pending calibration.",
+      "The initial propagule bank is part of the conserved material ledger; no hidden spawn occurs."
+    ]
+  },
+  "render": {
+    "approximate_dimensions": {
+      "leaf_length_mm": {
+        "value": 2,
+        "unit": "mm",
+        "status": "DERIVED",
+        "source": "kew_powo",
+        "notes": "POWO description reports larger leaves roughly 2-12 mm; renderer uses this only as a visual-order anchor."
+      }
+    },
+    "coloration": "Pale to medium green, very small leaves on freely branched succulent stems.",
+    "stage_differences": [
+      "Newly emerged ramets are tiny and sparse; mature patches form fine-textured branching mats."
+    ],
+    "locomotion_style": "Slow patch expansion through new ramets after emergence.",
+    "reference_images_asset_notes": [
+      "Use accepted Pilea microphylla references; do not substitute generic Pilea imagery."
+    ]
+  },
+  "sources": [
+    {
+      "id": "kew_powo",
+      "category": "taxonomic_database",
+      "citation": "Royal Botanic Gardens, Kew, Plants of the World Online: Pilea microphylla (L.) Liebm.; accepted species, wet tropical biome.",
+      "url": "https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:1162156-2/general-information",
+      "confidence": "high"
+    },
+    {
+      "id": "model_internal",
+      "category": "model_internal",
+      "citation": "Simarium succession-biodiversity preview fixture.",
+      "confidence": "low"
+    },
+    {
+      "id": "pilea_depressa_proxy",
+      "category": "proxy",
+      "citation": "Existing Simarium Pilea depressa plant-physiology coefficients used only as an engineering starting proxy.",
+      "confidence": "low"
+    },
+    {
+      "id": "wet_tropical_proxy",
+      "category": "proxy",
+      "citation": "Wet-tropical habitat direction from Kew POWO; numeric response remains assumed.",
+      "confidence": "low"
+    },
+    {
+      "id": "generic_plant_proxy",
+      "category": "proxy",
+      "citation": "Generic Simarium plant maintenance-respiration proxy.",
+      "confidence": "low"
+    }
+  ]
+}
