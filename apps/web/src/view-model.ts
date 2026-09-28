@@ -45,7 +45,7 @@ export function getOverlayValue(
   const values: Record<OverlayKey, string> = {
     temperature: `${environment.temperatureC.toFixed(1)} °C`,
     humidity: `${Math.round(environment.relativeHumidity * 100)}% RH · proxy`,
-    soilWater: `${Math.round(environment.soilWater * 100)}%`,
+    soilWater: `${Math.round(environment.soilWater * 100)}% · proxy`,
     light: `${environment.lightPar.toFixed(0)} PAR · proxy`,
     co2: `${environment.co2Ppm.toFixed(0)} ppm · proxy`,
     o2: optional(environment.o2Percent, "%"),

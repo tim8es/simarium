@@ -32,15 +32,65 @@ async function waitForServer(url, timeoutMs = 30_000) {
   throw new Error(`Preview server did not become ready at ${url}`);
 }
 
+function summarizeHeap(samples) {
+  const available = samples.filter(Boolean);
+  if (available.length === 0) {
+    return {
+      available: false,
+      sampleCount: 0,
+      note: "Chromium performance.memory unavailable; no heap/GC proxy recorded."
+    };
+  }
+  const used = available.map(sample => sample.usedJSHeapSize);
+  let heapDropEventsProxy = 0;
+  let largestHeapDropBytes = 0;
+  for (let index = 1; index < used.length; index++) {
+    const drop = used[index - 1] - used[index];
+    if (drop >= 1024 * 1024) heapDropEventsProxy++;
+    largestHeapDropBytes = Math.max(largestHeapDropBytes, drop);
+  }
+  return {
+    available: true,
+    sampleCount: available.length,
+    startUsedJSHeapBytes: used[0],
+    endUsedJSHeapBytes: used.at(-1),
+    peakUsedJSHeapBytes: Math.max(...used),
+    minimumUsedJSHeapBytes: Math.min(...used),
+    usedJSHeapDeltaBytes: used.at(-1) - used[0],
+    totalJSHeapBytes: available.at(-1).totalJSHeapSize,
+    jsHeapSizeLimitBytes: available.at(-1).jsHeapSizeLimit,
+    heapDropEventsProxy,
+    largestHeapDropBytes,
+    note:
+      "heapDropEventsProxy counts >=1 MiB decreases in usedJSHeapSize; it is a GC/activity proxy, not a direct GC event counter."
+  };
+}
+
 async function runCamera(page, camera, durationMs) {
   await page.goto(
     `${baseUrl}/?record=1&camera=${encodeURIComponent(camera)}`,
     { waitUntil: "networkidle", timeout: 30_000 }
   );
   await page.waitForSelector("#render-layer canvas", { timeout: 30_000 });
-  await page.waitForTimeout(warmupMs + durationMs);
+  await page.waitForTimeout(warmupMs);
 
-  return page.evaluate(() => {
+  const heapSamples = [];
+  const measurementDeadline = Date.now() + durationMs;
+  while (Date.now() < measurementDeadline) {
+    heapSamples.push(await page.evaluate(() => {
+      const memory = performance.memory;
+      return memory
+        ? {
+            usedJSHeapSize: memory.usedJSHeapSize,
+            totalJSHeapSize: memory.totalJSHeapSize,
+            jsHeapSizeLimit: memory.jsHeapSizeLimit
+          }
+        : null;
+    }));
+    await page.waitForTimeout(Math.min(1000, Math.max(0, measurementDeadline - Date.now())));
+  }
+
+  const result = await page.evaluate(() => {
     const canvas = document.querySelector("#render-layer canvas");
     const gl = canvas?.getContext("webgl2");
     const debug = gl?.getExtension("WEBGL_debug_renderer_info");
@@ -67,6 +117,10 @@ async function runCamera(page, camera, durationMs) {
       }
     };
   });
+  return {
+    ...result,
+    memory: summarizeHeap(heapSamples)
+  };
 }
 
 try {
@@ -97,6 +151,7 @@ try {
     args: [
       "--enable-webgl",
       "--ignore-gpu-blocklist",
+      "--enable-precise-memory-info",
       "--window-size=1920,1080"
     ]
   });

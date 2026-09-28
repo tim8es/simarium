@@ -51,6 +51,12 @@ function convertEntity(entity: {
 
 type ResolveMessage = (message: WorkerToUiMessage) => void;
 
+type PendingRequest = {
+  resolve: ResolveMessage;
+  reject: (error: Error) => void;
+  timeout: number;
+};
+
 export interface SimulationClientHooks {
   onSnapshot?: (snapshot: RenderWorldSnapshot) => void;
   onDelta?: (delta: RenderWorldDelta) => void;
@@ -62,9 +68,9 @@ export interface SimulationClientHooks {
 }
 
 export class SimulationClient {
-  private readonly worker: Worker;
+  private worker: Worker;
   private readonly persistence = new IndexedDbWorldPersistence();
-  private readonly pending = new Map<string, ResolveMessage>();
+  private readonly pending = new Map<string, PendingRequest>();
   private requestCounter = 0;
   private renderSequence = -1;
   private currentTick = 0;
@@ -75,11 +81,7 @@ export class SimulationClient {
   readonly hooks: SimulationClientHooks = {};
 
   constructor() {
-    this.worker = new Worker(new URL("../sim-worker.ts", import.meta.url), {
-      type: "module",
-      name: "simarium-ecology"
-    });
-    this.worker.addEventListener("message", this.onMessage);
+    this.worker = this.createWorker();
   }
 
   async initialize(seed: number): Promise<void> {
@@ -115,6 +117,31 @@ export class SimulationClient {
     });
   }
 
+  async pauseAndWait(): Promise<void> {
+    const requestId = this.nextRequestId("pause");
+    const message = await this.commandAndWait({
+      type: "PAUSE",
+      requestId
+    });
+    if (
+      message.type !== "EVENT" ||
+      !message.event ||
+      typeof message.event !== "object" ||
+      Array.isArray(message.event) ||
+      message.event.type !== "runtime_paused"
+    ) {
+      throw new Error("Unexpected pause acknowledgement");
+    }
+
+    const statsMessage = await this.commandAndWait({
+      type: "REQUEST_STATS",
+      requestId: this.nextRequestId("stats")
+    });
+    if (statsMessage.type !== "STATS") {
+      throw new Error("Unexpected pause stats response");
+    }
+  }
+
   setSpeed(speed: SimulationSpeed): void {
     this.post({
       type: "SET_SPEED",
@@ -144,6 +171,10 @@ export class SimulationClient {
       requestId: this.nextRequestId("entity"),
       entityId
     });
+  }
+
+  nextUserActionSequence(): number {
+    return this.actionSequence;
   }
 
   userAction(action: UserAction): number {
@@ -195,11 +226,16 @@ export class SimulationClient {
     const snapshot = parseRuntimeSnapshot(value);
     this.stopPolling();
     this.restoreActionSequence(snapshot);
-    await this.commandAndWait({
-      type: "LOAD_WORLD",
-      requestId: this.nextRequestId("load"),
-      snapshot
-    });
+    try {
+      await this.commandAndWait({
+        type: "LOAD_WORLD",
+        requestId: this.nextRequestId("load"),
+        snapshot
+      });
+    } catch (error) {
+      this.restartWorker();
+      throw error;
+    }
     this.currentSaveId = saveId;
     this.start();
     this.startPolling();
@@ -215,12 +251,29 @@ export class SimulationClient {
     const saves = await this.persistence.list();
     const latest = saves[0];
     if (!latest) return null;
-    return this.load(latest.id);
+    try {
+      return await this.load(latest.id);
+    } catch (error) {
+      try {
+        const snapshot = await this.persistence.load(latest.id);
+        await this.persistence.save(snapshot, {
+          id: `recovery-${latest.id}-${Date.now().toString(36)}`,
+          title: `Recovery copy of failed save: ${latest.title ?? latest.id}`,
+          compress: true
+        });
+      } catch {
+        // Preserve the original load failure. Recovery copying is best-effort.
+      }
+      throw error;
+    }
   }
 
   dispose(): void {
     this.stopPolling();
     this.worker.removeEventListener("message", this.onMessage);
+    this.worker.removeEventListener("error", this.onWorkerError);
+    this.worker.removeEventListener("messageerror", this.onWorkerMessageError);
+    this.rejectPending(new Error("Simulation worker disposed"));
     this.worker.terminate();
   }
 
@@ -235,12 +288,26 @@ export class SimulationClient {
       return;
     }
 
-    const requestId = "requestId" in message ? message.requestId : undefined;
+    const eventRequestId =
+      message.type === "EVENT" &&
+      message.event &&
+      typeof message.event === "object" &&
+      !Array.isArray(message.event) &&
+      typeof message.event.requestId === "string"
+        ? message.event.requestId
+        : undefined;
+    const requestId =
+      "requestId" in message ? message.requestId : eventRequestId;
     if (requestId) {
-      const resolve = this.pending.get(requestId);
-      if (resolve) {
+      const pending = this.pending.get(requestId);
+      if (pending) {
         this.pending.delete(requestId);
-        resolve(message);
+        window.clearTimeout(pending.timeout);
+        if (message.type === "ERROR") {
+          pending.reject(new Error(message.message));
+        } else {
+          pending.resolve(message);
+        }
       }
     }
 
@@ -288,6 +355,57 @@ export class SimulationClient {
     }
   };
 
+  private createWorker(): Worker {
+    const worker = new Worker(new URL("../sim-worker.ts", import.meta.url), {
+      type: "module",
+      name: "simarium-ecology",
+      credentials: "include"
+    });
+    worker.addEventListener("message", this.onMessage);
+    worker.addEventListener("error", this.onWorkerError);
+    worker.addEventListener("messageerror", this.onWorkerMessageError);
+    return worker;
+  }
+
+  private restartWorker(): void {
+    this.stopPolling();
+    this.worker.removeEventListener("message", this.onMessage);
+    this.worker.removeEventListener("error", this.onWorkerError);
+    this.worker.removeEventListener("messageerror", this.onWorkerMessageError);
+    this.worker.terminate();
+    this.rejectPending(new Error("Simulation worker restarted after failed world load"));
+    this.renderSequence = -1;
+    this.currentTick = 0;
+    this.worker = this.createWorker();
+  }
+
+  private readonly onWorkerError = (event: ErrorEvent): void => {
+    const location =
+      event.filename && event.lineno
+        ? ` at ${event.filename}:${event.lineno}:${event.colno}`
+        : "";
+    const message =
+      event.message?.trim() ||
+      "Worker script could not be loaded or executed";
+    const error = new Error(`Simulation worker failed: ${message}${location}`);
+    this.rejectPending(error);
+    this.hooks.onError?.(error.message);
+  };
+
+  private readonly onWorkerMessageError = (): void => {
+    const error = new Error("Simulation worker message could not be decoded by the browser");
+    this.rejectPending(error);
+    this.hooks.onError?.(error.message);
+  };
+
+  private rejectPending(error: Error): void {
+    for (const pending of this.pending.values()) {
+      window.clearTimeout(pending.timeout);
+      pending.reject(error);
+    }
+    this.pending.clear();
+  }
+
   private post(message: object): void {
     this.worker.postMessage(message);
   }
@@ -295,18 +413,21 @@ export class SimulationClient {
   private commandAndWait(message: { requestId: string } & Record<string, unknown>): Promise<WorkerToUiMessage> {
     return new Promise((resolve, reject) => {
       const requestId = message.requestId;
+      const commandType =
+        typeof message.type === "string" ? message.type : "UNKNOWN";
+      const timeoutMs =
+        commandType === "INIT" || commandType === "LOAD_WORLD"
+          ? 120_000
+          : 30_000;
       const timeout = window.setTimeout(() => {
         this.pending.delete(requestId);
-        reject(new Error(`Worker request timed out: ${requestId}`));
-      }, 30_000);
-      this.pending.set(requestId, (response) => {
-        window.clearTimeout(timeout);
-        if (response.type === "ERROR") {
-          reject(new Error(response.message));
-        } else {
-          resolve(response);
-        }
-      });
+        reject(
+          new Error(
+            `Worker ${commandType} request timed out after ${Math.round(timeoutMs / 1000)}s: ${requestId}`
+          )
+        );
+      }, timeoutMs);
+      this.pending.set(requestId, { resolve, reject, timeout });
       this.post(message);
     });
   }

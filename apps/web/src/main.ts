@@ -125,6 +125,7 @@ if (benchmarkOnly) {
   let selectedEntity: EntitySummary | undefined;
   let selectedInspection: EntityInspection | undefined;
   const runtimeActionIds = new Map<number, string>();
+  let pauseTransitionPending = false;
 
   let state: ObservationUiState = {
     paused: false,
@@ -151,6 +152,19 @@ if (benchmarkOnly) {
     }
   });
   renderer.start();
+
+  Object.defineProperty(window, "__SIMARIUM_RENDER_METRICS__", {
+    configurable: true,
+    get: () => renderer.getPerformanceSnapshot()
+  });
+  Object.defineProperty(window, "__SIMARIUM_RENDER_ENTITY_IDS__", {
+    configurable: true,
+    get: () => renderer.getRenderedEntityIds()
+  });
+  Object.defineProperty(window, "__SIMARIUM_ANIMAL_PICK_TARGETS__", {
+    configurable: true,
+    get: () => renderer.getAnimalPickTargets()
+  });
 
   const client = new SimulationClient();
 
@@ -330,7 +344,7 @@ if (benchmarkOnly) {
       case "PLACE_HARDSCAPE": {
         const kind = window.prompt("Hardscape kind", "wood");
         if (!kind) return null;
-        const id = `hardscape-${Date.now().toString(36)}`;
+        const id = `hardscape-${state.seed}-${client.nextUserActionSequence()}`;
         return {
           type: "add_hardscape",
           hardscapeId: id,
@@ -367,12 +381,20 @@ if (benchmarkOnly) {
     if (!runtimeAction) return;
     const uiAction = createUserAction(type, {
       live: true,
-      seed: state.seed
+      seed: state.seed,
+      ...(runtimeAction.type === "add_hardscape"
+        ? { hardscapeId: runtimeAction.hardscapeId }
+        : {})
     });
     const sequence = client.userAction(runtimeAction);
     runtimeActionIds.set(sequence, uiAction.id);
+    if (type === "REMOVE_ORGANISM") {
+      selectedEntity = undefined;
+      selectedInspection = undefined;
+    }
     setState({
       userActions: [...state.userActions, uiAction],
+      ...(type === "REMOVE_ORGANISM" ? { selectedEntityId: null } : {}),
       runtimeStatus: state.paused ? "paused" : "running",
       runtimeMessage: `Queued ${type} at current simulation tick`
     });
@@ -463,6 +485,7 @@ if (benchmarkOnly) {
     const target = event.target as HTMLElement;
 
     if (target.closest<HTMLElement>("[data-command='pause']")) {
+      if (pauseTransitionPending) return;
       if (state.paused) {
         client.start();
         setState({
@@ -471,12 +494,28 @@ if (benchmarkOnly) {
           runtimeMessage: "Simulation running"
         });
       } else {
-        client.pause();
+        pauseTransitionPending = true;
         setState({
-          paused: true,
-          runtimeStatus: "paused",
-          runtimeMessage: "Simulation paused"
+          runtimeStatus: "starting",
+          runtimeMessage: "Pausing simulation…"
         });
+        void client.pauseAndWait()
+          .then(() => {
+            pauseTransitionPending = false;
+            setState({
+              paused: true,
+              runtimeStatus: "paused",
+              runtimeMessage: "Simulation paused"
+            });
+          })
+          .catch((error) => {
+            pauseTransitionPending = false;
+            setState({
+              runtimeStatus: "error",
+              runtimeMessage:
+                error instanceof Error ? error.message : String(error)
+            });
+          });
       }
       return;
     }
@@ -677,23 +716,45 @@ if (benchmarkOnly) {
 
   renderUi();
   const boot = !explicitLaunch
-    ? client.loadLatest().then((loaded) => {
-        if (loaded) {
+    ? client.loadLatest()
+        .then((loaded) => {
+          if (loaded) {
+            snapshot = emptyObservationSnapshot();
+            setState({
+              seed: loaded.seed,
+              selectedEntityId: null,
+              paused: false,
+              runtimeStatus: "running",
+              runtimeMessage: `Resumed autosave at day ${(loaded.virtualTime / 86400).toFixed(1)}`,
+              saveMessage: "Autosave resumed"
+            });
+            return;
+          }
+          return client.initialize(state.seed).then(() => {
+            client.setSpeed(state.speed);
+          });
+        })
+        .catch(async (error) => {
+          const failedMessage =
+            error instanceof Error ? error.message : String(error);
           snapshot = emptyObservationSnapshot();
           setState({
-            seed: loaded.seed,
             selectedEntityId: null,
             paused: false,
-            runtimeStatus: "running",
-            runtimeMessage: `Resumed autosave at day ${(loaded.virtualTime / 86400).toFixed(1)}`,
-            saveMessage: "Autosave resumed"
+            speed: 1,
+            runtimeStatus: "starting",
+            runtimeMessage: "Latest save could not be resumed; starting a fresh world…",
+            saveMessage: `Recovery copy preserved. Resume error: ${failedMessage}`
           });
-          return;
-        }
-        return client.initialize(state.seed).then(() => {
-          client.setSpeed(state.speed);
-        });
-      })
+          await client.initialize(state.seed);
+          client.setSpeed(1);
+          await client.save("Autosave", "autosave");
+          setState({
+            runtimeStatus: "running",
+            runtimeMessage: "Fresh Phase 7 world started after autosave recovery",
+            saveMessage: "Failed latest save preserved as a recovery copy"
+          });
+        })
     : client.initialize(state.seed)
         .then(() => {
           client.setSpeed(state.speed);

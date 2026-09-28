@@ -13,18 +13,21 @@ export interface PlantRamet {
   offspringCount: number;
 }
 
+export type PlantRametDeathCause = "senescence" | "user_removal";
+
 export interface PlantRametRecord {
   id: number;
   parentId?: number;
   birthTimeSeconds: number;
   deathTimeSeconds?: number;
+  deathCause?: PlantRametDeathCause;
   offspringIds: number[];
 }
 
 export type PlantRametEvent =
   | { type: "birth"; timeSeconds: number; id: number; parentId?: number }
   | { type: "clone"; timeSeconds: number; parentId: number; offspringId: number }
-  | { type: "death"; timeSeconds: number; id: number };
+  | { type: "death"; timeSeconds: number; id: number; cause: PlantRametDeathCause };
 
 export class PlantRametPopulation {
   private nextId = 1;
@@ -118,13 +121,19 @@ export class PlantRametPopulation {
     return childId;
   }
 
-  markDead(id: number, timeSeconds: number): void {
+  markDead(
+    id: number,
+    timeSeconds: number,
+    cause: PlantRametDeathCause = "senescence"
+  ): void {
     const ramet = this.ramets.find((candidate) => candidate.id === id);
     if (!ramet || !ramet.alive) return;
     ramet.alive = false;
     ramet.share = 0;
-    this.record(id).deathTimeSeconds = timeSeconds;
-    this.events.push({ type: "death", timeSeconds, id });
+    const record = this.record(id);
+    record.deathTimeSeconds = timeSeconds;
+    record.deathCause = cause;
+    this.events.push({ type: "death", timeSeconds, id, cause });
   }
 
   normalizeShares(): void {

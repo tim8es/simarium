@@ -29,6 +29,11 @@ body { background: #0f1716; }
   backdrop-filter: blur(10px);
 }
 
+.camera-controls[hidden] {
+  display: none !important;
+  pointer-events: none;
+}
+
 .camera-controls button {
   appearance: none;
   border: 1px solid rgba(220, 240, 234, 0.18);

@@ -118,7 +118,7 @@ export function renderEntityCard(entity: EntitySummary | undefined): string {
       ];
 
   return `
-    <section class="glass-panel entity-card">
+    <section class="glass-panel entity-card" data-entity-id="${entity.id}" data-entity-kind="${entity.kind}">
       <div class="entity-header">
         <div class="entity-mark ${entity.kind}"></div>
         <div>
@@ -191,7 +191,7 @@ export function renderGenealogy(nodes: ReadonlyArray<GenealogyNode>): string {
   const current = nodes.find(node => node.relation === "current");
   const offspring = nodes.filter(node => node.relation === "offspring");
   const node = (item: GenealogyNode | undefined, relation: string) => item
-    ? `<div class="lineage-node ${item.relation}"><span>${relation}</span><strong>${item.label}</strong><small>${item.lifeStage}</small></div>`
+    ? `<div class="lineage-node ${item.relation}" data-entity-id="${item.entityId}"><span>${relation}</span><strong>${item.label}</strong><small>${item.lifeStage}</small></div>`
     : `<div class="lineage-node muted"><span>${relation}</span><strong>unknown</strong></div>`;
 
   return `
@@ -224,7 +224,7 @@ function sparkline(series: PopulationSeries): string {
   }).join(" ");
   const latest = values.at(-1) ?? 0;
   return `
-    <div class="series-row">
+    <div class="series-row" data-species-id="${series.speciesId}" data-point-count="${series.points.length}" data-latest="${latest}">
       <div class="series-label"><span>${series.label}</span><strong>${latest}</strong></div>
       <svg class="sparkline" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
         <polyline points="${points}"></polyline>
@@ -275,7 +275,7 @@ export function renderFoodWeb(snapshot: ObservationSnapshot): string {
             const source = speciesById.get(link.sourceSpeciesId)?.commonName ?? link.sourceSpeciesId;
             const target = speciesById.get(link.targetSpeciesId)?.commonName ?? link.targetSpeciesId;
             return `
-              <div class="web-edge" data-source="${link.sourceSpeciesId}" data-target="${link.targetSpeciesId}">
+              <div class="web-edge" data-source="${link.sourceSpeciesId}" data-target="${link.targetSpeciesId}" data-biomass-mg="${link.biomassTransferMg}">
                 <i style="height:${thickness.toFixed(1)}px"></i>
                 <span>${source} → ${target}</span>
               </div>
@@ -335,7 +335,7 @@ export function renderActions(state: ObservationUiState): string {
         <span class="eyebrow">USER_ACTION QUEUE</span>
         ${state.userActions.length === 0
           ? "<p>No UI-side mutations. Actions are emitted to the simulation boundary.</p>"
-          : state.userActions.slice(-4).reverse().map(action => `<div><code>${action.source}</code><span>${action.type}</span><strong>${action.status}</strong></div>`).join("")
+          : state.userActions.slice(-4).reverse().map(action => `<div data-action-type="${action.type}" ${typeof action.payload.hardscapeId === "string" ? `data-hardscape-id="${action.payload.hardscapeId}"` : ""}><code>${action.source}</code><span>${action.type}</span><strong>${action.status}</strong></div>`).join("")
         }
       </div>
     </div>
@@ -361,6 +361,10 @@ function renderResources(snapshot: ObservationSnapshot): string {
         ${metric("Fungal C", `${r.fungalCarbonMg.toFixed(2)} mg`)}
         ${metric("Bacterial C", `${r.bacterialCarbonMg.toFixed(2)} mg`)}
         ${metric("Corpse C", `${r.corpseCarbonMg.toFixed(3)} mg`)}
+        <div class="metric boundary-flux" data-boundary-carbon-mg="${ledger.cumulativeBoundaryFlux.carbonMg}" data-boundary-nitrogen-mg="${ledger.cumulativeBoundaryFlux.nitrogenMg}" data-boundary-phosphorus-mg="${ledger.cumulativeBoundaryFlux.phosphorusMg}" data-boundary-water-g="${ledger.cumulativeBoundaryFlux.waterG}">
+          <span>Boundary flux</span>
+          <strong>C ${ledger.cumulativeBoundaryFlux.carbonMg.toFixed(2)} mg · H₂O ${ledger.cumulativeBoundaryFlux.waterG.toFixed(3)} g</strong>
+        </div>
       </div>
       <div class="ledger-panel">
         <div class="panel-heading compact">

@@ -631,7 +631,7 @@ export class DalotiaPredatorSystem implements SimSystem {
     // half-saturation by the number of active local hunters; no new
     // biological coefficient is introduced.
     const localHunterCount =
-      nearbyRefs === undefined ? 1 : this.countCompetingHunters(candidates);
+      nearbyRefs === undefined ? 1 : this.countCompetingHunters(nearbyRefs);
     const densityFactor =
       available /
       Math.max(
@@ -661,24 +661,16 @@ export class DalotiaPredatorSystem implements SimSystem {
     return consumedAny;
   }
 
-  private countCompetingHunters(candidates: readonly PreyCandidate[]): number {
-    if (this.spatial === undefined) return 1;
-
-    const hunterIds = new Set<number>();
-    for (const target of candidates) {
-      const preyRef = `${target.species}#${target.individual.id}`;
-      for (const ref of this.spatial.nearbyRefs(
-        preyRef,
-        this.preyEncounterRadiusCells
-      )) {
-        if (!ref.startsWith("dalotia_coriaria#")) continue;
-        const id = Number(ref.slice("dalotia_coriaria#".length));
-        if (!Number.isInteger(id) || id <= 0) continue;
-        const candidate = this.population.get(id);
-        if (this.feedingDrive(candidate) > 0) hunterIds.add(id);
-      }
+  private countCompetingHunters(refs: readonly string[]): number {
+    let count = 0;
+    for (const ref of refs) {
+      if (!ref.startsWith("dalotia_coriaria#")) continue;
+      const id = Number(ref.slice("dalotia_coriaria#".length));
+      if (!Number.isInteger(id) || id <= 0) continue;
+      const candidate = this.population.get(id);
+      if (this.feedingDrive(candidate) > 0) count++;
     }
-    return Math.max(1, hunterIds.size);
+    return Math.max(1, count);
   }
 
   private collectPrey(

@@ -135,6 +135,19 @@ export class BenchmarkApp {
     return this.hud.getSnapshot();
   }
 
+  getRenderedEntityIds(): string[] {
+    const ids: string[] = [];
+    this.adapter.forEachRenderableEntity((entity) => ids.push(entity.id));
+    return ids;
+  }
+
+  getAnimalPickTargets() {
+    return this.benchmarkScene.getAnimalPickTargets(
+      this.cameraController.camera,
+      this.renderer.domElement
+    );
+  }
+
   private readonly onResize = (): void => {
     const width = window.innerWidth;
     const height = window.innerHeight;

@@ -97,13 +97,201 @@ describe("integrated browser runtime", () => {
     expect(ledger.cumulativeBoundaryFlux.waterG).toBeGreaterThan(1.99);
   });
 
+  it("round-trips every MVP boundary action through save/load and deterministic continuation", () => {
+    const source = init(7067);
+    const initial = source.renderSnapshot();
+    const removable = initial.entities.find(
+      (entity) => entity.speciesId === "folsomia_candida"
+    );
+    expect(removable).toBeDefined();
+
+    const actions: UserActionEnvelope[] = [
+      {
+        sequence: 0,
+        targetTick: 0,
+        action: { type: "add_water", waterG: 1.5 }
+      },
+      {
+        sequence: 1,
+        targetTick: 0,
+        action: {
+          type: "add_litter",
+          material: {
+            carbonMg: 100,
+            nitrogenMg: 2,
+            phosphorusMg: 0.2,
+            waterG: 0.5
+          }
+        }
+      },
+      {
+        sequence: 2,
+        targetTick: 0,
+        action: {
+          type: "introduce_organisms",
+          speciesId: "folsomia_candida",
+          count: 2
+        }
+      },
+      {
+        sequence: 3,
+        targetTick: 0,
+        action: { type: "set_light", intensity: 0.65 }
+      },
+      {
+        sequence: 4,
+        targetTick: 0,
+        action: { type: "set_ventilation", ratePerSecond: 0.00002 }
+      },
+      {
+        sequence: 5,
+        targetTick: 0,
+        action: {
+          type: "add_hardscape",
+          hardscapeId: "persistent-hardscape",
+          kind: "wood",
+          position: { x: 0, y: 0.14, z: 0 }
+        }
+      },
+      {
+        sequence: 6,
+        targetTick: 0,
+        action: {
+          type: "add_hardscape",
+          hardscapeId: "temporary-hardscape",
+          kind: "stone",
+          position: { x: 0.1, y: 0.1, z: 0 }
+        }
+      },
+      {
+        sequence: 7,
+        targetTick: 0,
+        action: {
+          type: "remove_hardscape",
+          hardscapeId: "temporary-hardscape"
+        }
+      },
+      {
+        sequence: 8,
+        targetTick: 0,
+        action: {
+          type: "remove_organisms",
+          entityIds: [removable!.entityId]
+        }
+      }
+    ];
+
+    for (const action of actions) {
+      source.applyUserAction(action);
+    }
+    source.step(3);
+
+    const saved = source.saveSnapshot();
+    const restored = new IntegratedEcosystemRuntimeAdapter();
+    restored.loadSnapshot(saved);
+
+    const restoredSave = restored.saveSnapshot();
+    expect(restoredSave.tick).toBe(saved.tick);
+    expect(restoredSave.virtualTime).toBe(saved.virtualTime);
+    expect(restoredSave.rngState).toEqual(saved.rngState);
+    expect(restoredSave.sections.materialPools).toEqual(
+      saved.sections.materialPools
+    );
+    expect(restoredSave.sections.organisms).toEqual(
+      saved.sections.organisms
+    );
+    expect(restoredSave.sections.plants).toEqual(saved.sections.plants);
+    expect(restoredSave.sections.spatialState).toEqual(
+      saved.sections.spatialState
+    );
+
+    const stats = restored.stats() as unknown as {
+      controls: {
+        lightMultiplier: number;
+        ventilationRatePerSecond: number;
+      };
+      hardscape: Array<{ id: string }>;
+    };
+    expect(stats.controls.lightMultiplier).toBe(0.65);
+    expect(stats.controls.ventilationRatePerSecond).toBe(0.00002);
+    expect(stats.hardscape.some((item) => item.id === "persistent-hardscape")).toBe(true);
+    expect(stats.hardscape.some((item) => item.id === "temporary-hardscape")).toBe(false);
+
+    const followOn: UserActionEnvelope = {
+      sequence: 9,
+      targetTick: saved.tick,
+      action: { type: "set_light", intensity: 0.9 }
+    };
+    source.applyUserAction(followOn);
+    restored.applyUserAction(structuredClone(followOn));
+    source.step(5);
+    restored.step(5);
+
+    const sourceEnd = source.saveSnapshot();
+    const restoredEnd = restored.saveSnapshot();
+    expect(restoredEnd.tick).toBe(sourceEnd.tick);
+    expect(restoredEnd.virtualTime).toBe(sourceEnd.virtualTime);
+    expect(restoredEnd.rngState).toEqual(sourceEnd.rngState);
+    expect(restoredEnd.coreState).toEqual(sourceEnd.coreState);
+    expect(restoredEnd.userActionQueue).toEqual(sourceEnd.userActionQueue);
+    expect(restoredEnd.sections).toEqual(sourceEnd.sections);
+  });
+
+  it("records explicit diagnostic cause when a plant ramet is removed", () => {
+    const adapter = init(7071);
+    const plant = adapter.renderSnapshot().entities.find(
+      (entity) => entity.speciesId === "fittonia_albivenis"
+    );
+    expect(plant).toBeDefined();
+
+    adapter.applyUserAction({
+      sequence: 0,
+      targetTick: 0,
+      action: {
+        type: "remove_organisms",
+        entityIds: [plant!.entityId]
+      }
+    });
+    adapter.step(1);
+
+    expect(
+      adapter.renderSnapshot().entities.some(
+        (entity) => entity.entityId === plant!.entityId
+      )
+    ).toBe(false);
+
+    const stats = adapter.stats() as unknown as {
+      events: {
+        recent: Array<{
+          speciesId: string;
+          type: string;
+          entityId: string | null;
+          label: string;
+        }>;
+      };
+    };
+    expect(stats.events.recent).toContainEqual(
+      expect.objectContaining({
+        speciesId: "fittonia_albivenis",
+        type: "death",
+        entityId: plant!.entityId,
+        label: expect.stringContaining("user_removal")
+      })
+    );
+  });
+
   it("keeps ecology deterministic when render and stats are observed", () => {
     const observed = init(7041);
     const headless = init(7041);
 
     for (let tick = 0; tick < 32; tick++) {
-      observed.renderSnapshot();
+      const render = observed.renderSnapshot();
       observed.stats();
+      const inspectable = render.entities.find(
+        (entity) => entity.speciesId === "fittonia_albivenis"
+      );
+      if (!inspectable) throw new Error("Expected an inspectable Fittonia ramet");
+      observed.entityDetails(inspectable.entityId);
       observed.step(1);
       headless.step(1);
     }
@@ -194,6 +382,100 @@ describe("integrated browser runtime", () => {
     );
   });
 
+
+  it("replays boundary, organism and hardscape actions through save-load without drift", () => {
+    const source = init(7111);
+    const initial = source.renderSnapshot();
+    const removable = initial.entities.find(
+      (entity) => entity.speciesId === "folsomia_candida"
+    );
+    expect(removable).toBeDefined();
+
+    const actions: UserActionEnvelope[] = [
+      {
+        sequence: 0,
+        targetTick: 0,
+        action: {
+          type: "add_litter",
+          material: {
+            carbonMg: 120,
+            nitrogenMg: 2.4,
+            phosphorusMg: 0.24,
+            waterG: 0.6
+          }
+        }
+      },
+      {
+        sequence: 1,
+        targetTick: 0,
+        action: { type: "set_ventilation", ratePerSecond: 0.0002 }
+      },
+      {
+        sequence: 2,
+        targetTick: 0,
+        action: {
+          type: "introduce_organisms",
+          speciesId: "trichorhina_tomentosa",
+          count: 2
+        }
+      },
+      {
+        sequence: 3,
+        targetTick: 0,
+        action: {
+          type: "add_hardscape",
+          hardscapeId: "validation-wood",
+          kind: "wood",
+          position: { x: 0.1, y: 0.14, z: -0.05 }
+        }
+      },
+      {
+        sequence: 4,
+        targetTick: 0,
+        action: {
+          type: "remove_organisms",
+          entityIds: [removable!.entityId]
+        }
+      }
+    ];
+    actions.forEach((action) => source.applyUserAction(action));
+    source.step(4);
+
+    const saved = source.saveSnapshot();
+    const restored = new IntegratedEcosystemRuntimeAdapter();
+    restored.loadSnapshot(saved);
+
+    expect(restored.saveSnapshot().rngState).toEqual(saved.rngState);
+    expect(restored.saveSnapshot().sections.materialPools).toEqual(
+      saved.sections.materialPools
+    );
+    expect(restored.saveSnapshot().sections.organisms).toEqual(
+      saved.sections.organisms
+    );
+    expect(restored.saveSnapshot().sections.spatialState).toEqual(
+      saved.sections.spatialState
+    );
+
+    const stats = restored.stats() as unknown as {
+      controls: { ventilationRatePerSecond: number };
+      hardscape: Array<{ id: string }>;
+    };
+    expect(stats.controls.ventilationRatePerSecond).toBe(0.0002);
+    expect(stats.hardscape.some((item) => item.id === "validation-wood")).toBe(true);
+
+    source.step(8);
+    restored.step(8);
+    expect(restored.saveSnapshot().rngState).toEqual(source.saveSnapshot().rngState);
+    expect(restored.saveSnapshot().sections.materialPools).toEqual(
+      source.saveSnapshot().sections.materialPools
+    );
+    expect(restored.saveSnapshot().sections.organisms).toEqual(
+      source.saveSnapshot().sections.organisms
+    );
+    expect(restored.saveSnapshot().sections.spatialState).toEqual(
+      source.saveSnapshot().sections.spatialState
+    );
+  });
 
   it("keeps all animal species represented when render populations exceed the visual budget", () => {
     const adapter = init(7053);

@@ -5,6 +5,7 @@ import {
   batchSummaryToCsv
 } from "../tools/ecosystem-report.ts";
 import {
+  assertIntegratedStateValid,
   runEcosystemBatch,
   runIntegratedEcosystem
 } from "../tools/ecosystem-analysis.ts";
@@ -35,6 +36,21 @@ describe("Phase 7 report/export helpers", () => {
     expect(lines.at(-1)?.startsWith("4,")).toBe(true);
   }, 30_000);
 
+  it("rejects non-finite organism state even when material pools remain finite", () => {
+    const run = runIntegratedEcosystem({
+      seed: 7307,
+      days: 1,
+      sampleEveryDays: 1
+    });
+    const individual = run.ecosystem.animals.folsomia.living()[0];
+    expect(individual).toBeDefined();
+    individual!.reserveCarbonMg = Number.NaN;
+
+    expect(() => assertIntegratedStateValid(run.ecosystem)).toThrow(
+      /Non-finite organism state/
+    );
+  }, 30_000);
+
   it("merges compact single-seed batch shards without applying acceptance early", () => {
     const first = runEcosystemBatch({
       seeds: [7308],
@@ -56,6 +72,22 @@ describe("Phase 7 report/export helpers", () => {
     expect(merged.seeds).toEqual([7308, 7309]);
     expect(merged.runCount).toBe(2);
     expect(merged.runOutcomes).toHaveLength(2);
+  }, 30_000);
+
+  it("retains long-run stability telemetry in compact batch outcomes", () => {
+    const batch = runEcosystemBatch({
+      seeds: [7312, 7313],
+      days: 5,
+      sampleEveryDays: 1
+    });
+
+    expect(batch.runOutcomes).toHaveLength(2);
+    expect(batch.runOutcomes[0]?.stability.folsomia.meanLiving).toBeGreaterThanOrEqual(0);
+    expect(batch.runOutcomes[0]?.stability.dalotia.coefficientOfVariation).toBeGreaterThanOrEqual(0);
+    expect(batch.meanLiving.bradysia).toBeGreaterThanOrEqual(0);
+    expect(batch.meanCoefficientOfVariation.folsomia).toBeGreaterThanOrEqual(0);
+    expect(batch.meanGenerationTurnover.trichorhina).toBeGreaterThanOrEqual(0);
+    expect(Number.isFinite(batch.meanResourceDrift.litterCarbonMg)).toBe(true);
   }, 30_000);
 
   it("exports aggregate persistence probabilities for batch comparison", () => {
