@@ -552,4 +552,88 @@ describe("integrated browser runtime", () => {
     }
   });
 
+
+  it("keeps the rendered animal cohort stable as an over-budget population grows", () => {
+    const adapter = init(7131);
+    adapter.applyUserAction({
+      sequence: 0,
+      targetTick: 0,
+      action: {
+        type: "introduce_organisms",
+        speciesId: "trichorhina_tomentosa",
+        count: 400
+      }
+    });
+    adapter.step(1);
+
+    const before = adapter.renderSnapshot().entities
+      .filter((entity) => entity.speciesId === "trichorhina_tomentosa")
+      .map((entity) => entity.entityId);
+    expect(before.length).toBe(300);
+
+    adapter.applyUserAction({
+      sequence: 1,
+      targetTick: 1,
+      action: {
+        type: "introduce_organisms",
+        speciesId: "trichorhina_tomentosa",
+        count: 50
+      }
+    });
+    adapter.step(1);
+
+    const after = adapter.renderSnapshot().entities
+      .filter((entity) => entity.speciesId === "trichorhina_tomentosa")
+      .map((entity) => entity.entityId);
+    const beforeSet = new Set(before);
+    const retained = after.filter((id) => beforeSet.has(id));
+
+    expect(after.length).toBe(300);
+    expect(retained.length).toBeGreaterThanOrEqual(290);
+  });
+
+  it("renders a newly introduced plant as sparse emerging growth before it matures", () => {
+    const adapter = init(7133);
+    adapter.applyUserAction({
+      sequence: 0,
+      targetTick: 0,
+      action: {
+        type: "introduce_organisms",
+        speciesId: "fittonia_albivenis",
+        count: 1,
+        lifeStage: "ramet"
+      }
+    });
+    adapter.step(1);
+
+    const snapshot = adapter.renderSnapshot();
+    const young = snapshot.entities
+      .filter((entity) => entity.speciesId === "fittonia_albivenis")
+      .find((entity) =>
+        entity.action === "new-growth" &&
+        Number(
+          (entity.debugAttributes as { visualGrowthProgress?: number } | undefined)
+            ?.visualGrowthProgress
+        ) === 0
+      );
+
+    expect(young).toBeDefined();
+    expect(young!.displayScale).toBeLessThan(0.3);
+    const initialScale = young!.displayScale;
+
+    adapter.step(48 * 6);
+
+    const grown = adapter.renderSnapshot().entities.find(
+      (entity) => entity.entityId === young!.entityId
+    );
+    expect(grown).toBeDefined();
+    expect(grown!.displayScale).toBeGreaterThan(initialScale);
+    expect(
+      Number(
+        (grown!.debugAttributes as { visualGrowthProgress?: number } | undefined)
+          ?.visualGrowthProgress
+      )
+    ).toBeGreaterThan(0);
+  });
+
 });
