@@ -244,7 +244,7 @@ function animalGeometry(key: AnimalVisualKey): BufferGeometry {
 }
 
 function leafGeometry(speciesId: string): BufferGeometry {
-  const boundary =
+  const boundary: readonly (readonly [number, number])[] =
     speciesId === "fittonia-albivenis"
       ? [
           [0, 0],
