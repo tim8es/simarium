@@ -4,7 +4,6 @@ import {
   BufferGeometry,
   CapsuleGeometry,
   Color,
-  ConeGeometry,
   CylinderGeometry,
   DirectionalLight,
   DoubleSide,
@@ -26,7 +25,6 @@ import {
   PlaneGeometry,
   Points,
   PointsMaterial,
-  Quaternion,
   Raycaster,
   Scene,
   SphereGeometry,
@@ -330,7 +328,6 @@ export class BenchmarkScene {
   private readonly farColors = new Float32Array(MAX_ANIMALS * 3);
   private readonly dummy = new Object3D();
   private readonly position = new Vector3();
-  private readonly quaternion = new Quaternion();
   private readonly scale = new Vector3();
   private readonly frustum = new Frustum();
   private readonly projectionView = new Matrix4();
