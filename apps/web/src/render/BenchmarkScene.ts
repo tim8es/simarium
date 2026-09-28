@@ -3,7 +3,6 @@ import {
   BufferAttribute,
   BufferGeometry,
   CapsuleGeometry,
-  CircleGeometry,
   Color,
   CylinderGeometry,
   DirectionalLight,
@@ -93,10 +92,22 @@ type VisibleAnimal = {
 };
 
 const plantStyle = {
-  "fittonia-albivenis": { color: 0x3f7b4f, length: 0.055, width: 0.036, height: 0.17, baseLeaves: 18, extraLeaves: 18 },
-  "peperomia-caperata": { color: 0x315b3e, length: 0.052, width: 0.044, height: 0.15, baseLeaves: 12, extraLeaves: 15 },
-  "pilea-depressa": { color: 0x5d9b57, length: 0.029, width: 0.025, height: 0.11, baseLeaves: 24, extraLeaves: 24 },
-  "pilea-microphylla": { color: 0x79a866, length: 0.017, width: 0.012, height: 0.075, baseLeaves: 30, extraLeaves: 42 }
+  "fittonia-albivenis": {
+    color: 0x3f7b4f, length: 0.055, width: 0.036, height: 0.17,
+    minLeaves: 3, baseLeaves: 18, extraLeaves: 18, spread: 0.9, upright: 0.84
+  },
+  "peperomia-caperata": {
+    color: 0x315b3e, length: 0.052, width: 0.044, height: 0.15,
+    minLeaves: 3, baseLeaves: 12, extraLeaves: 15, spread: 0.76, upright: 0.7
+  },
+  "pilea-depressa": {
+    color: 0x5d9b57, length: 0.029, width: 0.025, height: 0.11,
+    minLeaves: 4, baseLeaves: 24, extraLeaves: 24, spread: 1.18, upright: 0.48
+  },
+  "pilea-microphylla": {
+    color: 0x79a866, length: 0.017, width: 0.012, height: 0.075,
+    minLeaves: 5, baseLeaves: 30, extraLeaves: 42, spread: 1.28, upright: 0.42
+  }
 } as const;
 
 const animalStyle: Record<AnimalVisualKey, { color: number; length: number; height: number; width: number }> = {
@@ -136,8 +147,8 @@ function animalGeometry(key: AnimalVisualKey): BufferGeometry {
     return geometry;
   }
   if (key.startsWith("trichorhina-tomentosa:")) {
-    const geometry = new CapsuleGeometry(0.38, 0.26, 4, 8);
-    geometry.rotateZ(Math.PI / 2);
+    const geometry = new SphereGeometry(0.5, 10, 6);
+    geometry.scale(1, 0.34, 0.62);
     return geometry;
   }
   if (key === "bradysia-impatiens:adult") {
@@ -151,7 +162,10 @@ function animalGeometry(key: AnimalVisualKey): BufferGeometry {
     return geometry;
   }
   if (key === "dalotia-coriaria:adult") {
-    return new BoxGeometry(1, 0.34, 0.44, 1, 1, 1);
+    const geometry = new CapsuleGeometry(0.24, 0.52, 3, 8);
+    geometry.rotateZ(Math.PI / 2);
+    geometry.scale(1, 0.72, 0.9);
+    return geometry;
   }
   if (key.startsWith("dalotia-coriaria:")) {
     const geometry = new CapsuleGeometry(0.22, 0.58, 3, 7);
@@ -175,11 +189,43 @@ function animalAccentGeometry(key: AnimalVisualKey): BufferGeometry | null {
 }
 
 function plantLeafGeometry(speciesId: keyof typeof plantStyle): BufferGeometry {
-  const segments =
-    speciesId === "peperomia-caperata" ? 10 :
-    speciesId === "fittonia-albivenis" ? 9 :
-    7;
-  return new CircleGeometry(0.5, segments);
+  const boundary: readonly (readonly [number, number])[] =
+    speciesId === "fittonia-albivenis"
+      ? [
+          [0, 0], [0.12, -0.2], [0.4, -0.43], [0.72, -0.38],
+          [1, 0], [0.72, 0.38], [0.4, 0.43], [0.12, 0.2]
+        ]
+      : speciesId === "peperomia-caperata"
+        ? [
+            [0, 0], [0.1, -0.38], [0.38, -0.55], [0.72, -0.47],
+            [0.96, -0.2], [1, 0], [0.96, 0.2], [0.72, 0.47],
+            [0.38, 0.55], [0.1, 0.38]
+          ]
+        : speciesId === "pilea-microphylla"
+          ? [
+              [0, 0], [0.16, -0.3], [0.5, -0.42], [0.84, -0.28],
+              [1, 0], [0.84, 0.28], [0.5, 0.42], [0.16, 0.3]
+            ]
+          : [
+              [0, 0], [0.16, -0.34], [0.5, -0.48], [0.84, -0.32],
+              [1, 0], [0.84, 0.32], [0.5, 0.48], [0.16, 0.34]
+            ];
+
+  const positions = [0.44, 0, 0];
+  for (const [x, y] of boundary) positions.push(x, y, 0);
+  const indices: number[] = [];
+  for (let index = 0; index < boundary.length; index++) {
+    indices.push(0, index + 1, ((index + 1) % boundary.length) + 1);
+  }
+
+  const geometry = new BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new BufferAttribute(new Float32Array(positions), 3)
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 function hash01(value: string): number {
@@ -213,6 +259,7 @@ export class BenchmarkScene {
   private readonly farColors = new Float32Array(MAX_ANIMALS * 3);
   private readonly dummy = new Object3D();
   private readonly position = new Vector3();
+  private readonly animatedPosition = new Vector3();
   private readonly scale = new Vector3();
   private readonly frustum = new Frustum();
   private readonly projectionView = new Matrix4();
@@ -288,7 +335,7 @@ export class BenchmarkScene {
         visualPosition.lerp(this.position, blend);
       }
 
-      const animatedPosition = visualPosition.clone();
+      const animatedPosition = this.animatedPosition.copy(visualPosition);
       const phase = hash01(`${entity.id}:phase`) * Math.PI * 2;
       const t = this.visualTimeSeconds;
       const localX = Math.cos(heading);
@@ -926,19 +973,19 @@ export class BenchmarkScene {
   }
 
   private refreshPlantInstances(force: boolean): void {
-    const plants = this.adapter
-      .getRenderableEntities()
-      .filter((entity) => PLANT_SPECIES.has(entity.speciesId));
+    const plants: Readonly<RenderEntity>[] = [];
+    this.adapter.forEachRenderableEntity((entity) => {
+      if (PLANT_SPECIES.has(entity.speciesId)) plants.push(entity);
+    });
     const signature = plants
-      .map((plant) => `${plant.id}:${plant.scale.toFixed(4)}`)
-      .sort()
+      .map((plant) => `${plant.id}:${plant.scale.toFixed(4)}:${plant.animationState}`)
       .join("|");
     if (!force && signature === this.plantSignature) return;
     this.plantSignature = signature;
     this.buildPlantInstances(plants);
   }
 
-  private buildPlantInstances(plants: readonly RenderEntity[]): void {
+  private buildPlantInstances(plants: readonly Readonly<RenderEntity>[]): void {
     for (const mesh of this.leafMeshes.values()) {
       this.scene.remove(mesh);
       mesh.geometry.dispose();
@@ -952,7 +999,7 @@ export class BenchmarkScene {
     this.leafEntityIds.clear();
     this.stemEntityIds.splice(0, this.stemEntityIds.length);
 
-    const speciesPlants = new Map<string, RenderEntity[]>();
+    const speciesPlants = new Map<string, Readonly<RenderEntity>[]>();
     for (const plant of plants) {
       const bucket = speciesPlants.get(plant.speciesId) ?? [];
       bucket.push(plant);
@@ -964,12 +1011,21 @@ export class BenchmarkScene {
 
     for (const [speciesId, style] of Object.entries(plantStyle)) {
       const members = speciesPlants.get(speciesId) ?? [];
-      const leafCounts = members.map((plant) =>
-        Math.max(
-          6,
-          Math.round(style.baseLeaves + style.extraLeaves * Math.max(0, Math.min(1.8, plant.scale / 1.6)))
-        )
-      );
+      const leafCounts = members.map((plant) => {
+        const emerging = plant.animationState === "new-growth";
+        const growth = emerging
+          ? Math.max(0, Math.min(1, (plant.scale - 0.12) / 0.78))
+          : 1;
+        const establishedScale = Math.max(0, Math.min(1.8, plant.scale / 1.6));
+        return Math.max(
+          style.minLeaves,
+          Math.round(
+            style.minLeaves +
+            (style.baseLeaves - style.minLeaves) * Math.sqrt(growth) +
+            style.extraLeaves * establishedScale * growth
+          )
+        );
+      });
       const capacity = Math.max(1, leafCounts.reduce((sum, count) => sum + count, 0));
       const mesh = new InstancedMesh(
         plantLeafGeometry(speciesId as keyof typeof plantStyle),
@@ -992,21 +1048,36 @@ export class BenchmarkScene {
         const baseAngle = hash01(plant.id) * Math.PI * 2;
         for (let leaf = 0; leaf < leafCount; leaf++) {
           const t = leaf / Math.max(1, leafCount - 1);
-          const angle = baseAngle + leaf * 2.399963229728653;
-          const radius = (0.018 + 0.07 * Math.sqrt(t)) * plant.scale;
+          const angle =
+            baseAngle +
+            leaf * 2.399963229728653 +
+            (hash01(`${plant.id}:leaf-angle:${leaf}`) - 0.5) * 0.28;
+          const radius =
+            (0.012 + 0.066 * Math.sqrt(t)) *
+            plant.scale *
+            style.spread *
+            (0.86 + hash01(`${plant.id}:leaf-radius:${leaf}`) * 0.28);
           const height =
-            (0.035 + style.height * (0.25 + t * 0.75)) * plant.scale;
+            (0.022 +
+              style.height *
+                (0.18 + t * style.upright) *
+                (0.9 + hash01(`${plant.id}:leaf-height:${leaf}`) * 0.2)) *
+            plant.scale;
           this.dummy.position.set(
             plant.position[0] + Math.cos(angle) * radius,
             plant.position[1] + height,
             plant.position[2] + Math.sin(angle) * radius
           );
           this.dummy.rotation.set(
-            -Math.PI / 2 + 0.28 * Math.sin(angle),
+            -Math.PI / 2 + 0.32 * Math.sin(angle),
             angle,
-            0.18 * Math.cos(angle)
+            0.18 * Math.cos(angle) +
+              (hash01(`${plant.id}:leaf-roll:${leaf}`) - 0.5) * 0.16
           );
-          const leafScale = (0.7 + 0.5 * t) * plant.scale;
+          const leafScale =
+            (0.58 + 0.58 * t) *
+            plant.scale *
+            (0.88 + hash01(`${plant.id}:leaf-scale:${leaf}`) * 0.24);
           this.dummy.scale.set(
             style.length * leafScale,
             style.width * leafScale,
