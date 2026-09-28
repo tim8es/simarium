@@ -3,6 +3,7 @@ import catalog from "../data/species.json";
 import fittonia from "../data/species-profiles/fittonia_albivenis.json";
 import peperomia from "../data/species-profiles/peperomia_caperata.json";
 import pilea from "../data/species-profiles/pilea_depressa.json";
+import pileaMicrophylla from "../data/species-profiles/pilea_microphylla.json";
 import folsomia from "../data/species-profiles/folsomia_candida.json";
 import trichorhina from "../data/species-profiles/trichorhina_tomentosa.json";
 import bradysia from "../data/species-profiles/bradysia_impatiens.json";
@@ -22,6 +23,7 @@ const mvpProfiles = [
   fittonia,
   peperomia,
   pilea,
+  pileaMicrophylla,
   folsomia,
   trichorhina,
   bradysia,
@@ -47,8 +49,8 @@ function walkParameters(value: unknown, visit: (parameter: Record<string, unknow
 describe("normalized species profiles", () => {
   it("validates every MVP profile and keeps catalog/profile membership one-to-one", () => {
     const validatedCatalog = validateSpeciesCatalog(catalog);
-    expect(validatedCatalog.species).toHaveLength(9);
-    expect(mvpProfiles).toHaveLength(9);
+    expect(validatedCatalog.species).toHaveLength(10);
+    expect(mvpProfiles).toHaveLength(10);
 
     const byId = new Map(mvpProfiles.map((profile) => {
       const validated = validateSpeciesProfile(profile);

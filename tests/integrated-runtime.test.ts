@@ -57,18 +57,18 @@ describe("integrated browser runtime", () => {
       populations: Record<string, number>;
       materialLedger: {
         residuals: {
-          carbonMg: number;
-          nitrogenMg: number;
-          phosphorusMg: number;
-          waterG: number;
+          carbonMg: { residual: number };
+          nitrogenMg: { residual: number };
+          phosphorusMg: { residual: number };
+          waterG: { residual: number };
         };
       };
     };
     expect(stats.populations.pilea_microphylla).toBeGreaterThan(0);
-    expect(Math.abs(stats.materialLedger.residuals.carbonMg)).toBeLessThan(1e-6);
-    expect(Math.abs(stats.materialLedger.residuals.nitrogenMg)).toBeLessThan(1e-6);
-    expect(Math.abs(stats.materialLedger.residuals.phosphorusMg)).toBeLessThan(1e-6);
-    expect(Math.abs(stats.materialLedger.residuals.waterG)).toBeLessThan(1e-6);
+    expect(Math.abs(stats.materialLedger.residuals.carbonMg.residual)).toBeLessThan(1e-6);
+    expect(Math.abs(stats.materialLedger.residuals.nitrogenMg.residual)).toBeLessThan(1e-6);
+    expect(Math.abs(stats.materialLedger.residuals.phosphorusMg.residual)).toBeLessThan(1e-6);
+    expect(Math.abs(stats.materialLedger.residuals.waterG.residual)).toBeLessThan(1e-6);
   });
 
   it("round-trips an integrated world through deterministic replay save/load", () => {
