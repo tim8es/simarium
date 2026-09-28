@@ -414,6 +414,11 @@ if (benchmarkOnly) {
         snapshot.environment.lightPar,
         state.nightObservationAid
       );
+      renderer.setBioticGroundcover(
+        snapshot.resources.litterCarbonMg,
+        snapshot.resources.fungalCarbonMg,
+        snapshot.resources.bacterialCarbonMg
+      );
       renderer.setTemperatureGridOverlay(
         snapshot.temperatureGrid,
         state.activeOverlay === "temperature"

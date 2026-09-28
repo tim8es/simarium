@@ -11,6 +11,7 @@ import {
   MicrobialDecomposerSystem,
   PlantClonalLineageSystem,
   PlantPhysiologySystem,
+  PlantPropaguleBankSystem,
   PlantRametPopulation,
   ScalarGrid3D,
   SpatialEcologySystem,
@@ -38,6 +39,7 @@ import trichorhinaFixture from "../../../data/experiments/phase4-trichorhina.jso
 import bradysiaFixture from "../../../data/experiments/phase5-bradysia.json" with { type: "json" };
 import dalotiaFixture from "../../../data/experiments/phase6-dalotia.json" with { type: "json" };
 import integratedFixture from "../../../data/experiments/phase7-integrated.json" with { type: "json" };
+import successionFixture from "../../../data/experiments/succession-biodiversity.json" with { type: "json" };
 
 function value(entry: any): number {
   return Number(entry.value);
@@ -178,6 +180,51 @@ function clonalParameters(
     cloneFraction: p.cloneFraction,
     minimumStructuralCarbonMgForClone:
       p.minimumStructuralCarbonMgForClone,
+    rametLifespanDays: p.rametLifespanDays
+  };
+}
+
+function successionPlantPhysiology(): PlantPhysiologySystem {
+  const p = successionFixture.species.pilea_microphylla.physiology;
+  return new PlantPhysiologySystem({
+    atmospherePool: "atmosphere",
+    reservePool: "pilea_microphylla_reserve",
+    structuralPool: "pilea_microphylla_structural",
+    nutrientPool: "available_nutrients",
+    litterPool: "litter",
+    substratePool: "substrate",
+    mobileWaterPool: "pilea_microphylla_water",
+    relativeLight: value(p.relativeLight),
+    lightHalfSaturation: value(p.lightHalfSaturation),
+    temperatureOptimumC: value(p.temperatureOptimumC),
+    temperatureSigmaC: value(p.temperatureSigmaC),
+    maxPhotosynthesisCarbonMgPerSecond: value(p.maxPhotosynthesisCarbonMgPerSecond),
+    structuralGrowthRatePerSecond: value(p.structuralGrowthRatePerSecond),
+    nitrogenMgPerCarbonMg: value(plantFixture.shared.nitrogenMgPerCarbonMg),
+    phosphorusMgPerCarbonMg: value(plantFixture.shared.phosphorusMgPerCarbonMg),
+    senescenceRatePerSecond: value(p.senescenceRatePerSecond),
+    targetWaterGPerStructuralCarbonMg: value(p.targetWaterGPerStructuralCarbonMg),
+    rootWaterUptakeRatePerSecond: value(p.rootWaterUptakeRatePerSecond),
+    transpirationRatePerSecond: value(p.transpirationRatePerSecond),
+    waterStressHalfSaturation: value(p.waterStressHalfSaturation),
+    maintenanceRespirationCarbonPerStructuralCarbonPerSecond:
+      value(p.maintenanceRespirationCarbonPerStructuralCarbonPerSecond),
+    photosynthesisReferenceStructuralCarbonMg: 24
+  });
+}
+
+function successionClonalParameters(): PlantClonalParameters {
+  const p = successionFixture.species.pilea_microphylla.clonal;
+  return {
+    structuralPool: "pilea_microphylla_structural",
+    reservePool: "pilea_microphylla_reserve",
+    waterPool: "pilea_microphylla_water",
+    litterPool: "litter",
+    substratePool: "substrate",
+    maturityDays: p.maturityDays,
+    cloneIntervalDays: p.cloneIntervalDays,
+    cloneFraction: p.cloneFraction,
+    minimumStructuralCarbonMgForClone: p.minimumStructuralCarbonMgForClone,
     rametLifespanDays: p.rametLifespanDays
   };
 }
@@ -393,6 +440,7 @@ export interface IntegratedEcosystem {
     fittonia: PlantRametPopulation;
     peperomia: PlantRametPopulation;
     pilea: PlantRametPopulation;
+    pileaMicrophylla: PlantRametPopulation;
   };
   animals: {
     folsomia: ReturnType<typeof seedFolsomiaJuveniles>;
@@ -418,7 +466,13 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
     bradysia_biomass: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
     bradysia_feed_buffer: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
     dalotia_biomass: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
-    dalotia_feed_buffer: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 }
+    dalotia_feed_buffer: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
+    pilea_microphylla_seedbank: structuredClone(
+      successionFixture.species.pilea_microphylla.propaguleBank.initialMaterial
+    ),
+    pilea_microphylla_reserve: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
+    pilea_microphylla_structural: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 },
+    pilea_microphylla_water: { carbonMg: 0, nitrogenMg: 0, phosphorusMg: 0, waterG: 0 }
   });
 
   const folsomia = seedFolsomiaJuveniles({
@@ -483,6 +537,7 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
   const pilea = createPlantPopulation(
     integratedFixture.plants.pilea_depressa.initialAgesDays
   );
+  const pileaMicrophylla = new PlantRametPopulation();
 
   const habitat = new SpatialHabitat(
     integratedFixture.spatial.widthCells,
@@ -517,6 +572,28 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
     new PlantClonalLineageSystem(
       pilea,
       clonalParameters("pilea_depressa", "pilea")
+    ),
+
+    new PlantPropaguleBankSystem(
+      pileaMicrophylla,
+      {
+        propagulePool: "pilea_microphylla_seedbank",
+        structuralPool: "pilea_microphylla_structural",
+        reservePool: "pilea_microphylla_reserve",
+        waterPool: "pilea_microphylla_water",
+        substratePool: "substrate",
+        emergenceDays:
+          successionFixture.species.pilea_microphylla.propaguleBank.emergenceDays,
+        minimumSubstrateWaterG:
+          successionFixture.species.pilea_microphylla.propaguleBank.minimumSubstrateWaterG,
+        structuralCarbonFraction:
+          successionFixture.species.pilea_microphylla.propaguleBank.structuralCarbonFraction
+      }
+    ),
+    successionPlantPhysiology(),
+    new PlantClonalLineageSystem(
+      pileaMicrophylla,
+      successionClonalParameters()
     ),
 
     decomposer(
@@ -585,7 +662,7 @@ export function createIntegratedEcosystem(seed = integratedFixture.seed): Integr
       relativeTolerance: integratedFixture.numerics.invariantRelativeTolerance
     }),
     habitat,
-    plants: { fittonia, peperomia, pilea },
+    plants: { fittonia, peperomia, pilea, pileaMicrophylla },
     animals: { folsomia, trichorhina, bradysia, dalotia }
   };
 }

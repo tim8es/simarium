@@ -33,6 +33,44 @@ describe("integrated browser runtime", () => {
     expect(afterDay.virtualTime).toBe(86_400);
   });
 
+  it("reveals succession species only from the conserved propagule bank", () => {
+    const adapter = init(7001);
+    const before = adapter.renderSnapshot();
+    expect(
+      before.entities.some((entity) => entity.speciesId === "pilea_microphylla")
+    ).toBe(false);
+
+    adapter.step(14 * 48 + 1);
+
+    const after = adapter.renderSnapshot();
+    expect(
+      after.entities.some((entity) => entity.speciesId === "pilea_microphylla")
+    ).toBe(true);
+
+    const saved = adapter.saveSnapshot();
+    const pools = saved.sections.materialPools as unknown as {
+      pools: Record<string, { carbonMg: number }>;
+    };
+    expect(pools.pools.pilea_microphylla_seedbank!.carbonMg).toBeLessThan(24);
+
+    const stats = adapter.stats() as unknown as {
+      populations: Record<string, number>;
+      materialLedger: {
+        residuals: {
+          carbonMg: { residual: number };
+          nitrogenMg: { residual: number };
+          phosphorusMg: { residual: number };
+          waterG: { residual: number };
+        };
+      };
+    };
+    expect(stats.populations.pilea_microphylla).toBeGreaterThan(0);
+    expect(Math.abs(stats.materialLedger.residuals.carbonMg.residual)).toBeLessThan(1e-6);
+    expect(Math.abs(stats.materialLedger.residuals.nitrogenMg.residual)).toBeLessThan(1e-6);
+    expect(Math.abs(stats.materialLedger.residuals.phosphorusMg.residual)).toBeLessThan(1e-6);
+    expect(Math.abs(stats.materialLedger.residuals.waterG.residual)).toBeLessThan(1e-6);
+  });
+
   it("round-trips an integrated world through deterministic replay save/load", () => {
     const source = init(7017);
     source.step(8);
@@ -512,6 +550,90 @@ describe("integrated browser runtime", () => {
       );
       expect(rendered.length).toBe(300);
     }
+  });
+
+
+  it("keeps the rendered animal cohort stable as an over-budget population grows", () => {
+    const adapter = init(7131);
+    adapter.applyUserAction({
+      sequence: 0,
+      targetTick: 0,
+      action: {
+        type: "introduce_organisms",
+        speciesId: "trichorhina_tomentosa",
+        count: 400
+      }
+    });
+    adapter.step(1);
+
+    const before = adapter.renderSnapshot().entities
+      .filter((entity) => entity.speciesId === "trichorhina_tomentosa")
+      .map((entity) => entity.entityId);
+    expect(before.length).toBe(300);
+
+    adapter.applyUserAction({
+      sequence: 1,
+      targetTick: 1,
+      action: {
+        type: "introduce_organisms",
+        speciesId: "trichorhina_tomentosa",
+        count: 50
+      }
+    });
+    adapter.step(1);
+
+    const after = adapter.renderSnapshot().entities
+      .filter((entity) => entity.speciesId === "trichorhina_tomentosa")
+      .map((entity) => entity.entityId);
+    const beforeSet = new Set(before);
+    const retained = after.filter((id) => beforeSet.has(id));
+
+    expect(after.length).toBe(300);
+    expect(retained.length).toBeGreaterThanOrEqual(290);
+  });
+
+  it("renders a newly introduced plant as sparse emerging growth before it matures", () => {
+    const adapter = init(7133);
+    adapter.applyUserAction({
+      sequence: 0,
+      targetTick: 0,
+      action: {
+        type: "introduce_organisms",
+        speciesId: "fittonia_albivenis",
+        count: 1,
+        lifeStage: "ramet"
+      }
+    });
+    adapter.step(1);
+
+    const snapshot = adapter.renderSnapshot();
+    const young = snapshot.entities
+      .filter((entity) => entity.speciesId === "fittonia_albivenis")
+      .find((entity) =>
+        entity.action === "new-growth" &&
+        Number(
+          (entity.debugAttributes as { visualGrowthProgress?: number } | undefined)
+            ?.visualGrowthProgress
+        ) === 0
+      );
+
+    expect(young).toBeDefined();
+    expect(young!.displayScale).toBeLessThan(0.3);
+    const initialScale = young!.displayScale;
+
+    adapter.step(48 * 6);
+
+    const grown = adapter.renderSnapshot().entities.find(
+      (entity) => entity.entityId === young!.entityId
+    );
+    expect(grown).toBeDefined();
+    expect(grown!.displayScale).toBeGreaterThan(initialScale);
+    expect(
+      Number(
+        (grown!.debugAttributes as { visualGrowthProgress?: number } | undefined)
+          ?.visualGrowthProgress
+      )
+    ).toBeGreaterThan(0);
   });
 
 });

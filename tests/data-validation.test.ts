@@ -5,6 +5,7 @@ import catalog from "../data/species.json";
 import fittonia from "../data/species-profiles/fittonia_albivenis.json";
 import peperomia from "../data/species-profiles/peperomia_caperata.json";
 import pilea from "../data/species-profiles/pilea_depressa.json";
+import pileaMicrophylla from "../data/species-profiles/pilea_microphylla.json";
 import folsomia from "../data/species-profiles/folsomia_candida.json";
 import trichorhina from "../data/species-profiles/trichorhina_tomentosa.json";
 import bradysia from "../data/species-profiles/bradysia_impatiens.json";
@@ -34,6 +35,7 @@ const mvpProfiles = [
   fittonia,
   peperomia,
   pilea,
+  pileaMicrophylla,
   folsomia,
   trichorhina,
   bradysia,
@@ -45,9 +47,9 @@ const mvpProfiles = [
 describe("species data contracts", () => {
   it("validates the canonical MVP catalog through runtime validation", () => {
     const validated = validateSpeciesCatalog(catalog);
-    expect(validated.species).toHaveLength(9);
-    expect(new Set(validated.species.map((species) => species.id)).size).toBe(9);
-    expect(new Set(validated.species.map((species) => species.profile_path)).size).toBe(9);
+    expect(validated.species).toHaveLength(10);
+    expect(new Set(validated.species.map((species) => species.id)).size).toBe(10);
+    expect(new Set(validated.species.map((species) => species.profile_path)).size).toBe(10);
   });
 
   it("validates all normalized MVP profiles through runtime validation", () => {

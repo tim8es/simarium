@@ -1,0 +1,111 @@
+{
+  "id": "succession_biodiversity_v1",
+  "status": "experimental_preview",
+  "purpose": "Adds one explicit wet-tropical plant species through a material-conserving dormant propagule bank. Numerical rates are engineering assumptions pending calibration; this file does not redefine accepted Phase-7 gates.",
+  "species": {
+    "pilea_microphylla": {
+      "physiology": {
+        "relativeLight": {
+          "value": 0.18,
+          "unit": "dimensionless",
+          "status": "ASSUMED",
+          "source": "kew_pilea_microphylla",
+          "notes": "Low-light engineering proxy; POWO supports wet-tropical habitat, not this numeric response."
+        },
+        "lightHalfSaturation": {
+          "value": 0.18,
+          "unit": "dimensionless",
+          "status": "ASSUMED",
+          "source": "model_internal"
+        },
+        "temperatureOptimumC": {
+          "value": 24,
+          "unit": "degC",
+          "status": "ASSUMED",
+          "source": "wet_tropical_proxy"
+        },
+        "temperatureSigmaC": {
+          "value": 6,
+          "unit": "degC",
+          "status": "ASSUMED",
+          "source": "model_internal"
+        },
+        "maxPhotosynthesisCarbonMgPerSecond": {
+          "value": 0.00007,
+          "unit": "mg_C/s",
+          "status": "ASSUMED",
+          "source": "pilea_depressa_proxy"
+        },
+        "structuralGrowthRatePerSecond": {
+          "value": 0.0000022,
+          "unit": "1/s",
+          "status": "ASSUMED",
+          "source": "pilea_depressa_proxy"
+        },
+        "senescenceRatePerSecond": {
+          "value": 1.15e-7,
+          "unit": "1/s",
+          "status": "ASSUMED",
+          "source": "pilea_depressa_proxy"
+        },
+        "targetWaterGPerStructuralCarbonMg": {
+          "value": 0.05,
+          "unit": "g_H2O/mg_C",
+          "status": "ASSUMED",
+          "source": "wet_tropical_proxy"
+        },
+        "rootWaterUptakeRatePerSecond": {
+          "value": 0.000018,
+          "unit": "1/s",
+          "status": "ASSUMED",
+          "source": "pilea_depressa_proxy"
+        },
+        "transpirationRatePerSecond": {
+          "value": 0.0000025,
+          "unit": "1/s",
+          "status": "ASSUMED",
+          "source": "pilea_depressa_proxy"
+        },
+        "waterStressHalfSaturation": {
+          "value": 0.4,
+          "unit": "dimensionless",
+          "status": "ASSUMED",
+          "source": "model_internal"
+        },
+        "maintenanceRespirationCarbonPerStructuralCarbonPerSecond": {
+          "value": 1.4e-8,
+          "unit": "1/s",
+          "status": "ASSUMED",
+          "source": "generic_plant_proxy"
+        }
+      },
+      "clonal": {
+        "maturityDays": 25,
+        "cloneIntervalDays": 28,
+        "cloneFraction": 0.18,
+        "minimumStructuralCarbonMgForClone": 6,
+        "rametLifespanDays": 220
+      },
+      "propaguleBank": {
+        "emergenceDays": [
+          14,
+          52,
+          105
+        ],
+        "minimumSubstrateWaterG": 5000,
+        "structuralCarbonFraction": 0.72,
+        "initialMaterial": {
+          "carbonMg": 24,
+          "nitrogenMg": 0.96,
+          "phosphorusMg": 0.096,
+          "waterG": 1.5
+        }
+      }
+    }
+  },
+  "notes": [
+    "Pilea microphylla is accepted by Kew POWO and occurs primarily in wet tropical biome.",
+    "Emergence timing, carbon allocation and all physiology coefficients are engineering assumptions for a succession preview, not measured species constants.",
+    "All propagule material exists in the initial mass ledger; emergence creates no matter."
+  ]
+}
