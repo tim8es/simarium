@@ -396,11 +396,21 @@ try {
   const hardscapeRow = await applyPausedAction(page, "PLACE_HARDSCAPE", ["wood"]);
   const hardscapeId = await hardscapeRow.getAttribute("data-hardscape-id");
   if (!hardscapeId) throw new Error("Placed hardscape did not retain its deterministic action identity");
+  await page.waitForFunction(
+    (expected) => window.__SIMARIUM_RENDER_METRICS__?.dynamicHardscape === expected,
+    hardscapeBefore.dynamicHardscape + 1,
+    { timeout: 8_000 }
+  );
   const hardscapeAdded = await renderMetrics(page);
   if (hardscapeAdded.dynamicHardscape !== hardscapeBefore.dynamicHardscape + 1) {
     throw new Error(`Hardscape was not visually added: ${hardscapeBefore.dynamicHardscape} -> ${hardscapeAdded.dynamicHardscape}`);
   }
   await applyPausedAction(page, "REMOVE_HARDSCAPE", [hardscapeId]);
+  await page.waitForFunction(
+    (expected) => window.__SIMARIUM_RENDER_METRICS__?.dynamicHardscape === expected,
+    hardscapeBefore.dynamicHardscape,
+    { timeout: 8_000 }
+  );
   const hardscapeRemoved = await renderMetrics(page);
   if (hardscapeRemoved.dynamicHardscape !== hardscapeBefore.dynamicHardscape) {
     throw new Error(`Hardscape was not visually removed: ${hardscapeAdded.dynamicHardscape} -> ${hardscapeRemoved.dynamicHardscape}`);
@@ -414,21 +424,21 @@ try {
   await page.getByText(/user_removal/).first().waitFor({ timeout: 5_000 });
 
   const downloadPromise = page.waitForEvent("download");
-  await page.locator("[data-world-command='export']").click();
+  await clickControl(page, "[data-world-command='export']");
   const download = await downloadPromise;
   const exportedPath = await download.path();
   if (!exportedPath) throw new Error("Portable save export did not produce a file");
   await page.getByText(/Portable save exported/).waitFor({ timeout: 30_000 });
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.locator("[data-world-command='import']").click();
+  await clickControl(page, "[data-world-command='import']");
   const fileChooser = await fileChooserPromise;
   await fileChooser.setFiles(exportedPath);
   await page.getByText(/Portable save imported/).waitFor({ timeout: 30_000 });
   await clickControl(page, "[data-command='pause']");
   await page.waitForSelector(".runtime-banner.paused");
 
-  await page.locator("[data-world-command='save']").click();
+  await clickControl(page, "[data-world-command='save']");
   await page.getByText(/Saved: manual-/).waitFor({ timeout: 30_000 });
   const savedClock = await worldClock.textContent();
 
@@ -562,9 +572,9 @@ try {
       timeout: 30_000
     });
     await errorPage.waitForSelector(".runtime-banner.running", { timeout: 30_000 });
-    await errorPage.locator("[data-bottom-tab='actions']").click();
+    await clickControl(errorPage, "[data-bottom-tab='actions']");
     await withDialogs(errorPage, ["unknown_species", "1"], async () => {
-      await errorPage.locator("[data-user-action='INTRODUCE_ORGANISM']").click();
+      await clickControl(errorPage, "[data-user-action='INTRODUCE_ORGANISM']");
     });
     await errorPage.waitForSelector(".runtime-banner.error", { timeout: 8_000 });
     const errorBanner = await errorPage.locator(".runtime-banner.error").innerText();
